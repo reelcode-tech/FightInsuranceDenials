@@ -118,6 +118,10 @@ export default function SubmitDenial() {
     try {
       const denialData = {
         ...extractedData,
+        insurer: extractedData.insurer || "Private Carrier",
+        procedure: extractedData.procedure || "Medical Service",
+        denialReason: extractedData.denialReason || "Coverage Denial",
+        summary: extractedData.summary || `User story regarding ${extractedData.insurer || 'insurance'} denial.`,
         narrative,
         status: 'denied',
         tags: ['user-submission'],
@@ -130,16 +134,7 @@ export default function SubmitDenial() {
       };
       await addDoc(collection(db, "denials"), denialData);
       
-      // Fetch similar cases for personalized insights
-      const q = query(
-        collection(db, "denials"), 
-        where("insurer", "==", extractedData.insurer),
-        where("procedure", "==", extractedData.procedure)
-      );
-      const snapshot = await getDocs(q);
-      setSimilarCasesCount(snapshot.size);
-      
-      setStep(4);
+      setStep(3);
       toast.success("Submission saved successfully!", { id: toastId });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, "denials");
@@ -153,7 +148,7 @@ export default function SubmitDenial() {
     <div className="max-w-4xl mx-auto p-8 space-y-12 bg-[#0A0A0B] min-h-screen text-slate-200">
       <div className="space-y-6 border-b border-white/10 pb-12">
         <div className="flex items-center gap-4">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div 
               key={s} 
               className={`w-12 h-12 flex items-center justify-center font-bold text-xl rounded-2xl transition-all duration-500 ${step === s ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/5 text-slate-500 border border-white/5'}`}
@@ -198,21 +193,9 @@ export default function SubmitDenial() {
                 />
                 <Button className="w-full h-20 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xl font-bold shadow-xl shadow-blue-900/20 group" onClick={handleExtract} disabled={isExtracting || !rawText.trim()}>
                   {isExtracting ? <Loader2 className="mr-3 h-6 w-6 animate-spin" /> : <ChevronRight className="mr-3 h-6 w-6 group-hover:translate-x-2 transition-transform" />}
-                  Analyze Text
+                  Analyze Story
                 </Button>
               </div>
-            </div>
-
-            <div className="p-8 bg-slate-900/80 rounded-[2rem] border border-white/5 space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-blue-500" />
-                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Email Forwarding</h3>
-              </div>
-              <p className="text-sm font-light text-slate-400 leading-relaxed">
-                You can also forward your insurance emails to <span className="text-blue-400 font-mono font-bold">denials@denialwatch.com</span>. 
-                <br />
-                <span className="text-[10px] uppercase opacity-40 font-bold tracking-tighter">* To set this up for free, use Cloudflare Email Routing or forward to a dedicated Gmail.</span>
-              </p>
             </div>
           </div>
 
@@ -229,16 +212,11 @@ export default function SubmitDenial() {
             <h3 className="text-3xl font-bold text-white border-b border-white/10 pb-6">Confirm Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[
-                { label: "Insurer", value: extractedData.insurer || "Not found" },
-                { label: "Plan Type", value: extractedData.planType || "Not found" },
-                { label: "Procedure", value: extractedData.procedure || "Not found" },
-                { label: "Denial Reason", value: extractedData.denialReason || "Not found" },
+                { label: "Insurer", value: extractedData.insurer || "Private Carrier" },
+                { label: "Procedure", value: extractedData.procedure || "Medical Service" },
+                { label: "Denial Reason", value: extractedData.denialReason || "Coverage Denial" },
                 { label: "Date", value: extractedData.date || "Not found" },
-                { label: "CPT Codes", value: extractedData.cptCodes?.join(", ") || "None found" },
-                { label: "ERISA Status", value: extractedData.isERISA || "Unknown" },
-                { label: "Appeal Deadline", value: extractedData.appealDeadline || "Not found" },
-                { label: "Medical Necessity", value: extractedData.medicalNecessityFlag ? "Yes" : "No" },
-                { label: "IME Involved", value: extractedData.imeInvolved ? "Yes" : "No" }
+                { label: "ERISA Status", value: extractedData.isERISA || "Unknown" }
               ].map((field, i) => (
                 <div key={i} className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">{field.label}</label>
@@ -246,20 +224,12 @@ export default function SubmitDenial() {
                 </div>
               ))}
             </div>
-            {extractedData.denialQuote && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">Denial Logic Quote</label>
-                <div className="p-6 bg-blue-600/5 border border-blue-500/20 rounded-2xl italic text-slate-300 font-light leading-relaxed">
-                  "{extractedData.denialQuote}"
-                </div>
-              </div>
-            )}
 
             <div className="space-y-4">
               <label className="text-xl font-bold text-white">Add Personal Context</label>
               <textarea
                 className="min-h-[150px] w-full bg-white/5 border border-white/10 rounded-2xl p-6 font-light text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="How has this affected your health or life? This helps the AI generate a more persuasive appeal."
+                placeholder="How has this affected your health or life? This helps us build a stronger case for systemic change."
                 value={narrative}
                 onChange={(e) => setNarrative(e.target.value)}
               />
@@ -294,52 +264,16 @@ export default function SubmitDenial() {
 
             <div className="flex justify-between pt-8">
               <Button className="h-16 px-10 rounded-full border-white/10 hover:bg-white/5 text-white font-bold" onClick={() => setStep(1)}>Back</Button>
-              <Button className="h-16 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-bold shadow-xl shadow-blue-900/20" onClick={handleGenerateAppeal} disabled={isGeneratingAppeal}>
-                {isGeneratingAppeal ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <FileText className="mr-3 h-5 w-5" />}
-                Generate Appeal Letter
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && appealDraft && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="bg-white/5 border border-white/5 rounded-[3rem] p-12 space-y-12 backdrop-blur-sm">
-            <h3 className="text-3xl font-bold text-white border-b border-white/10 pb-6">Your Appeal Action Plan</h3>
-            
-            <div className="space-y-6">
-              <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">Key Arguments</h4>
-              <ul className="space-y-4">
-                {appealDraft.keyArguments.map((arg, i) => (
-                  <li key={i} className="flex items-start gap-4 font-light text-slate-300">
-                    <div className="mt-1.5 w-2 h-2 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] flex-shrink-0" />
-                    {arg}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="space-y-6">
-              <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">Draft Appeal Letter</h4>
-              <div className="p-10 bg-slate-900/80 border border-white/10 rounded-[2rem] font-mono text-sm leading-relaxed whitespace-pre-wrap text-slate-300">
-                <div className="font-bold mb-6 border-b border-white/10 pb-4 text-white">Subject: {appealDraft.subject}</div>
-                {appealDraft.body}
-              </div>
-            </div>
-
-            <div className="flex justify-between pt-8">
-              <Button className="h-16 px-10 rounded-full border-white/10 hover:bg-white/5 text-white font-bold" onClick={() => setStep(2)}>Back</Button>
-              <Button className="h-16 px-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xl font-bold shadow-xl shadow-blue-900/20" onClick={handleSaveAndFinish} disabled={isSaving}>
+              <Button className="h-16 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-bold shadow-xl shadow-blue-900/20" onClick={handleSaveAndFinish} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-3 h-5 w-5" />}
-                Save & View Insights
+                Submit Story
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {step === 4 && (
+      {step === 3 && (
         <div className="space-y-8 animate-in fade-in zoom-in duration-700">
           <div className="bg-blue-600 rounded-[3rem] p-16 text-white space-y-12 text-center relative overflow-hidden">
             <ShieldCheck className="absolute -top-20 -right-20 w-80 h-80 opacity-10" />
@@ -351,24 +285,6 @@ export default function SubmitDenial() {
               <p className="text-2xl font-light text-blue-100 max-w-2xl mx-auto">
                 Thank you for contributing to the public record. Your data is now part of the collective fight against unfair denials.
               </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-              <div className="p-10 bg-white/10 rounded-[2.5rem] backdrop-blur-md space-y-4 text-left">
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-200">Personalized Insight</p>
-                <h4 className="text-3xl font-bold">Power in Numbers</h4>
-                <p className="text-blue-100 font-light leading-relaxed">
-                  We found <span className="font-bold text-white">{similarCasesCount || 0} similar cases</span> involving {extractedData?.insurer} and {extractedData?.procedure}. 
-                  This pattern suggests a systemic issue that we are tracking.
-                </p>
-              </div>
-              <div className="p-10 bg-white/10 rounded-[2.5rem] backdrop-blur-md space-y-4 text-left">
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-200">Next Step</p>
-                <h4 className="text-3xl font-bold">Track Your Appeal</h4>
-                <p className="text-blue-100 font-light leading-relaxed">
-                  Use our Appeal Tracker to monitor your progress. We'll alert you if we detect new anomalies related to your case.
-                </p>
-              </div>
             </div>
 
             <div className="pt-8 relative z-10">

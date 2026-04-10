@@ -86,6 +86,8 @@ export default function Insights() {
     return () => unsubscribe();
   }, []);
 
+  const [dateRange, setDateRange] = useState("all");
+
   const filteredData = denials.filter(d => {
     const matchesSearch = 
       d.insurer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -96,13 +98,24 @@ export default function Insights() {
     const matchesCategory = categoryFilter === "all" || d.denialReason === categoryFilter;
     const matchesSource = sourceFilter === "all" || d.source?.includes(sourceFilter);
 
-    return matchesSearch && matchesInsurer && matchesCategory && matchesSource;
+    let matchesDate = true;
+    if (dateRange !== "all") {
+      const now = new Date();
+      const createdAt = d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt)) : new Date();
+      const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+      if (dateRange === "7d") matchesDate = diffDays <= 7;
+      if (dateRange === "30d") matchesDate = diffDays <= 30;
+      if (dateRange === "90d") matchesDate = diffDays <= 90;
+    }
+
+    return matchesSearch && matchesInsurer && matchesCategory && matchesSource && matchesDate;
   });
 
   // Chart Data Preparation
   const insurerChartData = Object.entries(
     denials.reduce((acc, d) => {
-      if (d.insurer) acc[d.insurer] = (acc[d.insurer] || 0) + 1;
+      const insurer = d.insurer || "Private Carrier";
+      acc[insurer] = (acc[insurer] || 0) + 1;
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }))
@@ -111,7 +124,8 @@ export default function Insights() {
 
   const categoryChartData = Object.entries(
     denials.reduce((acc, d) => {
-      if (d.denialReason) acc[d.denialReason] = (acc[d.denialReason] || 0) + 1;
+      const reason = d.denialReason || "Coverage Denial";
+      acc[reason] = (acc[reason] || 0) + 1;
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }))
@@ -139,8 +153,8 @@ export default function Insights() {
 
   const exportData = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Insurer,Procedure,Reason,Date,Source\n"
-      + filteredData.map(d => `"${d.insurer}","${d.procedure}","${d.denialReason}","${d.date}","${d.source}"`).join("\n");
+      + "Insurer,Procedure,Reason,Date,Source,ERISA,MedicalNecessity,IME\n"
+      + filteredData.map(d => `"${d.insurer}","${d.procedure}","${d.denialReason}","${d.date}","${d.source}","${d.isERISA}","${d.medicalNecessityFlag}","${d.imeInvolved}"`).join("\n");
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -149,6 +163,31 @@ export default function Insights() {
     document.body.appendChild(link);
     link.click();
     toast.success("Exporting data as CSV...");
+  };
+
+  const exportBigQuery = () => {
+    const bqData = filteredData.map(d => ({
+      id: d.id,
+      insurer: d.insurer,
+      procedure: d.procedure,
+      denial_reason: d.denialReason,
+      denial_quote: d.denialQuote,
+      appeal_deadline: d.appealDeadline,
+      is_erisa: d.isERISA,
+      medical_necessity: d.medicalNecessityFlag,
+      ime_involved: d.imeInvolved,
+      source: d.source,
+      created_at: d.createdAt
+    }));
+    
+    const blob = new Blob([JSON.stringify(bqData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "denialwatch_bigquery_import.json");
+    document.body.appendChild(link);
+    link.click();
+    toast.success("Exporting BigQuery-ready JSON...");
   };
 
   return (
@@ -160,13 +199,23 @@ export default function Insights() {
           <h1 className="text-7xl font-bold tracking-tighter text-white">Insights.</h1>
           <p className="text-xl font-light text-slate-400">Deep analysis of systemic insurance denial patterns.</p>
         </div>
-        <Button 
-          onClick={exportData}
-          className="h-14 px-8 rounded-full bg-white text-black hover:bg-slate-200 font-bold flex items-center gap-3"
-        >
-          <Download className="w-5 h-5" />
-          Export Dataset
-        </Button>
+        <div className="flex gap-4">
+          <Button 
+            onClick={exportBigQuery}
+            variant="outline"
+            className="h-14 px-8 rounded-full border-white/10 hover:bg-white/5 text-white font-bold flex items-center gap-3"
+          >
+            <Database className="w-5 h-5" />
+            BigQuery Export
+          </Button>
+          <Button 
+            onClick={exportData}
+            className="h-14 px-8 rounded-full bg-white text-black hover:bg-slate-200 font-bold flex items-center gap-3"
+          >
+            <Download className="w-5 h-5" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Aggregated Stats */}
@@ -306,6 +355,17 @@ export default function Insights() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-full md:w-[150px] h-14 bg-white/5 border-white/10 rounded-2xl text-white">
+              <SelectValue placeholder="Date Range" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1E1E20] border-white/10 text-white">
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+              <SelectItem value="90d">Last 90 Days</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={insurerFilter} onValueChange={setInsurerFilter}>
             <SelectTrigger className="w-full md:w-[200px] h-14 bg-white/5 border-white/10 rounded-2xl text-white">
               <SelectValue placeholder="All Insurers" />
@@ -353,10 +413,10 @@ export default function Insights() {
                 <div className="space-y-4 flex-1">
                   <div className="flex items-center gap-3">
                     <Badge className="bg-blue-600/10 text-blue-400 border-none px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                      {denial.insurer}
+                      {denial.insurer || "Private Carrier"}
                     </Badge>
                     <span className="text-[10px] text-slate-600 font-mono">{denial.date}</span>
-                    {denial.isERISA && (
+                    {denial.isERISA && denial.isERISA !== "Unknown" && (
                       <Badge variant="outline" className="border-slate-700 text-slate-500 text-[9px] uppercase tracking-tighter">
                         {denial.isERISA}
                       </Badge>
@@ -367,9 +427,9 @@ export default function Insights() {
                       </Badge>
                     )}
                   </div>
-                  <h4 className="text-xl font-bold text-white">{denial.procedure}</h4>
+                  <h4 className="text-xl font-bold text-white">{denial.procedure || "Medical Service"}</h4>
                   <div className="space-y-2">
-                    <p className="text-slate-400 text-sm font-light italic">"{denial.denialReason}"</p>
+                    <p className="text-slate-400 text-sm font-light italic">"{denial.denialReason || "Coverage Denial"}"</p>
                     {denial.denialQuote && (
                       <div className="p-4 bg-white/5 rounded-xl border border-white/5 border-l-blue-500 border-l-2">
                         <p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">Insurer Logic Quote</p>

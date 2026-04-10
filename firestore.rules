@@ -65,7 +65,12 @@ service cloud.firestore {
              data.denialReason is string && data.denialReason.size() > 0 && data.denialReason.size() < 500 &&
              isValidStatus(data.status) &&
              data.isPublic is bool &&
-             (!('narrative' in data) || (data.narrative is string && data.narrative.size() < 5000)) &&
+             (!('narrative' in data) || (data.narrative is string && data.narrative.size() < 10000)) &&
+             (!('denialQuote' in data) || (data.denialQuote is string && data.denialQuote.size() < 2000)) &&
+             (!('summary' in data) || (data.summary is string && data.summary.size() < 2000)) &&
+             (!('isERISA' in data) || (data.isERISA in ['ERISA', 'Non-ERISA', 'Unknown'])) &&
+             (!('medicalNecessityFlag' in data) || data.medicalNecessityFlag is bool) &&
+             (!('imeInvolved' in data) || data.imeInvolved is bool) &&
              (!('userId' in data) || data.userId == request.auth.uid);
     }
 

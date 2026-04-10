@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +9,7 @@ import { DenialRecord } from "@/src/types";
 import { db, auth, handleFirestoreError, OperationType } from "@/src/lib/firebase";
 import { collection, query, limit, onSnapshot, getDocs, where } from "firebase/firestore";
 import { runIngestionPipeline, ingestionLogs, ai as ingestionAI } from "@/src/lib/ingestion";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { 
   AlertCircle, 
   TrendingUp, 
@@ -49,7 +50,18 @@ export default function Dashboard() {
     auth: string;
     firestore: string;
     backend: string;
-  }>({ auth: 'Checking...', firestore: 'Checking...', backend: 'Checking...' });
+    ai: string;
+  }>({ auth: 'Checking...', firestore: 'Checking...', backend: 'Checking...', ai: 'Checking...' });
+
+  const checkAI = async () => {
+    try {
+      const resp = await fetch("/api/admin/test-ai");
+      const data = await resp.json();
+      setDiagStatus(prev => ({ ...prev, ai: data.status === "success" ? "Connected" : "Error" }));
+    } catch (e) {
+      setDiagStatus(prev => ({ ...prev, ai: "Offline" }));
+    }
+  };
 
   const fetchRealCount = async () => {
     if (!db) return;
@@ -61,8 +73,23 @@ export default function Dashboard() {
     }
   };
 
+  const [featuredStories, setFeaturedStories] = React.useState<DenialRecord[]>([]);
+
+  const fetchFeatured = async () => {
+    if (!db) return;
+    try {
+      const q = query(collection(db, "denials"), where("isPublic", "==", true), limit(3));
+      const snap = await getDocs(q);
+      setFeaturedStories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as DenialRecord[]);
+    } catch (e) {
+      console.error("Failed to fetch featured stories", e);
+    }
+  };
+
   React.useEffect(() => {
     fetchRealCount();
+    checkAI();
+    fetchFeatured();
   }, []);
 
   const fetchStats = async () => {
@@ -310,7 +337,7 @@ export default function Dashboard() {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           >
             <Badge variant="outline" className="mb-6 border-blue-500/30 text-blue-400 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.3em]">
-              DenialWatch Observatory
+              Fight Insurance Denials Observatory
             </Badge>
             <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
               Millions of denials.<br />
@@ -320,6 +347,26 @@ export default function Dashboard() {
               We aggregate, normalize, and analyze health insurance denial stories in real-time. 
               Turning thousands of individual frustrations into a collective force for change.
             </p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.8 }}
+            className="relative max-w-2xl mx-auto"
+          >
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500" />
+            <Input 
+              placeholder="Search the observatory (e.g. 'UnitedHealthcare MRI')" 
+              className="h-20 pl-16 pr-8 rounded-full bg-white/5 border-white/10 text-xl font-light focus:ring-2 focus:ring-blue-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  window.dispatchEvent(new CustomEvent('nav', { detail: 'insights' }));
+                }
+              }}
+            />
           </motion.div>
 
           <motion.div 
@@ -352,7 +399,7 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-16">
           {[
             { label: "Total Stories", value: realCount !== null ? realCount : totalDenials, sub: "Verified denial records" },
-            { label: "Top Insurer", value: insurerData[0]?.name || "N/A", sub: "Carrier with most rejections" },
+            { label: "AI Engine", value: diagStatus.ai, sub: "Normalization & Anomaly Engine" },
             { label: "Top Category", value: statusData[0]?.name || "N/A", sub: "Most common denial reason" }
           ].map((stat, i) => (
             <motion.div 
@@ -370,55 +417,135 @@ export default function Dashboard() {
           ))}
         </section>
 
+        {/* Featured Stories Carousel */}
+        <section className="space-y-12">
+          <div className="flex items-center justify-between">
+            <h3 className="text-4xl font-bold text-white tracking-tighter">Verified Denial Evidence</h3>
+            <Button 
+              variant="ghost" 
+              className="text-blue-400 hover:text-blue-300 font-bold group"
+              onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'insights' }))}
+            >
+              View All Insights <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredStories.slice(0, 3).map((story, i) => (
+              <motion.div
+                key={story.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="p-8 bg-white/5 border border-white/5 rounded-[2.5rem] space-y-6 hover:bg-white/[0.08] transition-all group cursor-pointer"
+                onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'insights' }))}
+              >
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-blue-600/10 text-blue-400 border-none px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                    {story.insurer || "Private Carrier"}
+                  </Badge>
+                  <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
+                </div>
+                <h4 className="text-xl font-bold text-white leading-tight">
+                  {story.procedure || "Medical Service Denial"}
+                </h4>
+                <p className="text-slate-400 text-sm font-light line-clamp-3 leading-relaxed">
+                  {story.summary || story.denialReason || "No details provided."}
+                </p>
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">Verified Case</span>
+                  <span className="text-[10px] text-slate-600 font-mono italic">Source: {story.source || "Social"}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* Interactive Dashboard */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div className="space-y-8">
-            <h3 className="text-2xl font-bold text-white">Denials by Carrier</h3>
-            <div className="h-[400px] w-full bg-white/5 p-8 rounded-[3rem] border border-white/5">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={insurerData.slice(0, 5)}>
-                  <XAxis dataKey="name" hide />
-                  <YAxis hide />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1E1E20', border: 'none', borderRadius: '16px' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Bar dataKey="value" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-white">Live Observatory Feed</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Real-time</span>
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/5 rounded-[3rem] overflow-hidden">
+              <ScrollArea className="h-[500px] p-8">
+                <div className="space-y-6">
+                  {liveDenials.slice(0, 10).map((denial, i) => (
+                    <motion.div 
+                      key={denial.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge className="bg-blue-600/10 text-blue-400 border-none px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                          {denial.insurer || "Private Carrier"}
+                        </Badge>
+                        <span className="text-[9px] text-slate-600 font-mono italic">{denial.source}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white mb-1">{denial.procedure || "Medical Service"}</h4>
+                      <p className="text-xs text-slate-500 line-clamp-2 italic">"{denial.denialReason}"</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
 
           <div className="space-y-8">
-            <h3 className="text-2xl font-bold text-white">Data Source Breakdown</h3>
-            <div className="h-[400px] w-full bg-white/5 p-8 rounded-[3rem] border border-white/5">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sourceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {sourceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1E1E20', border: 'none', borderRadius: '16px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap justify-center gap-4 mt-4">
-                {sourceData.map((entry, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{entry.name}</span>
-                  </div>
-                ))}
+            <h3 className="text-2xl font-bold text-white">Systemic Denial Patterns</h3>
+            <div className="bg-white/5 border border-white/5 rounded-[3rem] p-12 space-y-12">
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Denials by Carrier (Top 5)</h4>
+                  <Badge variant="outline" className="text-[8px] border-white/10">Volume</Badge>
+                </div>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={insurerData.slice(0, 5)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1E1E20', border: 'none', borderRadius: '12px', fontSize: '12px' }}
+                        itemStyle={{ color: '#fff' }}
+                      />
+                      <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Denial Count" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Data Source Distribution</h4>
+                  <Badge variant="outline" className="text-[8px] border-white/10">Mix</Badge>
+                </div>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie 
+                        data={sourceData} 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={40} 
+                        outerRadius={70} 
+                        dataKey="value"
+                        paddingAngle={5}
+                      >
+                        {sourceData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1E1E20', border: 'none', borderRadius: '12px', fontSize: '12px' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
@@ -497,6 +624,13 @@ export default function Dashboard() {
                       >
                         {isAnalyzingAnomalies ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShieldAlert className="w-4 h-4 mr-2" />}
                         Run Anomaly Detection
+                      </Button>
+                      <Button 
+                        onClick={checkAI}
+                        className="w-full rounded-2xl h-14 bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Test AI Connection
                       </Button>
                       <Button 
                         onClick={runPipelineTest}

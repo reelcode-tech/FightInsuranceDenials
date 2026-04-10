@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { db } from "@/src/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
+import AppealGenerator from './AppealGenerator';
 
 export default function AppealTools() {
   const [activeTool, setActiveTool] = useState<'generator' | 'benchmarks' | 'tracker'>('generator');
@@ -67,44 +68,46 @@ export default function AppealTools() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+            className="space-y-12"
           >
-            <Card className="bg-white/5 border-white/10 p-12 rounded-[3rem] space-y-8">
-              <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-900/40">
-                <Zap className="w-10 h-10 text-white" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              <div className="lg:col-span-2">
+                <AppealGenerator />
               </div>
-              <div className="space-y-4">
-                <h3 className="text-4xl font-bold text-white">Instant Appeal</h3>
-                <p className="text-slate-400 text-lg font-light leading-relaxed">
-                  Our specialized medical LLM analyzes your denial letter and generates a custom, 
-                  persuasive appeal draft with relevant legal and medical citations.
-                </p>
-              </div>
-              <Button 
-                className="w-full h-20 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xl font-bold shadow-xl shadow-blue-900/20"
-                onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'share' }))}
-              >
-                Start New Appeal
-              </Button>
-            </Card>
-
-            <div className="space-y-8">
-              <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">How it Works</h4>
-              <div className="space-y-6">
-                {[
-                  { step: "01", title: "Upload", desc: "Scan or photo your denial letter." },
-                  { step: "02", title: "Analyze", desc: "AI extracts codes and reasons." },
-                  { step: "03", title: "Generate", desc: "Custom letter with legal citations." },
-                  { step: "04", title: "Send", desc: "Download PDF and mail to insurer." }
-                ].map((s, i) => (
-                  <div key={i} className="flex items-start gap-6 p-6 bg-white/5 border border-white/5 rounded-2xl">
-                    <span className="text-3xl font-bold text-blue-600/50">{s.step}</span>
-                    <div>
-                      <h4 className="text-lg font-bold text-white">{s.title}</h4>
-                      <p className="text-slate-500 font-light text-sm">{s.desc}</p>
-                    </div>
+              <div className="space-y-8">
+                <Card className="bg-blue-600/5 border-blue-500/20 p-8 rounded-[2rem] space-y-6">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-6 h-6 text-blue-500" />
+                    <h4 className="text-lg font-bold text-white tracking-tight">AI Legal Guard</h4>
                   </div>
-                ))}
+                  <p className="text-sm text-slate-400 font-light leading-relaxed">
+                    Our AI is trained on ERISA regulations and state-specific insurance codes to ensure your appeal uses the strongest possible legal language.
+                  </p>
+                  <div className="pt-4 border-t border-white/5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Success Tip</p>
+                    <p className="text-xs text-slate-300 italic">"Always request your full case file from the insurer. They are legally required to provide it."</p>
+                  </div>
+                </Card>
+
+                <div className="space-y-6">
+                  <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">Workflow</h4>
+                  <div className="space-y-4">
+                    {[
+                      { step: "01", title: "Upload", desc: "Scan your denial letter." },
+                      { step: "02", title: "Analyze", desc: "AI extracts codes & reasons." },
+                      { step: "03", title: "Personalize", desc: "Add your health context." },
+                      { step: "04", title: "Weaponize", desc: "Download professional PDF." }
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-start gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                        <span className="text-xl font-bold text-blue-600/30">{s.step}</span>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">{s.title}</h4>
+                          <p className="text-[10px] text-slate-500 font-light">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

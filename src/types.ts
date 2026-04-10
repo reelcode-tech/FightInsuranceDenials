@@ -9,6 +9,7 @@ export interface DenialRecord {
   isERISA?: string;
   medicalNecessityFlag?: boolean;
   imeInvolved?: boolean;
+  summary?: string;
   date: string;
   status: 'denied' | 'appealing' | 'overturned' | 'sustained';
   narrative: string;
@@ -33,6 +34,7 @@ export interface ExtractionResult {
   isERISA?: string;
   medicalNecessityFlag?: boolean;
   imeInvolved?: boolean;
+  summary?: string;
   date: string;
   cptCodes: string[];
 }
