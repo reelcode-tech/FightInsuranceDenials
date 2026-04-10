@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DenialRecord } from "@/src/types";
 import { db, auth, handleFirestoreError, OperationType } from "@/src/lib/firebase";
 import { collection, query, limit, onSnapshot, getDocs, where } from "firebase/firestore";
-import { runIngestionPipeline, ingestionLogs, ai as ingestionAI } from "@/src/lib/ingestion";
+import { runIngestionPipeline, ingestionLogs } from "@/src/lib/ingestion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { 
   AlertCircle, 

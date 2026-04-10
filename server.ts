@@ -655,9 +655,114 @@ async function startServer() {
     }
   });
 
-  // Health check endpoint
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", engine: "active" });
+  // API: AI Extraction
+  app.post("/api/ai/extract", async (req, res) => {
+    const { text, fileData } = req.body;
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "MISSING_KEY") {
+      return res.status(500).json({ error: "AI Engine not configured" });
+    }
+    try {
+      const model = ai.getGenerativeModel({ model: "gemini-3-flash-preview" });
+      const parts: any[] = [{ text: `You are an expert medical billing and insurance specialist. 
+Analyze the provided text or image of a health insurance denial letter.
+Extract the following details with high precision. 
+
+Guidelines:
+- Insurer: The name of the insurance company (e.g., Aetna, Cigna, UnitedHealthcare).
+- Plan Type: (e.g., HMO, PPO, Medicare Advantage, Employer-sponsored).
+- Procedure: The specific medical service or medication denied.
+- Denial Reason: The core reason for rejection (e.g., Not Medically Necessary, Experimental, Out of Network, Missing Prior Auth).
+- Denial Quote: The EXACT sentence or phrase from the letter explaining the rejection logic.
+- Appeal Deadline: The timeline mentioned for filing an appeal (e.g., "180 days", "60 days").
+- isERISA: Determine if the plan is "ERISA" (employer-sponsored) or "Non-ERISA" (individual/marketplace/gov).
+- Medical Necessity Flag: Set to true if the denial claims the service is not "medically necessary".
+- IME Involved: Set to true if an "Independent Medical Exam" or "Third-party review" is mentioned.
+- Date: The date of the denial letter.
+- CPT Codes: Any 5-digit medical procedure codes found.
+
+If a field is absolutely not found, return an empty string or false for booleans.
+Return only valid JSON.` }];
+      
+      if (fileData) {
+        parts.push({
+          inlineData: {
+            data: fileData.data,
+            mimeType: fileData.mimeType
+          }
+        });
+      }
+      
+      if (text) {
+        parts.push({ text: `Content to analyze: ${text}` });
+      }
+
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: SchemaType.OBJECT,
+            properties: {
+              insurer: { type: SchemaType.STRING },
+              planType: { type: SchemaType.STRING },
+              procedure: { type: SchemaType.STRING },
+              denialReason: { type: SchemaType.STRING },
+              denialQuote: { type: SchemaType.STRING },
+              appealDeadline: { type: SchemaType.STRING },
+              isERISA: { type: SchemaType.STRING },
+              medicalNecessityFlag: { type: SchemaType.BOOLEAN },
+              imeInvolved: { type: SchemaType.BOOLEAN },
+              date: { type: SchemaType.STRING },
+              cptCodes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            },
+            required: ["insurer", "planType", "procedure", "denialReason", "date", "cptCodes"],
+          }
+        }
+      });
+      res.json(JSON.parse(result.response.text()));
+    } catch (err) {
+      console.error("[API] Extraction failed:", err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // API: AI Appeal Generation
+  app.post("/api/ai/generate-appeal", async (req, res) => {
+    const { denial } = req.body;
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "MISSING_KEY") {
+      return res.status(500).json({ error: "AI Engine not configured" });
+    }
+    try {
+      const model = ai.getGenerativeModel({ model: "gemini-3-flash-preview" });
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: `Generate a professional and persuasive health insurance appeal letter based on this denial story.
+Use a firm but respectful tone. Cite "medical necessity" and "standard of care" where appropriate.
+
+Denial Details:
+Insurer: ${denial.insurer}
+Procedure: ${denial.procedure}
+Reason: ${denial.denialReason}
+Patient Narrative: ${denial.narrative}
+
+Return the result as JSON.` }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: SchemaType.OBJECT,
+            properties: {
+              subject: { type: SchemaType.STRING },
+              body: { type: SchemaType.STRING },
+              keyArguments: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            },
+            required: ["subject", "body", "keyArguments"],
+          }
+        }
+      });
+      res.json(JSON.parse(result.response.text()));
+    } catch (err) {
+      console.error("[API] Appeal generation failed:", err);
+      res.status(500).json({ error: String(err) });
+    }
   });
 
   // Vite middleware for development
