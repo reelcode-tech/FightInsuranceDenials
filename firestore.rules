@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: denials
+    // Document ID: auto-generated
+    // Fields:
+    //   - insurer: string (required)
+    //   - planType: string (optional)
+    //   - procedure: string (required)
+    //   - denialReason: string (required)
+    //   - date: string (optional)
+    //   - status: string (required, enum: ['denied', 'appealing', 'overturned', 'sustained'])
+    //   - narrative: string (optional, max 5000 chars)
+    //   - tags: list of strings (optional)
+    //   - isPublic: bool (required)
+    //   - userId: string (optional, matches auth.uid)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - email: string (required)
+    //   - role: string (required, enum: ['patient', 'admin'])
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "sashimilbz@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidStatus(status) {
+      return status in ['denied', 'appealing', 'overturned', 'sustained'];
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidDenial(data) {
+      return data.insurer is string && data.insurer.size() > 0 && data.insurer.size() < 100 &&
+             data.procedure is string && data.procedure.size() > 0 && data.procedure.size() < 200 &&
+             data.denialReason is string && data.denialReason.size() > 0 && data.denialReason.size() < 500 &&
+             isValidStatus(data.status) &&
+             data.isPublic is bool &&
+             (!('narrative' in data) || (data.narrative is string && data.narrative.size() < 5000)) &&
+             (!('userId' in data) || data.userId == request.auth.uid);
+    }
+
+    function isValidUser(data) {
+      return isValidEmail(data.email) &&
+             data.role in ['patient', 'admin'] &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'patient';
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+    }
+
+    match /denials/{denialId} {
+      // Public denials are readable by everyone, private only by owner/admin
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.userId) || isAdmin();
+      allow list: if true; // Allow listing, but the query must still satisfy the read condition
+      
+      allow create: if isAuthenticated() && isValidDenial(request.resource.data) && 
+                      request.resource.data.createdAt == request.time;
+                      
+      allow update: if isAuthenticated() && 
+                      (isOwner(resource.data.userId) || isAdmin()) && 
+                      isValidDenial(request.resource.data) &&
+                      request.resource.data.userId == resource.data.userId;
+                      
+      allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "Denial": {
+      "title": "Denial",
+      "description": "A health insurance denial record.",
+      "type": "object",
+      "properties": {
+        "insurer": { "type": "string", "description": "Name of the insurance company." },
+        "planType": { "type": "string", "description": "Type of plan (e.g., PPO, HMO)." },
+        "procedure": { "type": "string", "description": "The medical procedure denied." },
+        "denialReason": { "type": "string", "description": "The reason given for the denial." },
+        "date": { "type": "string", "format": "date", "description": "Date of the denial." },
+        "status": { "type": "string", "enum": ["denied", "appealing", "overturned", "sustained"] },
+        "narrative": { "type": "string", "description": "The patient's personal story." },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "isPublic": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["insurer", "procedure", "denialReason", "status", "isPublic", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the platform.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["patient", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/denials/{denialId}": {
+      "schema": "Denial",
+      "description": "Collection of all denial stories."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    }
+  }
+}
