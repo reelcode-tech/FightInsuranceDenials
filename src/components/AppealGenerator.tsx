@@ -176,6 +176,42 @@ export default function AppealGenerator() {
 
       {step === 3 && appealDraft && (
         <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 space-y-12 backdrop-blur-sm">
+          {(appealDraft.benchmarkSummary || appealDraft.precedentNotes?.length || appealDraft.evidenceChecklist?.length) && (
+            <div className="grid gap-6 lg:grid-cols-3">
+              {appealDraft.benchmarkSummary && (
+                <div className="rounded-[2rem] border border-black/8 bg-[#eadfce] p-6 text-[#1f1b17]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">Database signal</p>
+                  <p className="mt-4 text-base leading-7">{appealDraft.benchmarkSummary}</p>
+                </div>
+              )}
+              {appealDraft.precedentNotes?.length ? (
+                <div className="rounded-[2rem] border border-black/8 bg-white/75 p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">Observed precedents</p>
+                  <div className="mt-4 space-y-3">
+                    {appealDraft.precedentNotes.slice(0, 4).map((note) => (
+                      <div key={note} className="rounded-[1.2rem] bg-[#f8f2ea] px-4 py-3 text-sm leading-6 text-[#574a40]">
+                        {note}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {appealDraft.evidenceChecklist?.length ? (
+                <div className="rounded-[2rem] border border-black/8 bg-white/75 p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">What to attach</p>
+                  <div className="mt-4 space-y-3">
+                    {appealDraft.evidenceChecklist.slice(0, 5).map((item) => (
+                      <div key={item} className="flex items-start gap-3 rounded-[1.2rem] bg-[#f8f2ea] px-4 py-3 text-sm text-[#574a40]">
+                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#b43c2e]" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
           <div className="space-y-6">
             <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">Draft Appeal Letter</h4>
             <div className="p-10 bg-slate-900/80 border border-white/10 rounded-[2rem] font-mono text-sm leading-relaxed whitespace-pre-wrap text-slate-300 max-h-[500px] overflow-y-auto">

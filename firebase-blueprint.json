@@ -1,44 +1,298 @@
 {
+  "version": 2,
+  "notes": [
+    "This blueprint reflects the long-term Insurance Denial Observatory schema.",
+    "The legacy /denials collection remains supported during migration.",
+    "Collections are intentionally BigQuery-friendly and avoid deeply nested arrays where practical."
+  ],
   "entities": {
-    "Denial": {
-      "title": "Denial",
-      "description": "A health insurance denial record.",
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user profile managed alongside Firebase Auth.",
       "type": "object",
       "properties": {
-        "insurer": { "type": "string", "description": "Name of the insurance company." },
-        "planType": { "type": "string", "description": "Type of plan (e.g., PPO, HMO)." },
-        "procedure": { "type": "string", "description": "The medical procedure denied." },
-        "denialReason": { "type": "string", "description": "The reason given for the denial." },
-        "date": { "type": "string", "format": "date", "description": "Date of the denial." },
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "subscription_tier": { "type": "string", "enum": ["standard", "b2b", "admin"] },
+        "display_name": { "type": "string" },
+        "organization_name": { "type": "string" }
+      },
+      "required": ["uid", "email", "created_at", "subscription_tier"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "Primary observatory record for a denial case.",
+      "type": "object",
+      "properties": {
+        "story_id": { "type": "string" },
+        "user_uid": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "processing", "published", "archived"] },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "extracted_insurer": { "type": "string" },
+            "extracted_insurer_raw": { "type": "string" },
+            "payer_parent": { "type": "string" },
+            "plan_type": { "type": "string" },
+            "state": { "type": "string" },
+            "erisa_status": { "type": "string", "enum": ["ERISA", "Non-ERISA", "Unknown"] },
+            "network_status": { "type": "string", "enum": ["In Network", "Out of Network", "Unknown"] }
+          },
+          "required": ["extracted_insurer", "plan_type"]
+        },
+        "clinical": {
+          "type": "object",
+          "properties": {
+            "denial_category": { "type": "string" },
+            "procedure_condition": { "type": "string" },
+            "procedure_code_primary": { "type": "string" },
+            "procedure_codes": { "type": "array", "items": { "type": "string" } },
+            "diagnosis_codes": { "type": "array", "items": { "type": "string" } },
+            "denial_reason_raw": { "type": "string" },
+            "denial_reason_normalized": { "type": "string" },
+            "medical_necessity_flag": { "type": "boolean" },
+            "ime_involved": { "type": "boolean" }
+          },
+          "required": ["denial_category", "procedure_condition", "denial_reason_raw"]
+        },
+        "narrative": {
+          "type": "object",
+          "properties": {
+            "patient_narrative_summary": { "type": "string" },
+            "why_unfair_patient_quote": { "type": "string" },
+            "emotional_tone": { "type": "array", "items": { "type": "string" } },
+            "impact_summary": { "type": "string" }
+          }
+        },
+        "timeline": {
+          "type": "object",
+          "properties": {
+            "date_of_service": { "type": "string", "format": "date" },
+            "date_of_denial": { "type": "string", "format": "date" },
+            "appeal_deadline": { "type": "string", "format": "date" },
+            "submission_timestamp": { "type": "string", "format": "date-time" }
+          },
+          "required": ["submission_timestamp"]
+        },
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "consent_level": { "type": "string", "enum": ["public_story", "aggregated_stats_only", "fully_private"] },
+            "is_anonymized": { "type": "boolean" },
+            "contains_pii": { "type": "boolean" },
+            "public_story_ready": { "type": "boolean" },
+            "raw_upload_url": { "type": "string" }
+          },
+          "required": ["consent_level", "is_anonymized"]
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "source_type": { "type": "string" },
+            "source_label": { "type": "string" },
+            "source_url": { "type": "string" },
+            "source_record_id": { "type": "string" },
+            "source_author_handle": { "type": "string" },
+            "ingestion_run_id": { "type": "string" }
+          },
+          "required": ["source_type", "source_label"]
+        },
+        "benchmark": {
+          "type": "object",
+          "properties": {
+            "similar_cases_count": { "type": "number" },
+            "overturn_rate": { "type": "number" },
+            "sample_size_label": { "type": "string" },
+            "methodology_version": { "type": "string" },
+            "updated_at": { "type": "string", "format": "date-time" }
+          }
+        },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "anomaly_detected": { "type": "boolean" },
+        "anomaly_reason": { "type": "string" }
+      },
+      "required": ["story_id", "status", "coverage", "clinical", "timeline", "privacy", "source"]
+    },
+    "Appeal": {
+      "title": "Appeal",
+      "description": "Appeal history record attached to a story.",
+      "type": "object",
+      "properties": {
+        "appeal_id": { "type": "string" },
+        "story_id": { "type": "string" },
+        "level": { "type": "string" },
+        "submission_date": { "type": "string", "format": "date" },
+        "outcome": { "type": "string", "enum": ["pending", "overturned", "upheld", "partial", "withdrawn"] },
+        "generated_letter_url": { "type": "string" },
+        "generated_letter_version": { "type": "string" },
+        "notes": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["appeal_id", "story_id", "level", "outcome"]
+    },
+    "StoryDocument": {
+      "title": "StoryDocument",
+      "description": "Private file metadata for uploads stored in Firebase Storage.",
+      "type": "object",
+      "properties": {
+        "document_id": { "type": "string" },
+        "story_id": { "type": "string" },
+        "user_uid": { "type": "string" },
+        "document_type": { "type": "string" },
+        "storage_path": { "type": "string" },
+        "download_url": { "type": "string" },
+        "mime_type": { "type": "string" },
+        "byte_size": { "type": "number" },
+        "uploaded_at": { "type": "string", "format": "date-time" },
+        "ocr_status": { "type": "string", "enum": ["pending", "processed", "failed"] },
+        "pii_redaction_status": { "type": "string", "enum": ["pending", "completed", "failed"] }
+      },
+      "required": ["document_id", "story_id", "document_type", "storage_path", "uploaded_at"]
+    },
+    "StoryEvent": {
+      "title": "StoryEvent",
+      "description": "Immutable audit event for story workflow actions.",
+      "type": "object",
+      "properties": {
+        "event_id": { "type": "string" },
+        "story_id": { "type": "string" },
+        "event_type": { "type": "string" },
+        "actor_type": { "type": "string", "enum": ["user", "admin", "ai", "system"] },
+        "actor_uid": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["event_id", "story_id", "event_type", "created_at"]
+    },
+    "GlobalAnalytics": {
+      "title": "GlobalAnalytics",
+      "description": "Aggregated dashboard metrics, suitable for homepage widgets and exports.",
+      "type": "object",
+      "properties": {
+        "analytics_id": { "type": "string" },
+        "total_stories": { "type": "number" },
+        "total_public_stories": { "type": "number" },
+        "total_private_cases": { "type": "number" },
+        "total_appeals": { "type": "number" },
+        "total_overturned": { "type": "number" },
+        "top_denied_procedures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "count": { "type": "number" }
+            }
+          }
+        },
+        "insurers_by_denial_count": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "count": { "type": "number" }
+            }
+          }
+        },
+        "average_overturn_rate": { "type": "number" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["analytics_id", "total_stories", "average_overturn_rate", "updated_at"]
+    },
+    "IngestionRun": {
+      "title": "IngestionRun",
+      "description": "Operational record of each public-source import run.",
+      "type": "object",
+      "properties": {
+        "ingestion_run_id": { "type": "string" },
+        "source_type": { "type": "string" },
+        "source_label": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["running", "completed", "failed"] },
+        "query_terms": { "type": "array", "items": { "type": "string" } },
+        "records_scanned": { "type": "number" },
+        "records_created": { "type": "number" },
+        "records_deduped": { "type": "number" },
+        "error_message": { "type": "string" }
+      },
+      "required": ["ingestion_run_id", "source_type", "source_label", "started_at", "status"]
+    },
+    "SourceRecord": {
+      "title": "SourceRecord",
+      "description": "Raw harvested source record retained for provenance and dedupe.",
+      "type": "object",
+      "properties": {
+        "source_record_id": { "type": "string" },
+        "source_type": { "type": "string" },
+        "external_id": { "type": "string" },
+        "canonical_url": { "type": "string" },
+        "title": { "type": "string" },
+        "raw_text": { "type": "string" },
+        "raw_payload": { "type": "object" },
+        "extracted_story_id": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["source_record_id", "source_type"]
+    },
+    "LegacyDenial": {
+      "title": "LegacyDenial",
+      "description": "Migration-era flat record kept for compatibility with the original app.",
+      "type": "object",
+      "properties": {
+        "insurer": { "type": "string" },
+        "planType": { "type": "string" },
+        "procedure": { "type": "string" },
+        "denialReason": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["denied", "appealing", "overturned", "sustained"] },
-        "narrative": { "type": "string", "description": "The patient's personal story." },
+        "narrative": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "isPublic": { "type": "boolean" },
         "userId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["insurer", "procedure", "denialReason", "status", "isPublic", "createdAt"]
-    },
-    "User": {
-      "title": "User",
-      "description": "A user of the platform.",
-      "type": "object",
-      "properties": {
-        "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["patient", "admin"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["email", "role", "createdAt"]
     }
   },
   "firestore": {
-    "/denials/{denialId}": {
-      "schema": "Denial",
-      "description": "Collection of all denial stories."
-    },
     "/users/{userId}": {
-      "schema": "User",
-      "description": "User profiles."
+      "schema": "UserProfile",
+      "description": "Private user profiles."
+    },
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Primary observatory collection."
+    },
+    "/stories/{storyId}/appeals/{appealId}": {
+      "schema": "Appeal",
+      "description": "Appeal history per story."
+    },
+    "/stories/{storyId}/events/{eventId}": {
+      "schema": "StoryEvent",
+      "description": "Immutable audit and workflow trail."
+    },
+    "/story_documents/{documentId}": {
+      "schema": "StoryDocument",
+      "description": "Private upload metadata for denial letters, EOBs, and evidence."
+    },
+    "/analytics/global": {
+      "schema": "GlobalAnalytics",
+      "description": "Homepage dashboard aggregates."
+    },
+    "/ingestion_runs/{runId}": {
+      "schema": "IngestionRun",
+      "description": "Operational ingestion logs."
+    },
+    "/source_records/{sourceRecordId}": {
+      "schema": "SourceRecord",
+      "description": "Raw source provenance records."
+    },
+    "/denials/{denialId}": {
+      "schema": "LegacyDenial",
+      "description": "Legacy collection retained during migration."
     }
   }
 }
