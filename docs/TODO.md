@@ -1,4 +1,4 @@
-# FightInsuranceDenials Todo
+﻿# FightInsuranceDenials Todo
 
 ## Active Priorities
 - [ ] Redesign the homepage hero so it feels human, emotionally grounded, and visually coherent on desktop and mobile.
@@ -14,7 +14,7 @@
 - [ ] Add non-Reddit ingestion modules for Breastcancer.org public discussions.
 - [ ] Add ingestion modules for ConsumerAffairs insurer complaint pages.
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
-- [ ] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer�s communities and advocacy organizations.
+- [ ] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
 - [ ] Add better rate-limit handling and backoff for Reddit/PullPush ingestion.
 - [ ] Add source weighting and confidence scoring that flows into the observatory UI.
 - [ ] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
@@ -31,11 +31,11 @@
 - [ ] Remove any stale or conflicting design remnants from older versions of the site.
 
 ## Deployment
-- [ ] Point Vercel production to the current GitHub branch/workflow instead of stale code.
+- [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.
 - [ ] Add required production environment variables to Vercel.
 - [ ] Validate production auth domains and Firebase config.
-- [ ] Confirm fightinsurancedenials.com serves the current build and not the stale sidebar version.
-- [ ] Set up a clean preview -> production promotion workflow for future checkpoints.
+- [x] Confirm fightinsurancedenials.com serves the current build and not the stale sidebar version.
+- [ ] Set up a cleaner preview -> production promotion workflow for future checkpoints.
 
 ## Security / Hardening
 - [ ] Add request rate limiting to public endpoints.
@@ -53,3 +53,5 @@
 - [x] Add precedent-aware appeal generation using warehouse evidence context.
 - [x] Push the working branch to GitHub as `codex/schema-foundation`.
 - [x] Connect the real domain in Vercel / Cloudflare.
+- [x] Restore the stronger homepage hook and simpler observatory positioning copy.
+

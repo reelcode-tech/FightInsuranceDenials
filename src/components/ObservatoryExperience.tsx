@@ -91,8 +91,9 @@ export default function ObservatoryExperience({
                 One searchable observatory.
               </motion.h1>
 
-              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#5f4d43] md:text-xl">
-                You are not alone. We turn scattered insurance denial stories into proof, patterns, and smarter appeals.
+              <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[#5f4d43] md:text-xl">
+                We aggregate, normalize, and analyze health insurance denial stories in real-time. Turning thousands of individual frustrations
+                into a collective force for change.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -113,13 +114,13 @@ export default function ObservatoryExperience({
 
               <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-[#6a584d]">
                 <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
-                  {totalStories.toLocaleString()} stories in the record
+                  {totalStories.toLocaleString()} real denial stories analyzed
                 </span>
                 <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
-                  Top pattern: {topCategory}
+                  Top denial pattern: {topCategory}
                 </span>
                 <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
-                  AI: {aiStatus}
+                  AI system: {aiStatus}
                 </span>
               </div>
 
