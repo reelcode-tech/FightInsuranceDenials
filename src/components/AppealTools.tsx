@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Zap, ShieldCheck, ArrowRight, Download, Copy, Mail, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from "motion/react";
-import { db } from "@/src/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { toast } from "sonner";
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { motion, AnimatePresence } from 'motion/react';
+import { db } from '@/src/lib/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { ArrowRight, Clock, ShieldCheck, Sparkles, TrendingUp, Zap } from 'lucide-react';
 import AppealGenerator from './AppealGenerator';
 
 export default function AppealTools() {
   const [activeTool, setActiveTool] = useState<'generator' | 'benchmarks' | 'tracker'>('generator');
-  const [benchmarkInsurer, setBenchmarkInsurer] = useState("UnitedHealthcare");
-  const [benchmarkData, setBenchmarkData] = useState<{ success: number, total: number } | null>(null);
+  const [benchmarkInsurer, setBenchmarkInsurer] = useState('UnitedHealthcare');
+  const [benchmarkData, setBenchmarkData] = useState<{ success: number; total: number } | null>(null);
 
   useEffect(() => {
     if (activeTool === 'benchmarks') {
@@ -22,116 +20,127 @@ export default function AppealTools() {
 
   const fetchBenchmarks = async () => {
     try {
-      const q = query(collection(db, "denials"), where("insurer", "==", benchmarkInsurer));
-      const snapshot = await getDocs(q);
-      const docs = snapshot.docs.map(d => d.data());
-      const overturned = docs.filter(d => d.status === 'overturned').length;
+      const snapshot = await getDocs(query(collection(db, 'denials'), where('insurer', '==', benchmarkInsurer)));
+      const docs = snapshot.docs.map((doc) => doc.data());
+      const overturned = docs.filter((doc) => doc.status === 'overturned').length;
       setBenchmarkData({ success: overturned, total: docs.length });
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
+      setBenchmarkData({ success: 0, total: 0 });
     }
   };
 
+  const benchmarkRate = benchmarkData ? Math.round((benchmarkData.success / (benchmarkData.total || 1)) * 100) : 0;
+
   return (
-    <div className="space-y-12 p-8 bg-[#0A0A0B] min-h-screen text-slate-200">
-      <div className="space-y-6 border-b border-white/10 pb-12">
-        <div className="inline-flex px-4 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-400 text-[10px] font-bold uppercase tracking-[0.3em]">AI Action Center</div>
-        <h1 className="text-7xl font-bold tracking-tighter text-white">Appeal Tools.</h1>
-        <p className="text-xl font-light text-slate-400">Professional-grade appeal generation and case benchmarking.</p>
-      </div>
+    <div className="min-h-screen bg-[#f4efe8] px-5 py-10 md:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="grid gap-6 rounded-[2.7rem] bg-[#1d1714] px-8 py-10 text-white md:grid-cols-[1.05fr_0.95fr] md:px-12 md:py-14">
+          <div className="space-y-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#efbfaa]">Fight back</p>
+            <h1 className="max-w-3xl text-5xl font-bold tracking-tight md:text-6xl">
+              Take the denial letter and turn it into your next move.
+            </h1>
+            <p className="max-w-2xl text-lg leading-relaxed text-white/74">
+              This page should feel like backup. Start with an appeal draft, compare similar cases, or keep track of what you’ve already sent.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: 'generator', label: 'Appeal generator', icon: Zap },
+                { id: 'benchmarks', label: 'Benchmarks', icon: TrendingUp },
+                { id: 'tracker', label: 'Tracker', icon: Clock },
+              ].map((tool) => (
+                <Button
+                  key={tool.id}
+                  onClick={() => setActiveTool(tool.id as 'generator' | 'benchmarks' | 'tracker')}
+                  className={`rounded-full ${
+                    activeTool === tool.id ? 'bg-[#b43c2e] text-white hover:bg-[#9f3226]' : 'bg-white/8 text-white hover:bg-white/14'
+                  }`}
+                >
+                  <tool.icon className="mr-2 h-4 w-4" />
+                  {tool.label}
+                </Button>
+              ))}
+            </div>
+          </div>
 
-      {/* Tool Navigation */}
-      <div className="flex flex-wrap gap-4">
-        {[
-          { id: 'generator', label: 'AI Appeal Generator', icon: Zap },
-          { id: 'benchmarks', label: 'Case Benchmarks', icon: TrendingUp },
-          { id: 'tracker', label: 'Appeal Tracker', icon: Clock }
-        ].map((tool) => (
-          <Button
-            key={tool.id}
-            variant={activeTool === tool.id ? "default" : "outline"}
-            className={`h-14 px-8 rounded-full font-bold transition-all ${
-              activeTool === tool.id ? 'bg-blue-600 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'
-            }`}
-            onClick={() => setActiveTool(tool.id as any)}
-          >
-            <tool.icon className="w-5 h-5 mr-3" />
-            {tool.label}
-          </Button>
-        ))}
-      </div>
+          <div className="grid gap-4 sm:grid-cols-3 md:grid-cols-1">
+            {[
+              { label: 'Recommended first step', value: 'Read the denial reason plainly' },
+              { label: 'Best use of AI here', value: 'Draft structure + evidence language' },
+              { label: 'Mindset', value: 'Calm, specific, and documented' },
+            ].map((card) => (
+              <div key={card.label} className="rounded-[1.8rem] border border-white/10 bg-white/5 p-5">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-white/46">{card.label}</p>
+                <p className="mt-3 text-lg font-semibold leading-snug">{card.value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <AnimatePresence mode="wait">
-        {activeTool === 'generator' && (
-          <motion.div 
-            key="generator"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-12"
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              <div className="lg:col-span-2">
+        <AnimatePresence mode="wait">
+          {activeTool === 'generator' && (
+            <motion.section
+              key="generator"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]"
+            >
+              <div className="rounded-[2.2rem] border border-black/8 bg-white/85 p-6 md:p-8">
                 <AppealGenerator />
               </div>
-              <div className="space-y-8">
-                <Card className="bg-blue-600/5 border-blue-500/20 p-8 rounded-[2rem] space-y-6">
+              <div className="space-y-6">
+                <div className="rounded-[2rem] border border-black/8 bg-[#eadfce] p-6">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-6 h-6 text-blue-500" />
-                    <h4 className="text-lg font-bold text-white tracking-tight">AI Legal Guard</h4>
+                    <ShieldCheck className="h-5 w-5 text-[#b43c2e]" />
+                    <h2 className="text-2xl font-bold tracking-tight text-[#1f1b17]">Plain-language guardrails</h2>
                   </div>
-                  <p className="text-sm text-slate-400 font-light leading-relaxed">
-                    Our AI is trained on ERISA regulations and state-specific insurance codes to ensure your appeal uses the strongest possible legal language.
+                  <p className="mt-4 leading-relaxed text-[#574a40]">
+                    Keep the appeal specific. Name the service, name the denial reason, and ask for the full case file if the insurer is being vague.
                   </p>
-                  <div className="pt-4 border-t border-white/5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Success Tip</p>
-                    <p className="text-xs text-slate-300 italic">"Always request your full case file from the insurer. They are legally required to provide it."</p>
-                  </div>
-                </Card>
+                </div>
 
-                <div className="space-y-6">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400">Workflow</h4>
-                  <div className="space-y-4">
+                <div className="rounded-[2rem] border border-black/8 bg-white/75 p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">Good workflow</p>
+                  <div className="mt-5 space-y-3">
                     {[
-                      { step: "01", title: "Upload", desc: "Scan your denial letter." },
-                      { step: "02", title: "Analyze", desc: "AI extracts codes & reasons." },
-                      { step: "03", title: "Personalize", desc: "Add your health context." },
-                      { step: "04", title: "Weaponize", desc: "Download professional PDF." }
-                    ].map((s, i) => (
-                      <div key={i} className="flex items-start gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                        <span className="text-xl font-bold text-blue-600/30">{s.step}</span>
-                        <div>
-                          <h4 className="text-sm font-bold text-white">{s.title}</h4>
-                          <p className="text-[10px] text-slate-500 font-light">{s.desc}</p>
+                      'Upload the denial or paste the language',
+                      'Confirm the insurer, treatment, and reason',
+                      'Use the draft as a starting point, not the final word',
+                      'Track your timeline and any response deadlines',
+                    ].map((item, index) => (
+                      <div key={item} className="flex items-start gap-3 rounded-[1.2rem] bg-[#f8f2ea] px-4 py-4">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1f1b17] text-sm font-bold text-white">
+                          {index + 1}
                         </div>
+                        <p className="pt-1 text-[#574a40]">{item}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.section>
+          )}
 
-        {activeTool === 'benchmarks' && (
-          <motion.div 
-            key="benchmarks"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-12"
-          >
-            <Card className="bg-white/5 border-white/10 p-12 rounded-[3rem] space-y-12">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                <div className="space-y-4">
-                  <h3 className="text-4xl font-bold text-white">Case Benchmarks</h3>
-                  <p className="text-slate-400 text-lg font-light">See how others successfully overturned similar denials.</p>
+          {activeTool === 'benchmarks' && (
+            <motion.section
+              key="benchmarks"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col gap-4 rounded-[2.2rem] border border-black/8 bg-white/80 p-6 md:flex-row md:items-end md:justify-between md:p-8">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">Benchmark view</p>
+                  <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#1f1b17]">Compare your insurer against the record.</h2>
                 </div>
                 <Select value={benchmarkInsurer} onValueChange={setBenchmarkInsurer}>
-                  <SelectTrigger className="w-full md:w-[300px] h-16 bg-slate-900 border-white/10 rounded-full text-lg font-bold">
-                    <SelectValue placeholder="Select Insurer" />
+                  <SelectTrigger className="w-full rounded-full border-black/10 bg-[#f8f2ea] md:w-[280px]">
+                    <SelectValue placeholder="Select insurer" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                  <SelectContent>
                     <SelectItem value="UnitedHealthcare">UnitedHealthcare</SelectItem>
                     <SelectItem value="Aetna">Aetna</SelectItem>
                     <SelectItem value="Cigna">Cigna</SelectItem>
@@ -141,71 +150,74 @@ export default function AppealTools() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="p-10 bg-blue-600/5 border border-blue-500/20 rounded-[2.5rem] text-center space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-400">Success Rate</p>
-                  <p className="text-6xl font-bold text-white">
-                    {benchmarkData ? Math.round((benchmarkData.success / (benchmarkData.total || 1)) * 100) : "0"}%
-                  </p>
-                  <p className="text-xs text-slate-500">Based on {benchmarkData?.total || 0} community cases</p>
-                </div>
-                <div className="p-10 bg-emerald-600/5 border border-emerald-500/20 rounded-[2.5rem] text-center space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">Avg. Overturn Time</p>
-                  <p className="text-6xl font-bold text-white">42</p>
-                  <p className="text-xs text-slate-500">Days from first appeal</p>
-                </div>
-                <div className="p-10 bg-purple-600/5 border border-purple-500/20 rounded-[2.5rem] text-center space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-purple-400">Top Strategy</p>
-                  <p className="text-3xl font-bold text-white">Medical Necessity</p>
-                  <p className="text-xs text-slate-500">Most successful appeal reason</p>
-                </div>
+              <div className="grid gap-5 md:grid-cols-3">
+                {[
+                  { label: 'Observed overturn rate', value: `${benchmarkRate}%`, note: `${benchmarkData?.total || 0} tracked cases` },
+                  { label: 'Best documented angle', value: 'Medical necessity', note: 'Most consistent appeal language' },
+                  { label: 'Typical friction point', value: 'Paperwork + delay', note: 'Often mixed with prior auth confusion' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[2rem] border border-black/8 bg-[#1d1714] p-6 text-white">
+                    <p className="text-[10px] uppercase tracking-[0.25em] text-white/44">{item.label}</p>
+                    <p className="mt-4 text-4xl font-bold tracking-tight">{item.value}</p>
+                    <p className="mt-3 text-sm text-white/66">{item.note}</p>
+                  </div>
+                ))}
               </div>
-            </Card>
-          </motion.div>
-        )}
+            </motion.section>
+          )}
 
-        {activeTool === 'tracker' && (
-          <motion.div 
-            key="tracker"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-12"
-          >
-            <Card className="bg-white/5 border-white/10 p-12 rounded-[3rem] space-y-12">
-              <div className="space-y-4">
-                <h3 className="text-4xl font-bold text-white">Appeal Tracker</h3>
-                <p className="text-slate-400 text-lg font-light">Monitor your active appeals and receive pattern-break alerts.</p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] flex items-center justify-between group hover:bg-white/[0.08] transition-all">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center">
-                      <Clock className="w-7 h-7 text-amber-500" />
-                    </div>
+          {activeTool === 'tracker' && (
+            <motion.section
+              key="tracker"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]"
+            >
+              <div className="rounded-[2.2rem] border border-black/8 bg-white/85 p-6 md:p-8">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a5a49]">Appeal tracker</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#1f1b17]">A calmer place to keep the process straight.</h2>
+                <div className="mt-8 space-y-4">
+                  <div className="flex items-center justify-between rounded-[1.4rem] border border-black/8 bg-[#f8f2ea] p-5">
                     <div>
-                      <h4 className="text-xl font-bold text-white">MRI Lumbar Spine</h4>
-                      <p className="text-sm text-slate-500">Aetna • Submitted 12 days ago</p>
+                      <p className="text-lg font-bold text-[#1f1b17]">MRI Lumbar Spine</p>
+                      <p className="text-sm text-[#7a6859]">Aetna • submitted 12 days ago</p>
                     </div>
+                    <span className="rounded-full bg-[#e8c481] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[#5f420d]">
+                      In progress
+                    </span>
                   </div>
-                  <div className="flex items-center gap-8">
-                    <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500">In Progress</p>
-                      <p className="text-xs text-slate-400">Waiting for Insurer Response</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="rounded-full"><ArrowRight className="w-5 h-5" /></Button>
+                  <div className="rounded-[1.4rem] border border-dashed border-black/10 bg-white/55 p-5 text-[#7a6859]">
+                    No other tracked appeals yet.
                   </div>
-                </div>
-
-                <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] flex items-center justify-center border-dashed">
-                  <p className="text-slate-500 font-light italic">No other active appeals found.</p>
                 </div>
               </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              <div className="rounded-[2.2rem] bg-[#eadfce] p-6 md:p-8">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-[#b43c2e]" />
+                  <h2 className="text-2xl font-bold tracking-tight text-[#1f1b17]">What patients actually need here</h2>
+                </div>
+                <div className="mt-6 space-y-4">
+                  {[
+                    'A simple deadline reminder',
+                    'A clean timeline of what was submitted and when',
+                    'Notes about who said what on calls',
+                    'One-button export of the appeal packet',
+                  ].map((item) => (
+                    <div key={item} className="rounded-[1.25rem] bg-white/70 px-4 py-4 text-[#574a40]">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                <Button className="mt-6 rounded-full bg-[#1f1b17] text-white hover:bg-[#2a231d]">
+                  Prepare my appeal packet <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

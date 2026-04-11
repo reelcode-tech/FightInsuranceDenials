@@ -1,112 +1,201 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: denials
-    // Document ID: auto-generated
-    // Fields:
-    //   - insurer: string (required)
-    //   - planType: string (optional)
-    //   - procedure: string (required)
-    //   - denialReason: string (required)
-    //   - date: string (optional)
-    //   - status: string (required, enum: ['denied', 'appealing', 'overturned', 'sustained'])
-    //   - narrative: string (optional, max 5000 chars)
-    //   - tags: list of strings (optional)
-    //   - isPublic: bool (required)
-    //   - userId: string (optional, matches auth.uid)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: users
-    // Document ID: userId
-    // Fields:
-    //   - email: string (required)
-    //   - role: string (required, enum: ['patient', 'admin'])
-    //   - createdAt: timestamp (required)
-    //
-    // ===============================================================
-
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return isAuthenticated() && userId is string && request.auth.uid == userId;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function isAdmin() {
-      return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "sashimilbz@gmail.com" && request.auth.token.email_verified == true));
+      return isAuthenticated() &&
+        (
+          (userDoc().data.subscription_tier == 'admin') ||
+          (userDoc().data.role == 'admin') ||
+          (request.auth.token.email == "sashimilbz@gmail.com" && request.auth.token.email_verified == true)
+        );
     }
 
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    function validConsentLevel(value) {
+      return value in ['public_story', 'aggregated_stats_only', 'fully_private'];
     }
 
-    function isValidStatus(status) {
+    function validStoryStatus(value) {
+      return value in ['draft', 'processing', 'published', 'archived'];
+    }
+
+    function isPublicStory(data) {
+      return data.status == 'published' &&
+        data.privacy.consent_level == 'public_story' &&
+        data.privacy.is_anonymized == true;
+    }
+
+    function canReadStory(data) {
+      return isPublicStory(data) || isOwner(data.user_uid) || isAdmin();
+    }
+
+    function validCoverage(data) {
+      return data.coverage is map &&
+        data.coverage.extracted_insurer is string &&
+        data.coverage.extracted_insurer.size() > 0 &&
+        data.coverage.plan_type is string;
+    }
+
+    function validClinical(data) {
+      return data.clinical is map &&
+        data.clinical.denial_category is string &&
+        data.clinical.procedure_condition is string &&
+        data.clinical.procedure_condition.size() > 0 &&
+        data.clinical.denial_reason_raw is string &&
+        data.clinical.denial_reason_raw.size() > 0;
+    }
+
+    function validTimeline(data) {
+      return data.timeline is map &&
+        data.timeline.submission_timestamp is timestamp;
+    }
+
+    function validPrivacy(data) {
+      return data.privacy is map &&
+        validConsentLevel(data.privacy.consent_level) &&
+        data.privacy.is_anonymized is bool;
+    }
+
+    function validSource(data) {
+      return data.source is map &&
+        data.source.source_type is string &&
+        data.source.source_label is string;
+    }
+
+    function validStory(data) {
+      return validStoryStatus(data.status) &&
+        validCoverage(data) &&
+        validClinical(data) &&
+        validTimeline(data) &&
+        validPrivacy(data) &&
+        validSource(data) &&
+        (!('user_uid' in data) || data.user_uid == request.auth.uid || isAdmin()) &&
+        (!('benchmark' in data) || data.benchmark is map);
+    }
+
+    function validUserProfile(data, userId) {
+      return data.uid == userId &&
+        data.email is string &&
+        data.created_at is timestamp &&
+        data.subscription_tier in ['standard', 'b2b', 'admin'];
+    }
+
+    function validStoryDocument(data) {
+      return data.story_id is string &&
+        data.document_type is string &&
+        data.storage_path is string &&
+        data.uploaded_at is timestamp &&
+        (!('user_uid' in data) || data.user_uid == request.auth.uid || isAdmin());
+    }
+
+    function validLegacyStatus(status) {
       return status in ['denied', 'appealing', 'overturned', 'sustained'];
     }
 
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
-
-    function isValidDenial(data) {
-      return data.insurer is string && data.insurer.size() > 0 && data.insurer.size() < 100 &&
-             data.procedure is string && data.procedure.size() > 0 && data.procedure.size() < 200 &&
-             data.denialReason is string && data.denialReason.size() > 0 && data.denialReason.size() < 500 &&
-             isValidStatus(data.status) &&
-             data.isPublic is bool &&
-             (!('narrative' in data) || (data.narrative is string && data.narrative.size() < 10000)) &&
-             (!('denialQuote' in data) || (data.denialQuote is string && data.denialQuote.size() < 2000)) &&
-             (!('summary' in data) || (data.summary is string && data.summary.size() < 2000)) &&
-             (!('isERISA' in data) || (data.isERISA in ['ERISA', 'Non-ERISA', 'Unknown'])) &&
-             (!('medicalNecessityFlag' in data) || data.medicalNecessityFlag is bool) &&
-             (!('imeInvolved' in data) || data.imeInvolved is bool) &&
-             (!('userId' in data) || data.userId == request.auth.uid);
+    function validLegacyDenial(data) {
+      return data.insurer is string &&
+        data.procedure is string &&
+        data.denialReason is string &&
+        validLegacyStatus(data.status) &&
+        data.isPublic is bool &&
+        data.createdAt is timestamp &&
+        (!('userId' in data) || data.userId == request.auth.uid || isAdmin());
     }
-
-    function isValidUser(data) {
-      return isValidEmail(data.email) &&
-             data.role in ['patient', 'admin'] &&
-             data.createdAt is timestamp;
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'patient';
-      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow create: if isOwner(userId) && validUserProfile(request.resource.data, userId);
+      allow update: if (isOwner(userId) || isAdmin()) && validUserProfile(request.resource.data, userId);
+      allow delete: if isAdmin();
+    }
+
+    match /stories/{storyId} {
+      allow read: if canReadStory(resource.data);
+      allow list: if true;
+      allow create: if isAuthenticated() && validStory(request.resource.data);
+      allow update: if isAuthenticated() &&
+        (isOwner(resource.data.user_uid) || isAdmin()) &&
+        validStory(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /stories/{storyId}/appeals/{appealId} {
+      allow read: if canReadStory(get(/databases/$(database)/documents/stories/$(storyId)).data);
+      allow list: if true;
+      allow create, update: if isAuthenticated() &&
+        (
+          isOwner(get(/databases/$(database)/documents/stories/$(storyId)).data.user_uid) ||
+          isAdmin()
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /stories/{storyId}/events/{eventId} {
+      allow read: if canReadStory(get(/databases/$(database)/documents/stories/$(storyId)).data);
+      allow list: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /story_documents/{documentId} {
+      allow read: if isAuthenticated() &&
+        (
+          isOwner(resource.data.user_uid) ||
+          isOwner(get(/databases/$(database)/documents/stories/$(resource.data.story_id)).data.user_uid) ||
+          isAdmin()
+        );
+      allow list: if false;
+      allow create: if isAuthenticated() && validStoryDocument(request.resource.data);
+      allow update: if isAuthenticated() &&
+        (
+          isOwner(resource.data.user_uid) ||
+          isAdmin()
+        ) &&
+        validStoryDocument(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /analytics/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ingestion_runs/{runId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /source_records/{sourceRecordId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /denials/{denialId} {
-      // Public denials are readable by everyone, private only by owner/admin
       allow read: if resource.data.isPublic == true || isOwner(resource.data.userId) || isAdmin();
-      allow list: if true; // Allow listing, but the query must still satisfy the read condition
-      
-      allow create: if isAuthenticated() && isValidDenial(request.resource.data) && 
-                      request.resource.data.createdAt == request.time;
-                      
-      allow update: if isAuthenticated() && 
-                      (isOwner(resource.data.userId) || isAdmin()) && 
-                      isValidDenial(request.resource.data) &&
-                      request.resource.data.userId == resource.data.userId;
-                      
+      allow list: if true;
+      allow create: if isAuthenticated() && validLegacyDenial(request.resource.data);
+      allow update: if isAuthenticated() &&
+        (isOwner(resource.data.userId) || isAdmin()) &&
+        validLegacyDenial(request.resource.data);
       allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
     }
 
-    // Default deny
+    match /stats/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
