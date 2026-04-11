@@ -63,107 +63,77 @@ export default function ObservatoryExperience({
   return (
     <div className="min-h-screen bg-[#f6efe8] text-[#1f1916]">
       <main className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-        <section className="overflow-hidden rounded-[2.8rem] border border-[#201613]/6 bg-[linear-gradient(135deg,#fffaf6_0%,#f5e7dc_48%,#ead8ca_100%)] shadow-[0_30px_90px_rgba(42,22,14,0.08)]">
-          <div className="px-7 py-8 md:px-10 md:py-10">
+        <section className="relative overflow-hidden rounded-[2.8rem] border border-[#201613]/6 bg-[linear-gradient(135deg,#fffaf6_0%,#f5e7dc_48%,#ead8ca_100%)] shadow-[0_30px_90px_rgba(42,22,14,0.08)]">
+          <div className="absolute inset-0">
+            <img
+              src={HERO_IMAGE}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-center opacity-[0.16] saturate-[0.7]"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,246,0.96)_0%,rgba(255,250,246,0.88)_42%,rgba(255,250,246,0.74)_100%)]" />
+          </div>
+
+          <div className="relative px-7 py-10 md:px-10 md:py-14">
             <Badge className="rounded-full border border-[#7f2f24]/12 bg-white/88 px-4 py-1 text-[10px] uppercase tracking-[0.35em] text-[#7f2f24]">
               Public insurance denial observatory
             </Badge>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
-              <div>
-                <p className="text-sm font-medium uppercase tracking-[0.26em] text-[#7f2f24]/82">What denial feels like</p>
-                <motion.h1
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45 }}
-                  className="mt-4 max-w-4xl text-5xl font-semibold leading-[0.94] tracking-[-0.06em] text-[#1f1916] md:text-7xl"
+            <div className="mt-6 max-w-4xl">
+              <motion.h1
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45 }}
+                className="text-5xl font-semibold leading-[0.92] tracking-[-0.065em] text-[#1f1916] md:text-7xl"
+              >
+                Millions of denials.
+                <br />
+                One searchable observatory.
+              </motion.h1>
+
+              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#5f4d43] md:text-xl">
+                You are not alone. We turn scattered insurance denial stories into proof, patterns, and smarter appeals.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Button
+                  onClick={() => onNavigate('share')}
+                  className="h-16 rounded-full bg-[#7f2f24] px-10 text-base font-semibold text-white shadow-[0_14px_40px_rgba(127,47,36,0.22)] hover:bg-[#6d261d]"
                 >
-                  They say no.
-                  <br />
-                  Your health pays for it.
-                </motion.h1>
-
-                <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[#5f4d43] md:text-xl">
-                  One searchable record for the people who get denied, delayed, priced out, and left alone to figure out a system that was
-                  built to outlast them.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Button
-                    onClick={() => onNavigate('share')}
-                    className="h-16 rounded-full bg-[#7f2f24] px-9 text-base font-semibold text-white shadow-[0_14px_40px_rgba(127,47,36,0.22)] hover:bg-[#6d261d]"
-                  >
-                    Share your story <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => onNavigate('appeal')}
-                    variant="outline"
-                    className="h-16 rounded-full border-[#1f1916]/10 bg-white/86 px-9 text-base font-semibold text-[#1f1916] hover:bg-white"
-                  >
-                    Fight back with AI
-                  </Button>
-                </div>
-
-                <div className="mt-6 max-w-md">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d776c]" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => onSearchTermChange(e.target.value)}
-                      placeholder="Search insurer, medication, procedure"
-                      className="h-11 rounded-full border-[#201613]/8 bg-white/90 pl-11 text-sm text-[#1f1916] placeholder:text-[#9a8577]"
-                    />
-                  </div>
-                </div>
+                  Share your story <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => onNavigate('appeal')}
+                  variant="outline"
+                  className="h-16 rounded-full border-[#1f1916]/10 bg-white/88 px-10 text-base font-semibold text-[#1f1916] hover:bg-white"
+                >
+                  Fight back with AI
+                </Button>
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.08 }}
-                className="relative overflow-hidden rounded-[2.3rem] border border-white/50 bg-[#cab09c] shadow-[0_24px_70px_rgba(59,31,21,0.18)]"
-              >
-                <img
-                  src={HERO_IMAGE}
-                  alt="Person sitting with overdue letters and paperwork, looking emotionally drained"
-                  className="h-[420px] w-full object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(25,15,11,0.02)_0%,rgba(25,15,11,0.38)_68%,rgba(25,15,11,0.74)_100%)]" />
-                <div className="absolute inset-x-0 bottom-0 p-6 md:p-7">
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.18 }}
-                    className="max-w-sm rounded-[1.7rem] border border-white/14 bg-[#201613]/68 p-5 backdrop-blur-md"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.28em] text-white/62">Why this exists</p>
-                    <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">Denial is not just paperwork.</p>
-                    <p className="mt-3 text-sm leading-relaxed text-white/72">
-                      It is delayed medication, missed care, more debt, and the feeling that the system is bigger than you.
-                    </p>
-                  </motion.div>
-                </div>
-              </motion.div>
-            </div>
+              <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-[#6a584d]">
+                <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
+                  {totalStories.toLocaleString()} stories in the record
+                </span>
+                <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
+                  Top pattern: {topCategory}
+                </span>
+                <span className="rounded-full border border-[#201613]/8 bg-white/70 px-4 py-2">
+                  AI: {aiStatus}
+                </span>
+              </div>
 
-            <div className="mt-8 grid max-w-6xl gap-4 md:grid-cols-3">
-              {[
-                { label: 'Stories in the record', value: totalStories.toLocaleString(), note: 'Cleaned public stories and structured denial evidence' },
-                { label: 'Top denial pattern', value: topCategory, note: 'What is surfacing most in the observatory right now' },
-                { label: 'AI support system', value: aiStatus, note: 'Extraction, grouping, and appeal-writing support grounded in our data' },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08, duration: 0.35 }}
-                  className="rounded-[1.8rem] border border-[#201613]/6 bg-white/74 p-5"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-[#8d776c]">{item.label}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#1f1916]">{item.value}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-[#69584d]">{item.note}</p>
-                </motion.div>
-              ))}
+              <div className="mt-6 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d776c]" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(e) => onSearchTermChange(e.target.value)}
+                    placeholder="Search insurer, medication, procedure"
+                    className="h-11 rounded-full border-[#201613]/8 bg-white/88 pl-11 text-sm text-[#1f1916] placeholder:text-[#9a8577]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>

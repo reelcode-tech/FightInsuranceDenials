@@ -95,6 +95,11 @@ export default function Insights() {
 
     try {
       const response = await fetch('/api/insights/patterns', { cache: 'no-store' });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const raw = await response.text();
+        throw new Error(raw.slice(0, 180) || 'Pattern endpoint did not return JSON');
+      }
       const payload = await response.json();
       if (!response.ok || payload.status !== 'success') {
         throw new Error(payload.error || 'Failed to load pattern review');

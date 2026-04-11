@@ -34,11 +34,19 @@ export default function Dashboard() {
   const fetchRealCount = async () => {
     try {
       const warehouseResp = await fetch('/api/observatory/summary', { cache: 'no-store' });
-      if (warehouseResp.ok) {
+      const contentType = warehouseResp.headers.get('content-type') || '';
+      if (warehouseResp.ok && contentType.includes('application/json')) {
         const warehouseData = await warehouseResp.json();
         if (warehouseData?.totalVisibleCount !== null && warehouseData?.totalVisibleCount !== undefined) {
           setRealCount(warehouseData.totalVisibleCount);
         }
+        if (warehouseData?.topCategory) {
+          setTopCategoryLabel(warehouseData.topCategory);
+        }
+        if (Array.isArray(warehouseData?.featuredStories) && warehouseData.featuredStories.length) {
+          setFeaturedStories(warehouseData.featuredStories);
+        }
+        return;
       }
 
       const analytics = await fetchCurrentAnalytics(db);
@@ -66,6 +74,16 @@ export default function Dashboard() {
 
   const fetchFeatured = async () => {
     try {
+      const warehouseResp = await fetch('/api/observatory/summary', { cache: 'no-store' });
+      const contentType = warehouseResp.headers.get('content-type') || '';
+      if (warehouseResp.ok && contentType.includes('application/json')) {
+        const warehouseData = await warehouseResp.json();
+        if (Array.isArray(warehouseData?.featuredStories) && warehouseData.featuredStories.length) {
+          setFeaturedStories(warehouseData.featuredStories);
+          return;
+        }
+      }
+
       const stories = await fetchFeaturedObservatoryStories(db, 3);
       setFeaturedStories(stories);
     } catch (e) {
