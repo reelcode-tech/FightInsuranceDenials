@@ -32,6 +32,7 @@
 
 ## Deployment
 - [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.
+- [x] Restore live production observatory APIs so Vercel serves real Neon-backed data instead of crashing routes.
 - [ ] Add required production environment variables to Vercel.
 - [ ] Validate production auth domains and Firebase config.
 - [x] Confirm fightinsurancedenials.com serves the current build and not the stale sidebar version.
@@ -54,4 +55,5 @@
 - [x] Push the working branch to GitHub as `codex/schema-foundation`.
 - [x] Connect the real domain in Vercel / Cloudflare.
 - [x] Restore the stronger homepage hook and simpler observatory positioning copy.
+- [x] Prove production Neon connectivity with a live database canary and move the public observatory APIs onto self-contained serverless handlers.
 
