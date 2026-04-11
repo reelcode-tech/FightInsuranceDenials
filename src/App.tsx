@@ -80,16 +80,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4efe8] text-[#1f1b17]">
-      <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f4efe8]/88 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#0a0c0f] text-[#f3efe9]">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-[rgba(10,12,15,0.82)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <button className="flex items-center gap-3 text-left" onClick={() => setActiveTab('home')}>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#b43c2e] text-white shadow-[0_14px_40px_rgba(180,60,46,0.22)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#b43c2e] text-white shadow-[0_14px_40px_rgba(180,60,46,0.28)]">
               <ShieldAlert className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-bold tracking-tight text-[#201915]">FightInsuranceDenials</p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8b7d70]">
+              <p className="text-sm font-bold tracking-tight text-[#f7f2eb]">FightInsuranceDenials</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9e9489]">
                 Public observatory + patient action
               </p>
             </div>
@@ -102,8 +102,8 @@ export default function App() {
                 onClick={() => setActiveTab(item.id)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   activeTab === item.id
-                    ? 'bg-[#1f1b17] text-white'
-                    : 'text-[#574a40] hover:bg-[#e8dfd4]'
+                    ? 'bg-[#f3efe9] text-[#131313]'
+                    : 'text-[#d2cbc2] hover:bg-white/8'
                 }`}
               >
                 {item.label}
@@ -114,12 +114,12 @@ export default function App() {
           <div className="hidden items-center gap-3 lg:flex">
             {user ? (
               <>
-                <div className="rounded-full border border-black/8 bg-white/70 px-4 py-2 text-sm text-[#574a40]">
+                <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#d2cbc2]">
                   {user.displayName || user.email}
                 </div>
                 <Button
                   variant="outline"
-                  className="rounded-full border-black/10 bg-white/80 text-[#201915] hover:bg-white"
+                  className="rounded-full border-white/10 bg-white/6 text-[#f3efe9] hover:bg-white/10"
                   onClick={handleLogout}
                 >
                   Sign out
@@ -136,7 +136,7 @@ export default function App() {
           </div>
 
           <button
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/80 lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/6 lg:hidden"
             onClick={() => setIsMobileMenuOpen((current) => !current)}
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -144,7 +144,7 @@ export default function App() {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="border-t border-black/5 bg-[#f4efe8] px-5 pb-5 pt-3 lg:hidden">
+          <div className="border-t border-white/8 bg-[#0a0c0f] px-5 pb-5 pt-3 lg:hidden">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <button
@@ -154,7 +154,7 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                   }}
                   className={`rounded-2xl px-4 py-3 text-left text-sm font-semibold ${
-                    activeTab === item.id ? 'bg-[#1f1b17] text-white' : 'bg-white/80 text-[#574a40]'
+                    activeTab === item.id ? 'bg-[#f3efe9] text-[#131313]' : 'bg-white/6 text-[#d2cbc2]'
                   }`}
                 >
                   {item.label}
@@ -165,7 +165,7 @@ export default function App() {
                   Sign in
                 </Button>
               ) : (
-                <Button onClick={handleLogout} variant="outline" className="mt-3 rounded-2xl border-black/10">
+                <Button onClick={handleLogout} variant="outline" className="mt-3 rounded-2xl border-white/10 bg-white/6 text-[#f3efe9]">
                   Sign out
                 </Button>
               )}

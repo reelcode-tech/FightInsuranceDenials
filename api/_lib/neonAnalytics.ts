@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { neon } from '@neondatabase/serverless';
 
 type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };
@@ -6,22 +6,18 @@ type ClusterRow = { procedure: string; insurer: string; category: string; value:
 type QualityRow = { metric: string; value: number };
 type FindingRow = { title: string; body: string; tone: 'high' | 'medium' | 'warning' };
 
-let pool: Pool | null = null;
+let sqlClient: ReturnType<typeof neon> | null = null;
 
-function getPool() {
-  if (pool) return pool;
+function getSql() {
+  if (sqlClient) return sqlClient;
 
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL is not configured in Vercel.');
   }
 
-  pool = new Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-  });
-
-  return pool;
+  sqlClient = neon(connectionString);
+  return sqlClient;
 }
 
 function asNumber(value: unknown) {
@@ -30,10 +26,10 @@ function asNumber(value: unknown) {
 }
 
 export async function fetchObservatorySummaryFromNeon() {
-  const db = getPool();
+  const sql = getSql();
 
   const [countResult, topCategoryResult, featuredResult] = await Promise.all([
-    db.query(`
+    sql`
       SELECT
         (SELECT COUNT(*)::int FROM raw_web_observations) AS raw_observation_count,
         (SELECT COUNT(*)::int FROM source_records) AS source_record_count,
@@ -42,8 +38,8 @@ export async function fetchObservatorySummaryFromNeon() {
           FROM curated_stories
           WHERE status = 'published' AND consent_level = 'public_story'
         ) AS total_visible_count
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT denial_category, COUNT(*)::int AS record_count
       FROM curated_stories
       WHERE status = 'published'
@@ -52,8 +48,8 @@ export async function fetchObservatorySummaryFromNeon() {
       GROUP BY denial_category
       ORDER BY record_count DESC
       LIMIT 1
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT
         story_id,
         extracted_insurer,
@@ -66,17 +62,17 @@ export async function fetchObservatorySummaryFromNeon() {
       WHERE status = 'published' AND consent_level = 'public_story'
       ORDER BY quality_score DESC, submission_timestamp DESC
       LIMIT 3
-    `),
+    `,
   ]);
 
-  const counts = countResult.rows[0] || {};
+  const counts = countResult[0] || {};
   return {
     status: 'success',
     rawObservationCount: asNumber(counts.raw_observation_count),
     sourceRecordCount: asNumber(counts.source_record_count),
     totalVisibleCount: asNumber(counts.total_visible_count),
-    topCategory: topCategoryResult.rows[0]?.denial_category || 'Coverage Denial',
-    featuredStories: featuredResult.rows.map((row) => ({
+    topCategory: topCategoryResult[0]?.denial_category || 'Coverage Denial',
+    featuredStories: (featuredResult as any[]).map((row: any) => ({
       id: row.story_id,
       insurer: row.extracted_insurer || 'Private carrier',
       procedure: row.procedure_condition || 'Medical service denial',
@@ -96,7 +92,7 @@ export async function fetchObservatorySummaryFromNeon() {
 }
 
 export async function fetchPatternsFromNeon() {
-  const db = getPool();
+  const sql = getSql();
 
   const [
     overviewCounts,
@@ -108,7 +104,7 @@ export async function fetchPatternsFromNeon() {
     statePatterns,
     sourceMix,
   ] = await Promise.all([
-    db.query(`
+    sql`
       SELECT
         (SELECT COUNT(*)::int FROM raw_web_observations) AS total_rows,
         (
@@ -146,8 +142,8 @@ export async function fetchPatternsFromNeon() {
           FROM raw_web_observations
           WHERE is_low_signal = TRUE
         ) AS low_signal_rows
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT extracted_insurer AS label, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -156,8 +152,8 @@ export async function fetchPatternsFromNeon() {
       GROUP BY extracted_insurer
       ORDER BY value DESC
       LIMIT 6
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT denial_category AS label, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -166,8 +162,8 @@ export async function fetchPatternsFromNeon() {
       GROUP BY denial_category
       ORDER BY value DESC
       LIMIT 6
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT procedure_condition AS label, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -176,8 +172,8 @@ export async function fetchPatternsFromNeon() {
       GROUP BY procedure_condition
       ORDER BY value DESC
       LIMIT 6
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT extracted_insurer AS insurer, denial_category AS category, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -187,8 +183,8 @@ export async function fetchPatternsFromNeon() {
       GROUP BY extracted_insurer, denial_category
       ORDER BY value DESC
       LIMIT 12
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT procedure_condition AS procedure, extracted_insurer AS insurer, denial_category AS category, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -199,8 +195,8 @@ export async function fetchPatternsFromNeon() {
       GROUP BY procedure_condition, extracted_insurer, denial_category
       ORDER BY value DESC
       LIMIT 10
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT state AS label, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -209,25 +205,25 @@ export async function fetchPatternsFromNeon() {
       GROUP BY state
       ORDER BY value DESC
       LIMIT 8
-    `),
-    db.query(`
+    `,
+    sql`
       SELECT source_type AS label, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published' AND consent_level = 'public_story'
       GROUP BY source_type
       ORDER BY value DESC
-    `),
+    `,
   ]);
 
-  const overviewRow = overviewCounts.rows[0] || {};
+  const overviewRow = overviewCounts[0] || {};
   const totalRows = asNumber(overviewRow.total_rows);
   const unknownInsurerPct = totalRows ? Math.round((asNumber(overviewRow.unknown_insurer_rows) / totalRows) * 100) : 0;
   const unknownCategoryPct = totalRows ? Math.round((asNumber(overviewRow.unknown_category_rows) / totalRows) * 100) : 0;
   const genericProcedurePct = totalRows ? Math.round((asNumber(overviewRow.generic_procedure_rows) / totalRows) * 100) : 0;
 
-  const topInsurerRows = topInsurers.rows as MetricRow[];
-  const topCategoryRows = topCategories.rows as MetricRow[];
-  const topProcedureRows = topProcedures.rows as MetricRow[];
+  const topInsurerRows = topInsurers as MetricRow[];
+  const topCategoryRows = topCategories as MetricRow[];
+  const topProcedureRows = topProcedures as MetricRow[];
 
   const findings: FindingRow[] = [
     topInsurerRows[0]
@@ -295,10 +291,10 @@ export async function fetchPatternsFromNeon() {
     topInsurers: topInsurerRows,
     topCategories: topCategoryRows,
     topProcedures: topProcedureRows,
-    heatmap: heatmap.rows as HeatmapRow[],
-    procedureClusters: procedureClusters.rows as ClusterRow[],
-    statePatterns: statePatterns.rows as MetricRow[],
-    sourceMix: sourceMix.rows as MetricRow[],
+    heatmap: heatmap as unknown as HeatmapRow[],
+    procedureClusters: procedureClusters as unknown as ClusterRow[],
+    statePatterns: statePatterns as unknown as MetricRow[],
+    sourceMix: sourceMix as unknown as MetricRow[],
     dataQuality,
   };
 }
