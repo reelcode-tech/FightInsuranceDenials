@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, BarChart3, Database, MapPinned, RefreshCw, Sparkles, Target } from 'lucide-react';
+import { AlertTriangle, BarChart3, MapPinned, RefreshCw, ShieldCheck, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,15 +42,15 @@ type PatternsResponse = {
 
 const BAR_COLORS = ['#c74b3c', '#ea7a5f', '#f0ae93', '#84a59d', '#5b7286', '#334155'];
 
-const metricLabels: Record<string, string> = {
-  total_rows: 'Raw observatory rows',
-  clean_pattern_rows: 'Rows strong enough for pattern review',
-  unknown_insurer_rows: 'Rows missing a named insurer',
-  unknown_category_rows: 'Rows missing a clean category',
-  generic_procedure_rows: 'Rows still in a generic procedure bucket',
+const QUALITY_LABELS: Record<string, string> = {
+  total_rows: 'Rows in the broader intake archive',
+  clean_pattern_rows: 'Rows we can use in the public record now',
+  unknown_insurer_rows: 'Rows still missing a confidently named insurer',
+  unknown_category_rows: 'Rows still missing a clean denial category',
+  generic_procedure_rows: 'Rows still trapped in a generic procedure bucket',
   missing_state_rows: 'Rows without usable state data',
-  suspicious_or_state_rows: 'Rows with suspicious "OR" state extraction',
-  low_signal_rows: 'Rows flagged as low signal',
+  suspicious_or_state_rows: 'Rows with suspicious OR/Oregon extraction',
+  low_signal_rows: 'Rows flagged as weak evidence',
 };
 
 function toneClasses(tone: FindingRow['tone']) {
@@ -118,6 +118,10 @@ export default function Insights() {
   }, [load]);
 
   const heatMax = Math.max(...(data?.heatmap.map((item) => item.value) || [1]));
+  const topCategory = data?.topCategories?.[0];
+  const topProcedure = data?.topProcedures?.[0];
+  const topInsurer = data?.topInsurers?.[0];
+  const topSourceMix = data?.sourceMix?.slice(0, 3).map((item) => item.label.replace(/_/g, ' ')).join(', ');
 
   return (
     <div className="min-h-screen bg-[#0a0c0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
@@ -133,8 +137,8 @@ export default function Insights() {
                   What the denials are starting to reveal.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  This is where scattered complaint posts become patterns, outliers, and early warning signs. We show what is surfacing,
-                  where the data is strong, and where the extraction still needs cleanup before anyone overclaims certainty.
+                  This page is not here to dump a warehouse on people. It is here to show what is repeating clearly enough to matter, what still needs more evidence,
+                  and where patients can already start learning from the record.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -159,21 +163,21 @@ export default function Insights() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
               {[
                 {
-                  label: 'Visible patterns',
+                  label: 'Public record we can stand behind',
                   value: data?.overview.cleanPatternRows || 0,
-                  caption: 'The rows we can actually use in public-facing charts after basic filtering and cleanup.',
-                  icon: Sparkles,
+                  caption: 'Cleaned stories we are comfortable using in public-facing findings right now.',
+                  icon: ShieldCheck,
                 },
                 {
-                  label: 'Raw observatory rows',
-                  value: data?.overview.totalRows || 0,
-                  caption: 'Everything we have pulled into the warehouse, including rows that still need more cleanup or better extraction.',
-                  icon: Database,
+                  label: 'Biggest repeated fight',
+                  value: topCategory?.label || 'Prior Authorization',
+                  caption: topCategory ? `${topCategory.value.toLocaleString()} cleaned stories already cluster here.` : 'This is the strongest repeat denial pattern so far.',
+                  icon: Target,
                 },
                 {
-                  label: 'Unknown insurer rate',
+                  label: 'What still needs better labeling',
                   value: `${data?.overview.unknownInsurerPct || 0}%`,
-                  caption: 'The share of raw rows where we still cannot confidently name the insurer.',
+                  caption: 'That share of raw rows still needs a confidently named insurer before we treat it as strong evidence.',
                   icon: AlertTriangle,
                 },
               ].map((item, index) => (
@@ -200,21 +204,21 @@ export default function Insights() {
           <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
             <Card className="rounded-[2.2rem] border-white/8 bg-[#12161b] shadow-[0_18px_55px_rgba(0,0,0,0.28)]">
               <CardHeader>
-                <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">What these numbers actually mean</CardTitle>
+                <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">How to read this page</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
                 {[
                   {
-                    title: 'Visible patterns',
-                    body: 'These are the rows we feel comfortable using in the current charts. They are not perfect, but they are cleaner and more interpretable than the raw intake.',
+                    title: 'What we show',
+                    body: 'We only foreground patterns that are specific enough to help a patient, reporter, or advocate understand where denial pressure is actually clustering.',
                   },
                   {
-                    title: 'Raw observatory rows',
-                    body: 'This is the bigger intake bucket. It includes everything we pulled from public sources before all of the extraction, dedupe, and cleanup work is finished.',
+                    title: 'What we hold back',
+                    body: 'Generic insurance chatter, unlabeled rows, and weak extraction stay out of the main story until we can clean them into something more trustworthy.',
                   },
                   {
-                    title: 'Unknown insurer rate',
-                    body: 'This is the share of raw rows where our pipeline still cannot confidently identify the payer. High unknown rates mean the pattern review is useful but not fully mature.',
+                    title: 'What to trust',
+                    body: 'The charts below are strongest on insurer, category, and procedure clusters. State-level conclusions are still more fragile and we say that openly.',
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-[1.5rem] bg-white/6 p-5">
@@ -227,20 +231,20 @@ export default function Insights() {
 
             <Card className="rounded-[2.2rem] border-white/8 bg-[linear-gradient(135deg,#171c22_0%,#1a232b_100%)] text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
               <CardHeader>
-                <CardTitle className="text-2xl tracking-tight">Why this observatory is different</CardTitle>
+                <CardTitle className="text-2xl tracking-tight">Where the evidence comes from</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm leading-7 text-white/78">
                 <p>
-                  We are trying to make sense of insurance complaints that are normally splintered across Reddit, public forums, complaint platforms, advocacy sites,
-                  and official benchmark sources.
+                  We pull public-source observations from places like Reddit, patient forums, complaint platforms, advocacy groups, and official benchmark sources such as OIG, KFF, and CMS.
                 </p>
                 <p>
-                  We pull public-source observations in, normalize insurer names and denial categories, try to identify procedures and treatments, and throw out obvious junk,
-                  unrelated insurance chatter, and low-signal rows.
+                  Then we normalize insurer names and denial categories, try to identify procedures and treatments, and throw out obvious junk, unrelated insurance chatter,
+                  and low-signal rows.
                 </p>
                 <p>
-                  The result is not a perfect claims database. It is a cleaned, explainable observatory built to help patients, researchers, and advocates see patterns they
-                  would otherwise miss.
+                  Right now the strongest repeat signals in the cleaned slice are {topProcedure?.label?.toLowerCase() || 'medication and procedure'} fights, with{' '}
+                  {topInsurer?.label || 'major payers'} surfacing most in the labeled insurer slice. The current source mix still leans heavily on {topSourceMix || 'public communities'},
+                  so we keep showing our caveats alongside the findings.
                 </p>
               </CardContent>
             </Card>
@@ -288,7 +292,7 @@ export default function Insights() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
                     <BarChart3 className="h-5 w-5 text-[#f19a86]" />
-                    Who is showing up the most
+                    What keeps repeating once we can label it clearly
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-6 lg:grid-cols-3">
@@ -445,7 +449,7 @@ export default function Insights() {
                   {data.dataQuality.map((row) => (
                     <div key={row.metric} className="flex items-start justify-between gap-4 rounded-[1.3rem] bg-white/6 px-4 py-4">
                       <div>
-                        <p className="text-sm font-semibold text-[#f7f2eb]">{metricLabels[row.metric] || row.metric}</p>
+                        <p className="text-sm font-semibold text-[#f7f2eb]">{QUALITY_LABELS[row.metric] || row.metric}</p>
                         <p className="mt-1 text-xs leading-5 text-[#c8bdb4]">{row.metric}</p>
                       </div>
                       <p className="text-2xl font-semibold tracking-tight text-[#f19a86]">{row.value}</p>

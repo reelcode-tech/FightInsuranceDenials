@@ -50,6 +50,10 @@ export default async function handler(_req: any, res: any) {
           source_url
         FROM curated_stories
         WHERE status = 'published' AND consent_level = 'public_story'
+          AND COALESCE(denial_category, '') NOT IN ('', 'Unknown')
+          AND COALESCE(procedure_condition, '') NOT IN ('', 'Insurance denial evidence', 'Insurance denial or appeal evidence')
+          AND COALESCE(denial_reason_raw, '') ~* '(denied|appeal|prior auth|prior authorization|not medically necessary|out of network|step therapy|coverage denied|claim denied|not covered|overturned|upheld)'
+          AND COALESCE(patient_narrative_summary, '') !~* '(which plan|what plan|turn 26|late enrollment|open enrollment|shopping for)'
         ORDER BY quality_score DESC, submission_timestamp DESC
         LIMIT 3
       `,

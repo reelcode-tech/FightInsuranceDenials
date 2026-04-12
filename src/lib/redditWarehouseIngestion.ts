@@ -67,9 +67,8 @@ const INSURER_PATTERNS: Array<[RegExp, string]> = [
 const RELEVANCE_PATTERNS = [
   /denied/i,
   /appeal/i,
-  /insurance/i,
-  /coverage/i,
-  /claim/i,
+  /coverage denied/i,
+  /claim denied/i,
   /\beob\b/i,
   /explanation of benefits/i,
   /prior auth/i,
@@ -86,6 +85,58 @@ const RELEVANCE_PATTERNS = [
   /authorization/i,
   /benefit(s)?/i,
   /pharmacy benefit/i,
+];
+
+const INSURANCE_CONTEXT_PATTERNS = [
+  /insurance/i,
+  /insurer/i,
+  /coverage/i,
+  /claim/i,
+  /prior auth/i,
+  /prior authorization/i,
+  /out of network/i,
+  /medicare/i,
+  /medicaid/i,
+  /plan\b/i,
+  /payer/i,
+];
+
+const ACCESS_BLOCK_PATTERNS = [
+  /denied/i,
+  /appeal/i,
+  /rejected/i,
+  /refused/i,
+  /not medically necessary/i,
+  /not covered/i,
+  /coverage denied/i,
+  /claim denied/i,
+  /claim rejection/i,
+  /step therapy/i,
+  /out of network/i,
+  /prior auth/i,
+  /prior authorization/i,
+  /preauth/i,
+  /authorization/i,
+  /cannot get/i,
+  /can't get/i,
+  /couldn'?t get/i,
+  /won't cover/i,
+  /wouldn'?t cover/i,
+  /miss my next/i,
+];
+
+const GENERIC_INSURANCE_PATTERNS = [
+  /turn 26/i,
+  /which plan/i,
+  /what plan/i,
+  /marketplace quote/i,
+  /late enrollment/i,
+  /open enrollment/i,
+  /do y'?all/i,
+  /recommendations for/i,
+  /what do i do about/i,
+  /shopping for/i,
+  /need a plan/i,
 ];
 
 const PROCEDURE_PATTERNS: Array<[RegExp, string]> = [
@@ -162,7 +213,10 @@ function sanitizeText(input: string) {
 }
 
 function seemsRelevant(text: string) {
-  return RELEVANCE_PATTERNS.some((pattern) => pattern.test(text));
+  const hasInsuranceContext = INSURANCE_CONTEXT_PATTERNS.some((pattern) => pattern.test(text));
+  const hasDenialSignal = ACCESS_BLOCK_PATTERNS.some((pattern) => pattern.test(text)) || RELEVANCE_PATTERNS.some((pattern) => pattern.test(text));
+  const looksGeneric = GENERIC_INSURANCE_PATTERNS.some((pattern) => pattern.test(text)) && !hasDenialSignal;
+  return hasInsuranceContext && hasDenialSignal && !looksGeneric;
 }
 
 function buildFingerprint(parts: string[]) {

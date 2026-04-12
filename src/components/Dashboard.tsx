@@ -1,35 +1,33 @@
 import React from 'react';
 import { DenialRecord } from "@/src/types";
-import { db, auth, handleFirestoreError, OperationType } from "@/src/lib/firebase";
-import { collection, getDocs, limit, query } from "firebase/firestore";
-import { countObservatoryRecords, fetchCurrentAnalytics, fetchFeaturedObservatoryStories, subscribeToPublicObservatoryRecords } from "@/src/lib/observatoryRepository";
+import { auth } from "@/src/lib/firebase";
 import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
 
-function normalizeInsurer(name: string) {
-  const n = name.trim();
-  if (n.match(/UnitedHealthcare|UHC|United Health|United|Optum|NaviHealth/i)) return "UnitedHealthcare";
-  if (n.match(/Aetna|CVS/i)) return "Aetna";
-  if (n.match(/Cigna/i)) return "Cigna";
-  if (n.match(/Blue Cross|Blue Shield|BCBS|Anthem|Empire|Highmark/i)) return "Blue Cross Blue Shield";
-  if (n.match(/Kaiser/i)) return "Kaiser Permanente";
-  if (n.match(/Humana/i)) return "Humana";
-  if (n.match(/Centene|Ambetter|WellCare/i)) return "Centene";
-  return n;
-}
+type MetricRow = { label: string; value: number };
+type PatternsPayload = {
+  status: 'success' | 'error';
+  overview: {
+    totalRows: number;
+    cleanPatternRows: number;
+    unknownInsurerPct: number;
+  };
+  topInsurers: MetricRow[];
+  topCategories: MetricRow[];
+  topProcedures: MetricRow[];
+};
 
 export default function Dashboard() {
   const [featuredStories, setFeaturedStories] = React.useState<DenialRecord[]>([]);
-  const [liveDenials, setLiveDenials] = React.useState<DenialRecord[]>([]);
   const [realCount, setRealCount] = React.useState<number | null>(null);
   const [topCategoryLabel, setTopCategoryLabel] = React.useState<string>('N/A');
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [patterns, setPatterns] = React.useState<PatternsPayload | null>(null);
   const [diagStatus, setDiagStatus] = React.useState<{
     auth: string;
-    firestore: string;
     backend: string;
     ai: string;
-  }>({ auth: 'Checking...', firestore: 'Checking...', backend: 'Checking...', ai: 'Checking...' });
+  }>({ auth: 'Checking...', backend: 'Checking...', ai: 'Checking...' });
 
   const fetchRealCount = async () => {
     try {
@@ -49,24 +47,6 @@ export default function Dashboard() {
         return;
       }
 
-      const analytics = await fetchCurrentAnalytics(db);
-      if (analytics) {
-        setRealCount((current) => {
-          if (current !== null && current !== undefined) return current;
-          if (analytics.total_public_stories !== null && analytics.total_public_stories !== undefined) {
-            return analytics.total_public_stories;
-          }
-          if (analytics.total_stories !== null && analytics.total_stories !== undefined) {
-            return analytics.total_stories;
-          }
-          return null;
-        });
-        setTopCategoryLabel(analytics.top_denial_categories?.[0]?.label || 'N/A');
-        return;
-      }
-
-      const count = await countObservatoryRecords(db);
-      setRealCount(count);
     } catch (e) {
       console.error("Failed to fetch real count", e);
     }
@@ -84,19 +64,20 @@ export default function Dashboard() {
         }
       }
 
-      const stories = await fetchFeaturedObservatoryStories(db, 3);
-      setFeaturedStories(stories);
     } catch (e) {
       console.error("Failed to fetch featured stories", e);
     }
   };
 
-  const fetchStats = async () => {
+  const fetchPatterns = async () => {
     try {
-      const q = query(collection(db, "stats"), limit(1));
-      await getDocs(q);
+      const resp = await fetch('/api/insights/patterns', { cache: 'no-store' });
+      const contentType = resp.headers.get('content-type') || '';
+      if (!resp.ok || !contentType.includes('application/json')) return;
+      const data = await resp.json();
+      if (data?.status === 'success') setPatterns(data);
     } catch (e) {
-      console.error("Failed to fetch stats", e);
+      console.error("Failed to fetch patterns", e);
     }
   };
 
@@ -114,13 +95,6 @@ export default function Dashboard() {
     setDiagStatus(prev => ({ ...prev, auth: auth.currentUser ? `Logged in as ${auth.currentUser.email}` : 'Not logged in' }));
 
     try {
-      await countObservatoryRecords(db);
-      setDiagStatus(prev => ({ ...prev, firestore: 'Connected & Readable' }));
-    } catch (e) {
-      setDiagStatus(prev => ({ ...prev, firestore: `Error: ${e}` }));
-    }
-
-    try {
       const resp = await fetch("/api/health");
       const data = await resp.json();
       setDiagStatus(prev => ({ ...prev, backend: data.status === "ok" ? `Engine Active (v${data.engine || '1.0'})` : 'Engine Offline' }));
@@ -132,69 +106,56 @@ export default function Dashboard() {
   React.useEffect(() => {
     fetchRealCount();
     fetchFeatured();
-    fetchStats();
+    fetchPatterns();
     checkAI();
     runDiagnostics();
 
-    const unsubscribe = subscribeToPublicObservatoryRecords(
-      db,
-      200,
-      (records) => setLiveDenials(records),
-      (error) => {
-        console.error("Firestore snapshot error", error);
-        handleFirestoreError(error, OperationType.LIST, "denials");
-      }
-    );
-
     const refreshInterval = window.setInterval(() => {
       fetchRealCount();
+      fetchPatterns();
     }, 45000);
 
     return () => {
-      unsubscribe();
       window.clearInterval(refreshInterval);
     };
   }, []);
 
-  const filteredDenials = liveDenials.filter(d =>
-    d.insurer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.procedure?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.denialReason?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const topInsurer = patterns?.topInsurers?.[0];
+  const topProcedure = patterns?.topProcedures?.[0];
+  const topCategory = patterns?.topCategories?.[0];
+  const proofPoints = [
+    {
+      eyebrow: 'What patients are fighting most',
+      title: topCategory ? `${topCategory.label} is leading the current record.` : 'Prior authorization is leading the current record.',
+      body: topCategory
+        ? `${topCategory.value.toLocaleString()} cleaned stories currently cluster around ${topCategory.label.toLowerCase()} fights.`
+        : 'The strongest repeat fight in the cleaned slice is prior authorization.',
+    },
+    {
+      eyebrow: 'Which payers keep surfacing',
+      title: topInsurer ? `${topInsurer.label} shows up the most when the insurer is clear.` : 'Named insurer patterns are still forming.',
+      body: patterns?.topInsurers?.length
+        ? `${patterns.topInsurers.slice(0, 3).map((item) => item.label).join(', ')} lead the labeled insurer slice right now.`
+        : 'We only foreground payer patterns once the insurer can be confidently named.',
+    },
+    {
+      eyebrow: 'What care gets blocked over and over',
+      title: topProcedure ? `${topProcedure.label} keeps getting caught in the denial loop.` : 'Medication and treatment access are surfacing fastest.',
+      body: topProcedure
+        ? `${topProcedure.value.toLocaleString()} stories already point to repeat friction around ${topProcedure.label.toLowerCase()}.`
+        : 'The strongest early clusters are around medications, procedures, and specialist access.',
+    },
+  ];
 
-  const insurerData = Object.entries(
-    filteredDenials.reduce((acc, d) => {
-      if (d.insurer) {
-        const canonical = normalizeInsurer(d.insurer);
-        acc[canonical] = (acc[canonical] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>)
-  )
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
-  const sourceData = Object.entries(
-    filteredDenials.reduce((acc, d) => {
-      const source = d.source?.split(' ')[0] || "Other";
-      acc[source] = (acc[source] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([name, value]) => ({ name, value }));
-
-  const statusData = Object.entries(
-    filteredDenials.reduce((acc, d) => {
-      acc[d.status] = (acc[d.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([name, value]) => ({ name, value }));
+  const confidenceNote = patterns
+    ? `We do not blindly chart everything we pull in. The public-facing record currently shows ${patterns.overview.cleanPatternRows.toLocaleString()} cleaned stories, while a larger raw archive is still being labeled and de-noised. Right now, ${patterns.overview.unknownInsurerPct}% of raw rows still need a confidently named insurer, so we only surface patterns we can explain.`
+    : 'We only surface patterns once they are clean enough to explain in plain English.';
 
   return (
     <ObservatoryExperience
       featuredStories={featuredStories}
-      liveDenials={filteredDenials}
-      totalStories={realCount ?? filteredDenials.length}
-      topCategory={topCategoryLabel !== 'N/A' ? topCategoryLabel : (statusData[0]?.name || 'N/A')}
+      totalStories={realCount ?? 0}
+      topCategory={topCategoryLabel !== 'N/A' ? topCategoryLabel : (topCategory?.label || 'Coverage denial')}
       aiStatus={diagStatus.ai}
       searchTerm={searchTerm}
       onSearchTermChange={setSearchTerm}
@@ -204,9 +165,8 @@ export default function Dashboard() {
           toast.success("Opening observatory benchmarks");
         }
       }}
-      insurerData={insurerData}
-      sourceData={sourceData}
-      statusData={statusData}
+      proofPoints={proofPoints}
+      confidenceNote={confidenceNote}
     />
   );
 }

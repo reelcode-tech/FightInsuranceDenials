@@ -15,6 +15,7 @@
 - [ ] Add ingestion modules for ConsumerAffairs insurer complaint pages.
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
 - [ ] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
+- [x] Add a trusted public observation pack so official and community sources keep widening even when Reddit slows down.
 - [ ] Add better rate-limit handling and backoff for Reddit/PullPush ingestion.
 - [ ] Add source weighting and confidence scoring that flows into the observatory UI.
 - [ ] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
@@ -34,6 +35,7 @@
 - [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.
 - [x] Restore live production observatory APIs so Vercel serves real Neon-backed data instead of crashing routes.
 - [ ] Add required production environment variables to Vercel.
+- [ ] Add `CRON_SECRET` in Vercel so the nightly ingest cron can run in production.
 - [ ] Validate production auth domains and Firebase config.
 - [x] Confirm fightinsurancedenials.com serves the current build and not the stale sidebar version.
 - [ ] Set up a cleaner preview -> production promotion workflow for future checkpoints.

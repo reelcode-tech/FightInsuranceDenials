@@ -1,4 +1,5 @@
 import { PUBLIC_SOURCE_CATALOG } from './publicSourceCatalog';
+import { TRUSTED_OBSERVATION_PACK } from './trustedObservationPack';
 import { WAREHOUSE_SEED_OBSERVATIONS } from './warehouseSeedData';
 import { getBigQueryAccessToken, runBigQuerySql } from '../../scripts/_bigqueryClient';
 import { withNeonClient } from '../../scripts/_neonClient';
@@ -66,6 +67,71 @@ export async function seedBigQueryWarehouseObservations() {
 
   await insertAll('raw_web_observations', rows);
   return rows.length;
+}
+
+export async function upsertTrustedObservationPackToNeon() {
+  return withNeonClient(async (client) => {
+    let upserted = 0;
+
+    for (const row of TRUSTED_OBSERVATION_PACK) {
+      await client.query(
+        `
+        INSERT INTO raw_web_observations (
+          observation_id, canonical_url, source_type, source_label, source_weight, title, raw_text, story_excerpt,
+          insurer_raw, insurer_normalized, procedure_raw, procedure_normalized, denial_reason_raw, denial_category,
+          state, plan_type, erisa_status, appeal_outcome, quality_score, is_low_signal, fingerprint, ingested_at, source_published_at
+        )
+        VALUES (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NULL,$15,$16,NULL,$17,$18,$19,NOW(),NOW()
+        )
+        ON CONFLICT (observation_id) DO UPDATE SET
+          canonical_url = EXCLUDED.canonical_url,
+          source_type = EXCLUDED.source_type,
+          source_label = EXCLUDED.source_label,
+          source_weight = EXCLUDED.source_weight,
+          title = EXCLUDED.title,
+          raw_text = EXCLUDED.raw_text,
+          story_excerpt = EXCLUDED.story_excerpt,
+          insurer_raw = EXCLUDED.insurer_raw,
+          insurer_normalized = EXCLUDED.insurer_normalized,
+          procedure_raw = EXCLUDED.procedure_raw,
+          procedure_normalized = EXCLUDED.procedure_normalized,
+          denial_reason_raw = EXCLUDED.denial_reason_raw,
+          denial_category = EXCLUDED.denial_category,
+          plan_type = EXCLUDED.plan_type,
+          erisa_status = EXCLUDED.erisa_status,
+          quality_score = EXCLUDED.quality_score,
+          is_low_signal = EXCLUDED.is_low_signal,
+          fingerprint = EXCLUDED.fingerprint,
+          ingested_at = NOW()
+        `,
+        [
+          row.observation_id,
+          row.canonical_url,
+          row.source_type,
+          row.source_label,
+          row.source_weight,
+          row.title,
+          row.raw_text,
+          row.story_excerpt,
+          row.insurer_raw,
+          row.insurer_normalized,
+          row.procedure_raw,
+          row.procedure_normalized,
+          row.denial_reason_raw,
+          row.denial_category,
+          row.plan_type,
+          row.erisa_status,
+          row.quality_score,
+          row.is_low_signal,
+          row.fingerprint,
+        ]
+      );
+      upserted += 1;
+    }
+
+    return upserted;
+  });
 }
 
 export async function syncBigQuerySourceRecordsToNeon() {
@@ -232,6 +298,12 @@ export async function promoteNeonObservationsToCurated(minQuality = 75) {
       FROM raw_web_observations
       WHERE COALESCE(is_low_signal, FALSE) = FALSE
         AND COALESCE(quality_score, 0) >= $1
+        AND (
+          COALESCE(denial_category, '') NOT IN ('', 'Unknown')
+          OR COALESCE(procedure_normalized, '') NOT IN ('', 'Insurance denial evidence')
+          OR COALESCE(denial_reason_raw, '') ~* '(prior auth|prior authorization|denied|appeal|not medically necessary|out of network|step therapy|coverage denied|claim denied|not covered)'
+        )
+        AND COALESCE(raw_text, '') !~* '(turn 26|which plan|what plan|late enrollment|open enrollment|marketplace quote|shopping for|recommendations for)'
       ORDER BY quality_score DESC, ingested_at DESC
       `,
       [minQuality]
@@ -299,6 +371,7 @@ export async function promoteNeonObservationsToCurated(minQuality = 75) {
 export async function runWarehouseAutopilotPass() {
   const seededSources = 0;
   const seededObservations = 0;
+  const trustedPackUpserted = await upsertTrustedObservationPackToNeon();
   const redditIngestion = await ingestRedditToBigQuery();
   const syncedSources = await syncBigQuerySourceRecordsToNeon();
   const syncedObservations = await syncBigQueryRawObservationsToNeon();
@@ -308,6 +381,7 @@ export async function runWarehouseAutopilotPass() {
   return {
     seededSources,
     seededObservations,
+    trustedPackUpserted,
     redditIngestion,
     syncedSources,
     syncedObservations,
@@ -317,6 +391,7 @@ export async function runWarehouseAutopilotPass() {
 }
 
 export async function runWarehouseDeepBackfillPass() {
+  const trustedPackUpserted = await upsertTrustedObservationPackToNeon();
   const redditBackfill = await backfillHistoricalRedditToBigQuery({
     pagesPerSubreddit: 5,
     pageSize: 80,
@@ -327,6 +402,7 @@ export async function runWarehouseDeepBackfillPass() {
   const summary = await fetchWarehouseSummary();
 
   return {
+    trustedPackUpserted,
     redditBackfill,
     syncedSources,
     syncedObservations,
