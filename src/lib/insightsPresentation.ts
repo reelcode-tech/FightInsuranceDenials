@@ -87,21 +87,21 @@ export function buildHomepageProofPoints(patterns: PatternsResponse | null): Pro
       eyebrow: 'Most common roadblock',
       title: topCategory ? `${topCategory.label} keeps surfacing.` : 'Prior authorization keeps surfacing.',
       body: topCategory
-        ? `${topCategory.value.toLocaleString()} published stories already point to the same roadblock. Patients are not imagining this pattern.`
+        ? `${topCategory.value.toLocaleString()} published stories already point to the same roadblock. That gives patients something real to compare, not just a feeling that the denial was unfair.`
         : 'The strongest early signal is still prior authorization and paperwork-driven care delays.',
     },
     {
       eyebrow: 'Who people keep naming',
       title: topInsurer ? `${topInsurer.label} shows up the most.` : 'Named payer patterns are still building.',
       body: patterns?.topInsurers?.length
-        ? `The clearest named insurers right now are ${listSummary(patterns.topInsurers)}, which gives patients somewhere concrete to start comparing stories.`
+        ? `The clearest named insurers right now are ${listSummary(patterns.topInsurers)}. That matters because a payer pattern is more useful than a generic complaint.`
         : 'We only foreground insurer patterns when the payer is named clearly enough to be fair and useful.',
     },
     {
       eyebrow: 'What kind of care gets blocked',
       title: topProcedure ? `${topProcedure.label} is a repeat fight.` : 'Medication access is surfacing first.',
       body: topProcedure
-        ? `${topProcedure.value.toLocaleString()} published stories involve ${topProcedure.label.toLowerCase()}, which makes it one of the clearest denial fights in the database.`
+        ? `${topProcedure.value.toLocaleString()} published stories involve ${topProcedure.label.toLowerCase()}, making it one of the clearest denial fights to investigate first.`
         : 'The strongest early clusters are still around medication access, specialty care, and pre-approval fights.',
     },
   ];
@@ -115,7 +115,7 @@ export function buildHomepageDemo(patterns: PatternsResponse | null): DemoCard {
 
   return {
     query: 'UnitedHealthcare Choice Plus denied Taltz. Anyone else?',
-    headline: 'You should be able to see the pattern fast.',
+    headline: 'You should be able to tell, fast, whether this is a repeat play.',
     subhead: topInsurer && topCategory && topProcedure
       ? `We are already seeing repeat stories where ${topInsurer.label} appears alongside ${topCategory.label.toLowerCase()} fights and blocked ${topProcedure.label.toLowerCase()}.`
       : 'Search by insurer, plan, drug, procedure, or denial reason and start from precedent instead of guesswork.',
@@ -189,24 +189,24 @@ export function buildActionQuestions(patterns: PatternsResponse | null) {
   return [
     {
       title: 'Am I the only one this happened to?',
-      body: `No. We already have ${patterns?.overview.cleanPatternRows?.toLocaleString() || '0'} public stories in the database, and they are clustered enough to compare by insurer, treatment, and denial reason.`,
+      body: `No. We already have ${patterns?.overview.cleanPatternRows?.toLocaleString() || '0'} public stories in the database, and enough of them cluster around the same insurers, treatments, and denial excuses to be useful.`,
     },
     {
       title: 'What excuse should I expect the insurer to lean on?',
       body: topCategory
-        ? `${topCategory.label} is surfacing more than any other named denial pattern right now.`
+        ? `${topCategory.label} is surfacing more than any other named denial pattern right now, which makes it the first tactic worth pressure-testing against your own letter.`
         : 'Prior authorization and paperwork-driven delays are still the first pattern we see.',
     },
     {
       title: 'What kind of care keeps getting blocked?',
       body: topProcedure
-        ? `${topProcedure.label} is the clearest repeat fight in the record so far.`
+        ? `${topProcedure.label} is the clearest repeat fight in the record so far, which means this is one of the strongest places to look for precedent.`
         : 'Medication access, specialty care, and procedures are surfacing first.',
     },
     {
       title: 'Which insurer should I compare myself against first?',
       body: topInsurer
-        ? `${topInsurer.label} is the most frequently named insurer in the published record today.`
+        ? `${topInsurer.label} is the most frequently named insurer in the published record today, so if they denied you too, start there.`
         : 'The published record is still building out named insurer comparisons.',
     },
   ];

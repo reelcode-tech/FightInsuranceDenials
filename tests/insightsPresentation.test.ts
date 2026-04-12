@@ -43,7 +43,7 @@ test('homepage proof points stay user-facing and avoid internal slice jargon', (
 test('homepage demo stays action-oriented and user-facing', () => {
   const demo = buildHomepageDemo(mockPatterns);
 
-  assert.match(demo.headline, /pattern fast/i);
+  assert.match(demo.headline, /repeat play/i);
   assert.equal(demo.signals.length, 3);
   assert.ok(demo.signals.every((item) => !/warehouse|slice/i.test(item.label)));
 });

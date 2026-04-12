@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { BarChart3, MapPinned, RefreshCw } from 'lucide-react';
+import { ArrowRight, BarChart3, MapPinned, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -144,12 +144,14 @@ export default function Insights() {
   const keyQuestions = buildActionQuestions(data);
   const sourceStory = buildSourceStory(data);
   const methodology = buildMethodologySummary(data);
+  const leadFinding = data?.findings[0];
+  const supportingFindings = data?.findings.slice(1, 3) || [];
 
   return (
     <div className="min-h-screen bg-[#090b0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[2.7rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(199,75,60,0.16),transparent_28%),linear-gradient(135deg,#101317_0%,#12171d_55%,#151b22_100%)] shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:p-12">
+          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:p-12">
             <div className="space-y-6">
               <div className="inline-flex rounded-full border border-[#c74b3c]/25 bg-white/6 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.35em] text-[#f19a86]">
                 Evidence patterns patients can use
@@ -159,7 +161,7 @@ export default function Insights() {
                   Find the pattern that makes your denial easier to fight.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  This page is for the questions people ask after a denial: who else ran into this insurer, what excuse keeps getting used, and what kind of care keeps getting blocked?
+                  Start with the questions people actually ask after a denial: did this insurer do this to anyone else, what excuse do they keep leaning on, and what kind of care keeps getting blocked most often?
                 </p>
                 {recordQuery ? (
                   <div className="rounded-[1.4rem] border border-white/10 bg-white/6 p-4 text-sm leading-7 text-[#e5d9ce]">
@@ -189,22 +191,35 @@ export default function Insights() {
               </div>
             </div>
 
-            <div className="grid gap-4">
-              {data?.findings.slice(0, 3).map((finding, index) => (
+            <div className="flex flex-col justify-between gap-4">
+              {leadFinding ? (
                 <motion.div
-                  key={finding.title}
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="rounded-[2rem] border border-white/8 bg-white/6 p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)]"
+                  className="rounded-[2rem] border border-white/8 bg-white/6 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.18)]"
                 >
                   <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">
-                    Key finding
+                    Right now, the clearest signal is this
                   </p>
-                  <p className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{finding.title}</p>
-                  <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{finding.body}</p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{leadFinding.title}</p>
+                  <p className="mt-4 text-sm leading-7 text-[#c8bdb4]">{leadFinding.body}</p>
                 </motion.div>
-              ))}
+              ) : null}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {supportingFindings.map((finding, index) => (
+                  <motion.div
+                    key={finding.title}
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.08 }}
+                    className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5"
+                  >
+                    <p className="text-lg font-semibold tracking-[-0.04em] text-[#f7f2eb]">{finding.title}</p>
+                    <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{finding.body}</p>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -247,13 +262,13 @@ export default function Insights() {
 
             <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
               <MetricChart
-                title="Which insurers keep getting named"
-                subtitle="Start here if you want to know whether your insurer keeps showing up in similar stories."
+                title="Which insurers keep surfacing"
+                subtitle="If your insurer is here, that means enough people are naming it clearly for the pattern to be worth watching."
                 rows={data.topInsurers}
               />
               <MetricChart
                 title="What excuse keeps getting used"
-                subtitle="These are the denial reasons that surface most often once a story is specific enough to compare."
+                subtitle="These are the reasons patients keep hearing when a denial story is specific enough to compare."
                 rows={data.topCategories}
               />
             </section>
@@ -261,7 +276,7 @@ export default function Insights() {
             <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <MetricChart
                 title="What care keeps getting blocked"
-                subtitle="These are the treatments and services that keep surfacing in repeat denial stories."
+                subtitle="These are the drugs, services, and procedures that keep resurfacing in denial stories patients are trying to fight."
                 rows={data.topProcedures}
               />
 
@@ -352,39 +367,46 @@ export default function Insights() {
               </Card>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+            <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
                   <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    What this database is built from
+                    What this page is meant to help you do
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
-                  {sourceStory.map((item) => (
-                    <div key={item.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                      <h3 className="text-lg font-semibold text-[#f7f2eb]">{item.title}</h3>
-                      <p className="mt-2">{item.body}</p>
-                    </div>
-                  ))}
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    Start with the insurer, denial reason, or treatment that matches your case. Then use the repeated patterns here to decide what evidence, plan language, or precedent you need next.
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    {methodology.coverageSummary} This page only highlights the parts of the record that are specific enough to help someone compare their own denial.
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    If you are trying to appeal, move from this page into Fight Back and bring the insurer, treatment, and denial reason with you.
+                  </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
                   <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    How to use this page
+                    Why this data is different
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    Look up the insurer. Then look for your drug, procedure, or denial reason. The goal is to find a pattern you can compare yourself against, not just a chart to stare at.
-                  </div>
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    {methodology.coverageSummary}
-                  </div>
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    Built from {methodology.sourceSummary}.
-                  </div>
+                  {sourceStory.slice(0, 2).map((item) => (
+                    <div key={item.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                      <h3 className="text-lg font-semibold text-[#f7f2eb]">{item.title}</h3>
+                      <p className="mt-2">{item.body}</p>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'about' }))}
+                    className="inline-flex items-center text-sm font-semibold text-[#f19a86]"
+                  >
+                    See methodology and trust details <ArrowRight className="ml-2 h-4 w-4" />
+                  </button>
                 </CardContent>
               </Card>
             </section>
