@@ -2,7 +2,7 @@
 
 ## Active Priorities
 - [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
-- [ ] Redesign the homepage hero so it feels human, emotionally grounded, and visually coherent on desktop and mobile.
+- [ ] Keep refining the homepage so it feels premium, emotionally grounded, and visually coherent on desktop and mobile.
 - [ ] Replace the current hero image with a stronger healthcare-denial emotional image or a custom-generated visual if the current source still misses the feeling.
 - [x] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
 - [ ] Keep growing public-source ingestion toward 10,000+ raw observations while improving precision, not just volume.
@@ -39,6 +39,7 @@
 ## Deployment
 - [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.
 - [x] Restore live production observatory APIs so Vercel serves real Neon-backed data instead of crashing routes.
+- [x] Re-verify live production observatory APIs after the redesign pass so homepage and evidence pages are reading real Neon-backed data.
 - [ ] Add required production environment variables to Vercel.
 - [ ] Add `CRON_SECRET` in Vercel so the nightly ingest cron can run in production.
 - [ ] Keep the local always-on warehouse daemon running hourly until production cron is fully armed.
@@ -57,6 +58,7 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Tighten the public storytelling layout using cleaner Claude/Granola-style hierarchy: larger hero, simpler product loop, fewer repetitive cards, and more meaningful evidence framing.
 - [x] Restructure the homepage around one sharp promise, one search-to-proof demo, and fewer repeated card layouts.
 - [x] Rewrite Evidence Patterns around patient questions and "so what" takeaways instead of internal analytics language.
 - [x] Add regression coverage for the new homepage demo and public-facing summary copy.
