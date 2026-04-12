@@ -2,7 +2,12 @@ import React from 'react';
 import { DenialRecord } from "@/src/types";
 import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
-import { buildHomepageProofPoints, buildMethodologySummary, type PatternsResponse } from '@/src/lib/insightsPresentation';
+import {
+  buildHomepageDemo,
+  buildHomepageProofPoints,
+  buildMethodologySummary,
+  type PatternsResponse,
+} from '@/src/lib/insightsPresentation';
 
 export default function Dashboard() {
   const STORY_SEED_KEY = 'fid_story_seed';
@@ -81,6 +86,7 @@ export default function Dashboard() {
 
   const topCategory = patterns?.topCategories?.[0];
   const proofPoints = buildHomepageProofPoints(patterns);
+  const demoCard = buildHomepageDemo(patterns);
   const confidenceNote = buildMethodologySummary(patterns).coverageSummary;
 
   const navigate = (tab: 'share' | 'appeal' | 'insights') => {
@@ -132,6 +138,7 @@ export default function Dashboard() {
       onOpenRecordFromQuery={openRecordFromQuery}
       onStartStoryFromQuery={seedStoryFromQuery}
       proofPoints={proofPoints}
+      demoCard={demoCard}
       confidenceNote={confidenceNote}
     />
   );

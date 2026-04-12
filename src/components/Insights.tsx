@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowUpRight, BarChart3, MapPinned, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, BarChart3, MapPinned, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,46 +23,34 @@ import {
   type PatternsResponse,
 } from '@/src/lib/insightsPresentation';
 
-const BAR_COLORS = ['#c74b3c', '#ea7a5f', '#f0ae93', '#84a59d', '#5b7286', '#334155'];
+const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
 
 function prettifyLabel(label: string) {
   return label.length > 28 ? `${label.slice(0, 28)}…` : label;
 }
 
-function toneClasses(tone: PatternsResponse['findings'][number]['tone']) {
-  if (tone === 'warning') return 'border-[#c74b3c]/30 bg-[#241514] text-[#ffd9d1]';
-  if (tone === 'high') return 'border-[#c74b3c]/25 bg-[#181313] text-[#f7f2eb]';
-  return 'border-white/10 bg-[#12161b] text-[#edf1f5]';
-}
-
-function HeatCell({ item, max }: { item: HeatmapRow; max: number }) {
-  const intensity = max ? item.value / max : 0;
-  const alpha = 0.2 + intensity * 0.65;
+function MetricChart({
+  title,
+  subtitle,
+  rows,
+}: {
+  title: string;
+  subtitle: string;
+  rows: MetricRow[];
+}) {
   return (
-    <div
-      className="rounded-[1.5rem] border border-white/10 p-5 transition-transform duration-200 hover:-translate-y-1"
-      style={{ backgroundColor: `rgba(199, 75, 60, ${alpha})` }}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/75">{item.insurer}</p>
-      <h4 className="mt-3 text-lg font-semibold leading-tight text-white">{item.category}</h4>
-      <p className="mt-4 text-3xl font-bold tracking-tight text-white">{item.value}</p>
-    </div>
-  );
-}
-
-function MetricChart({ title, rows }: { title: string; rows: MetricRow[] }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">{title}</p>
-      <div className="h-[255px]">
+    <div className="rounded-[1.8rem] border border-white/8 bg-[#11161b] p-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f1a28e]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[#c8bdb4]">{subtitle}</p>
+      <div className="mt-5 h-[240px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 6 }}>
+          <BarChart data={rows} layout="vertical" margin={{ left: 6, right: 6 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" hide />
             <YAxis
               type="category"
               dataKey="label"
-              width={110}
+              width={120}
               tick={{ fill: '#c8bdb4', fontSize: 12 }}
               tickFormatter={prettifyLabel}
             />
@@ -85,6 +73,23 @@ function MetricChart({ title, rows }: { title: string; rows: MetricRow[] }) {
       </div>
     </div>
   );
+}
+
+function buildHeatmapExplain(item: HeatmapRow) {
+  const category = item.category.toLowerCase();
+  if (category.includes('prior')) {
+    return 'If this matches your case, gather your doctor’s rationale, failed-treatment history, and plan requirements early.';
+  }
+  if (category.includes('out of network')) {
+    return 'If care was already in motion, look for continuity-of-care or gap-exception arguments.';
+  }
+  if (category.includes('medical necessity')) {
+    return 'If this is your denial, focus on clinical notes, guidelines, and why the insurer’s standard is too narrow.';
+  }
+  if (category.includes('coverage exclusion')) {
+    return 'If you were told the care is excluded, compare against the plan document and other stories involving the same service.';
+  }
+  return 'If this mirrors your denial, compare the language in your letter against similar stories before you appeal.';
 }
 
 export default function Insights() {
@@ -137,7 +142,6 @@ export default function Insights() {
     }
   }, []);
 
-  const heatMax = Math.max(...(data?.heatmap.map((item) => item.value) || [1]));
   const summaryCards = buildSummaryCards(data);
   const keyQuestions = buildActionQuestions(data);
   const sourceStory = buildSourceStory(data);
@@ -145,25 +149,25 @@ export default function Insights() {
 
   return (
     <div className="min-h-screen bg-[#090b0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-10">
+      <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[2.7rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(199,75,60,0.16),transparent_28%),linear-gradient(135deg,#101317_0%,#12171d_55%,#151b22_100%)] shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.45fr_0.95fr] lg:p-12">
+          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.35fr_0.9fr] lg:p-12">
             <div className="space-y-6">
               <div className="inline-flex rounded-full border border-[#c74b3c]/25 bg-white/6 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.35em] text-[#f19a86]">
                 Evidence patterns patients can use
               </div>
               <div className="max-w-3xl space-y-4">
                 <h1 className="text-4xl font-semibold tracking-[-0.05em] text-[#f7f2eb] md:text-6xl">
-                  See where denial pressure is repeating — and what that tells you to do next.
+                  Find the pattern that makes your denial easier to fight.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  This page is built for the questions people actually ask after a denial: has anyone else dealt with this insurer, this medication, this procedure, or this excuse? We only show patterns that are already strong enough to be useful.
+                  This page is for the questions people ask after a denial: who else ran into this insurer, what excuse keeps being used, and what kind of care keeps getting blocked?
                 </p>
                 {recordQuery ? (
                   <div className="rounded-[1.4rem] border border-white/10 bg-white/6 p-4 text-sm leading-7 text-[#e5d9ce]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Your question</p>
                     <p className="mt-2">
-                      You searched for <span className="font-semibold text-[#f7f2eb]">{recordQuery}</span>. Use the patterns below to see what is already surfacing, then add your story if your exact denial is still missing from the record.
+                      We carried your question in here: <span className="font-semibold text-[#f7f2eb]">{recordQuery}</span>. Use the sections below to see whether the same insurer, treatment, or denial tactic is already repeating.
                     </p>
                   </div>
                 ) : null}
@@ -175,7 +179,7 @@ export default function Insights() {
                   disabled={refreshing}
                 >
                   <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh pattern review
+                  Refresh the evidence
                 </Button>
                 <Button
                   variant="outline"
@@ -188,7 +192,7 @@ export default function Insights() {
             </div>
 
             <div className="grid gap-4">
-              {summaryCards.map((item, index) => (
+              {summaryCards.slice(0, 3).map((item, index) => (
                 <motion.div
                   key={item.label}
                   initial={{ opacity: 0, y: 18 }}
@@ -241,40 +245,25 @@ export default function Insights() {
               ))}
             </section>
 
-            <section className="grid gap-5 lg:grid-cols-3">
-              {data.findings.map((finding, index) => (
-                <motion.div
-                  key={finding.title}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.06 }}
-                >
-                  <Card className={`h-full rounded-[2rem] border ${toneClasses(finding.tone)}`}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-xl tracking-tight">{finding.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm leading-7">{finding.body}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+            <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+              <MetricChart
+                title="Who keeps getting named"
+                subtitle="These are the insurers that appear most often in published stories specific enough to compare."
+                rows={data.topInsurers}
+              />
+              <MetricChart
+                title="What excuse keeps getting used"
+                subtitle="These are the denial reasons that surface most often once a story is specific enough to publish."
+                rows={data.topCategories}
+              />
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
-                    <BarChart3 className="h-5 w-5 text-[#f19a86]" />
-                    What keeps happening in published denial stories
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-6 lg:grid-cols-3">
-                  <MetricChart title="Who keeps showing up" rows={data.topInsurers} />
-                  <MetricChart title="What reason keeps being used" rows={data.topCategories} />
-                  <MetricChart title="What care gets blocked most" rows={data.topProcedures} />
-                </CardContent>
-              </Card>
+            <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+              <MetricChart
+                title="What care keeps getting blocked"
+                subtitle="These are the treatment areas people are running into repeatedly, not just once or twice."
+                rows={data.topProcedures}
+              />
 
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
@@ -294,7 +283,7 @@ export default function Insights() {
                       ))
                     ) : (
                       <p className="text-sm leading-7 text-[#c8bdb4]">
-                        State-level patterns are still building as the public record gets denser.
+                        Geographic patterns are still building as more public stories come into the database.
                       </p>
                     )}
                   </div>
@@ -302,26 +291,37 @@ export default function Insights() {
               </Card>
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+            <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
-                  <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    Which insurer-and-excuse combinations keep appearing together
+                  <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
+                    <BarChart3 className="h-5 w-5 text-[#f19a86]" />
+                    What excuse does each insurer seem to lean on?
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {data.heatmap.slice(0, 8).map((item) => (
-                      <HeatCell key={`${item.insurer}-${item.category}`} item={item} max={heatMax} />
-                    ))}
-                  </div>
+                <CardContent className="space-y-4">
+                  {data.heatmap.slice(0, 6).map((item) => (
+                    <div key={`${item.insurer}-${item.category}`} className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#f19a86]">{item.insurer}</p>
+                          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{item.category}</h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Published stories</p>
+                          <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[#f19a86]">{item.value}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-sm leading-7 text-[#c8bdb4]">{buildHeatmapExplain(item)}</p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
 
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
                   <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    Evidence patterns patients can actually use
+                    If your drug, treatment, or procedure was denied, start here
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -342,7 +342,7 @@ export default function Insights() {
                           <p className="mt-3 text-sm leading-7 text-[#b8aea5]">{cluster.whyItMatters}</p>
                         </div>
                         <div className="min-w-[96px] text-right">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#9e9489]">Published cases</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#9e9489]">Stories</p>
                           <p className="mt-3 text-5xl font-semibold tracking-[-0.06em] text-[#f19a86]">{cluster.value}</p>
                         </div>
                       </div>
@@ -356,7 +356,7 @@ export default function Insights() {
               <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
                   <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    Where this evidence comes from
+                    What this database is built from
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -375,15 +375,15 @@ export default function Insights() {
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm leading-7 text-white/78">
                   <p>
-                    Start by looking for your insurer, your denial reason, or your treatment area. If the same combination is already surfacing here, you are not walking into your appeal alone.
+                    Start with your insurer, your denial reason, or your treatment area. If that same combination is already surfacing here, you are not starting your appeal from scratch.
                   </p>
                   <p>
-                    Then compare your own case against the strongest repeated patterns and carry that into the appeal flow, where we can help draft around the same tactics other patients already ran into.
+                    Then use the repeated patterns to decide what kind of proof you need next: plan language, doctor documentation, prior authorization history, continuity-of-care records, or similar patient stories.
                   </p>
                   <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Current source mix</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Current source coverage</p>
                     <p className="mt-3 text-sm leading-7 text-white/78">
-                      Right now the published record leans most heavily on {methodology.sourceSummary}. We keep widening trusted source coverage so the signal gets broader as the database grows.
+                      Right now the published database leans most heavily on {methodology.sourceSummary}. We keep widening trusted sources so the signal gets stronger as the record grows.
                     </p>
                   </div>
                   <Button

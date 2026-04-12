@@ -45,6 +45,18 @@ export type SummaryCard = {
   caption: string;
 };
 
+export type DemoSignal = {
+  label: string;
+  value: string;
+};
+
+export type DemoCard = {
+  query: string;
+  headline: string;
+  subhead: string;
+  signals: DemoSignal[];
+};
+
 function listSummary(rows: MetricRow[], count = 3) {
   return rows
     .slice(0, count)
@@ -95,6 +107,35 @@ export function buildHomepageProofPoints(patterns: PatternsResponse | null): Pro
   ];
 }
 
+export function buildHomepageDemo(patterns: PatternsResponse | null): DemoCard {
+  const topInsurer = patterns?.topInsurers?.[0];
+  const topCategory = patterns?.topCategories?.[0];
+  const topProcedure = patterns?.topProcedures?.[0];
+  const total = patterns?.overview.cleanPatternRows || 0;
+
+  return {
+    query: 'UnitedHealthcare Choice Plus denied Taltz. Anyone else?',
+    headline: 'The database should answer that question fast.',
+    subhead: topInsurer && topCategory && topProcedure
+      ? `We are already seeing repeat stories where ${topInsurer.label} appears alongside ${topCategory.label.toLowerCase()} fights and blocked ${topProcedure.label.toLowerCase()}.`
+      : 'Search by insurer, plan, drug, procedure, or denial reason and start from precedent instead of guesswork.',
+    signals: [
+      {
+        label: 'Published stories to compare',
+        value: total ? total.toLocaleString() : 'Growing daily',
+      },
+      {
+        label: 'Repeat roadblock',
+        value: topCategory?.label || 'Prior Authorization',
+      },
+      {
+        label: 'Care area surfacing most',
+        value: topProcedure?.label || 'Prescription medication',
+      },
+    ],
+  };
+}
+
 export function buildSummaryCards(patterns: PatternsResponse | null): SummaryCard[] {
   const topInsurer = patterns?.topInsurers?.[0];
   const topCategory = patterns?.topCategories?.[0];
@@ -102,29 +143,29 @@ export function buildSummaryCards(patterns: PatternsResponse | null): SummaryCar
 
   return [
     {
-      label: 'Stories you can compare right now',
+      label: 'If your denial came before care could start',
       value: patterns?.overview.cleanPatternRows?.toLocaleString() || '0',
-      caption: 'Published denial stories that are specific enough to compare by insurer, treatment, or denial tactic.',
+      caption: `We already have ${patterns?.overview.cleanPatternRows?.toLocaleString() || '0'} published stories specific enough to compare. Start there instead of starting from scratch.`,
     },
     {
-      label: 'Most repeated denial reason',
+      label: 'The excuse patients keep hearing',
       value: topCategory?.label || 'Prior Authorization',
       caption: topCategory
-        ? `${topCategory.value.toLocaleString()} stories already point to this tactic.`
-        : 'This is the strongest repeat reason in the record so far.',
+        ? `${topCategory.value.toLocaleString()} published stories point to this tactic, so it is not just your insurer telling only you this.`
+        : 'This is the strongest repeat denial tactic in the record so far.',
     },
     {
-      label: 'Care people keep losing access to',
+      label: 'The kind of care getting blocked most',
       value: topProcedure?.label || 'Prescription medication',
       caption: topProcedure
-        ? `${topProcedure.value.toLocaleString()} stories involve this kind of care.`
+        ? `${topProcedure.value.toLocaleString()} stories involve this kind of care, which makes it one of the clearest places to compare your case.`
         : 'The record is surfacing medication and treatment access fights first.',
     },
     {
-      label: 'Named insurer showing up most often',
+      label: 'The insurer to compare yourself against first',
       value: topInsurer?.label || 'Major carriers',
       caption: topInsurer
-        ? `${topInsurer.value.toLocaleString()} published stories already name this insurer.`
+        ? `${topInsurer.value.toLocaleString()} published stories already name this insurer, giving you a real precedent lane to inspect.`
         : 'We only highlight insurers once the naming is clear enough to compare.',
     },
   ];
@@ -151,13 +192,13 @@ export function buildActionQuestions(patterns: PatternsResponse | null) {
       body: `No. We already have ${patterns?.overview.cleanPatternRows?.toLocaleString() || '0'} public stories in the database, and they are clustered enough to compare by insurer, treatment, and denial reason.`,
     },
     {
-      title: 'What kind of denial are people fighting the most?',
+      title: 'What excuse should I expect the insurer to lean on?',
       body: topCategory
         ? `${topCategory.label} is surfacing more than any other named denial pattern right now.`
         : 'Prior authorization and paperwork-driven delays are still the first pattern we see.',
     },
     {
-      title: 'What kind of care gets blocked over and over?',
+      title: 'What kind of care keeps getting blocked?',
       body: topProcedure
         ? `${topProcedure.label} is the clearest repeat fight in the record so far.`
         : 'Medication access, specialty care, and procedures are surfacing first.',

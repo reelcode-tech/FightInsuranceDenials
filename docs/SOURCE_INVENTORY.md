@@ -26,13 +26,17 @@ This file tracks the public-source lanes currently feeding the observatory and t
 
 ### Condition and advocacy communities now wired into the source-family pack
 - California IMR / DMHC decisions
+- California Department of Insurance IMR rights materials
 - Mayo Clinic Connect
 - GLP-1 / obesity medication coverage fights
+- Mounjaro / additional GLP-1 coverage communities
 - Mental health parity and therapy coverage resources
+- Mental Health America access-to-care benchmarks
 - Autism treatment and ABA coverage resources
 - Cancer and rare-disease support communities
 - Alzheimer's and dementia appeal resources
 - Court and lawsuit intelligence
+- ProPublica autism-treatment investigations
 - Public Facebook discovery lane (manual review only)
 
 ## Manual review or cautious discovery lanes

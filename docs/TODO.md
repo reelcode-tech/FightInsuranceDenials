@@ -57,6 +57,10 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Restructure the homepage around one sharp promise, one search-to-proof demo, and fewer repeated card layouts.
+- [x] Rewrite Evidence Patterns around patient questions and "so what" takeaways instead of internal analytics language.
+- [x] Add regression coverage for the new homepage demo and public-facing summary copy.
+- [x] Expand the source-family pack with California CDI IMR rights material, Mounjaro coverage communities, Mental Health America, ProPublica autism-treatment reporting, and another public Facebook discovery lane.
 - [x] Add shared presentation helpers and regression tests so homepage and evidence copy stay user-facing instead of drifting back into internal analytics jargon.
 - [x] Rework the homepage around a cleaner action-first hero, clearer next steps, and stronger proof from the database.
 - [x] Reframe Evidence Patterns around patient questions, actionable findings, and source/methodology explanation.

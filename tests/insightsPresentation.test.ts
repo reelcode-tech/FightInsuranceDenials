@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildActionQuestions,
+  buildHomepageDemo,
   buildHomepageProofPoints,
   buildSourceStory,
   buildSummaryCards,
@@ -39,10 +40,18 @@ test('homepage proof points stay user-facing and avoid internal slice jargon', (
   assert.ok(proofPoints.every((point) => !/slice|warehouse|raw rows/i.test(point.body)));
 });
 
+test('homepage demo stays action-oriented and user-facing', () => {
+  const demo = buildHomepageDemo(mockPatterns);
+
+  assert.match(demo.headline, /question fast/i);
+  assert.equal(demo.signals.length, 3);
+  assert.ok(demo.signals.every((item) => !/warehouse|slice/i.test(item.label)));
+});
+
 test('summary cards answer public-facing questions', () => {
   const cards = buildSummaryCards(mockPatterns);
 
-  assert.equal(cards[0].label, 'Stories you can compare right now');
+  assert.equal(cards[0].label, 'If your denial came before care could start');
   assert.match(cards[1].caption, /194/);
   assert.match(cards[2].value, /Prescription medication/);
 });
