@@ -7,6 +7,7 @@ import { storage, db, auth, handleFirestoreError, OperationType } from "@/src/li
 import { Loader2, Upload, CheckCircle2, ChevronRight, ShieldCheck, Mic, MicOff } from 'lucide-react';
 import { toast } from "sonner";
 import { saveUserSubmission } from "@/src/lib/observatoryRepository";
+import { validateUploadFileMeta } from "@/src/lib/intakePipeline";
 
 export default function SubmitDenial() {
   const [step, setStep] = useState(1);
@@ -35,6 +36,18 @@ export default function SubmitDenial() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const validation = validateUploadFileMeta({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+
+    if (!validation.ok) {
+      toast.error(validation.error);
+      e.target.value = '';
+      return;
+    }
+
     setIsExtracting(true);
     const toastId = toast.loading("Uploading and reading your paperwork...");
     try {
@@ -61,7 +74,7 @@ export default function SubmitDenial() {
           }));
           toast.success("Paperwork analyzed. You can confirm the details next.", { id: toastId });
         } catch {
-          toast.success("Paperwork uploaded. You can confirm the details manually.", { id: toastId });
+          toast.success("Paperwork attached. You can confirm the details manually.", { id: toastId });
         } finally {
           setIsExtracting(false);
         }

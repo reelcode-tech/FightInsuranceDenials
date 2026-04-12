@@ -1,7 +1,16 @@
 import { ExtractionResult, AppealDraft, DenialRecord } from "../types";
 
+async function readJsonOrTextError(response: Response, fallback: string) {
+  const rawError = await response.text();
+  try {
+    const errorData = JSON.parse(rawError);
+    return errorData.error || fallback;
+  } catch {
+    return rawError || fallback;
+  }
+}
+
 export async function extractDenialData(text: string, fileData?: { data: string, mimeType: string }): Promise<ExtractionResult> {
-  console.log("🧠 Starting AI extraction via backend...");
   try {
     const response = await fetch("/api/ai/extract", {
       method: "POST",
@@ -10,21 +19,17 @@ export async function extractDenialData(text: string, fileData?: { data: string,
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Extraction failed");
+      throw new Error(await readJsonOrTextError(response, "Extraction failed"));
     }
 
-    const result = await response.json();
-    console.log("✅ AI Extraction complete:", result);
-    return result;
+    return await response.json();
   } catch (error) {
-    console.error("❌ AI Extraction failed:", error);
+    console.error("AI Extraction failed:", error);
     throw error;
   }
 }
 
 export async function generateAppealLetter(denial: DenialRecord): Promise<AppealDraft> {
-  console.log("✍️ Generating appeal letter via backend...");
   try {
     const response = await fetch("/api/ai/generate-appeal", {
       method: "POST",
@@ -33,15 +38,12 @@ export async function generateAppealLetter(denial: DenialRecord): Promise<Appeal
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Appeal generation failed");
+      throw new Error(await readJsonOrTextError(response, "Appeal generation failed"));
     }
 
-    const result = await response.json();
-    console.log("✅ Appeal generation complete");
-    return result;
+    return await response.json();
   } catch (error) {
-    console.error("❌ Appeal generation failed:", error);
+    console.error("Appeal generation failed:", error);
     throw error;
   }
 }

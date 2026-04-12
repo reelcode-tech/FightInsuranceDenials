@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "test": "node --test --import tsx tests/*.test.ts",
     "warehouse:autopilot": "tsx scripts/run-warehouse-job.ts autopilot",
     "warehouse:deep-backfill": "tsx scripts/run-warehouse-job.ts deep-backfill"
   },

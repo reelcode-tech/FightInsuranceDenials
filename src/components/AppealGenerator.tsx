@@ -9,6 +9,7 @@ import { ExtractionResult, DenialRecord, AppealDraft } from "@/src/types";
 import { Loader2, Upload, FileText, CheckCircle2, ChevronRight, AlertCircle, Mail, FileUp, MessageSquare, ShieldCheck, Download, Copy } from 'lucide-react';
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
+import { buildAppealDraftInput, validateUploadFileMeta } from "@/src/lib/intakePipeline";
 
 export default function AppealGenerator() {
   const [step, setStep] = useState(1);
@@ -22,6 +23,18 @@ export default function AppealGenerator() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validation = validateUploadFileMeta({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+
+    if (!validation.ok) {
+      toast.error(validation.error);
+      e.target.value = '';
+      return;
+    }
 
     setIsExtracting(true);
     const toastId = toast.loading("Analyzing document with AI...");
@@ -68,15 +81,7 @@ export default function AppealGenerator() {
     setIsGeneratingAppeal(true);
     const toastId = toast.loading("Drafting professional appeal...");
     try {
-      const denial: DenialRecord = {
-        id: "temp",
-        ...extractedData,
-        narrative,
-        status: 'denied',
-        tags: [],
-        isPublic: true,
-        createdAt: new Date().toISOString()
-      };
+      const denial: DenialRecord = buildAppealDraftInput({ extracted: extractedData, narrative });
       const draft = await generateAppealLetter(denial);
       setAppealDraft(draft);
       setStep(3);
