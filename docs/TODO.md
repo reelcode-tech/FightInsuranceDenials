@@ -38,6 +38,8 @@
 - [x] Restore live production observatory APIs so Vercel serves real Neon-backed data instead of crashing routes.
 - [ ] Add required production environment variables to Vercel.
 - [ ] Add `CRON_SECRET` in Vercel so the nightly ingest cron can run in production.
+- [ ] Keep the local always-on warehouse daemon running hourly until production cron is fully armed.
+- [ ] Finish and verify local login persistence for the warehouse daemon.
 - [ ] Validate production auth domains and Firebase config.
 - [x] Confirm fightinsurancedenials.com serves the current build and not the stale sidebar version.
 - [ ] Set up a cleaner preview -> production promotion workflow for future checkpoints.

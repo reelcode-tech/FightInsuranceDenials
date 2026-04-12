@@ -140,6 +140,13 @@ Key files:
 - [redditWarehouseIngestion.ts](C:\Users\sashi\Projects\FightInsuranceDenials-working\src\lib\redditWarehouseIngestion.ts)
 - scripts in [scripts](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts)
 
+Current background runner:
+- local always-on daemon in [warehouse-daemon.ps1](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\warehouse-daemon.ps1)
+- job entrypoint in [run-warehouse-job.ts](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\run-warehouse-job.ts)
+- wrapper entrypoint in [run-warehouse-job.ps1](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\run-warehouse-job.ps1)
+- daemon is intended to relaunch on Windows login through `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, but that persistence step still needs a final clean verification
+- this is the current "all day" ingestion lane until production cron is fully armed in Vercel
+
 Design principle:
 - raw first
 - clean second
