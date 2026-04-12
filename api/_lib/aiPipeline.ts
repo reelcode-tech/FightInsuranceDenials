@@ -46,7 +46,7 @@ Extract the following details with high precision.
 
 Guidelines:
 - Insurer: The name of the insurance company (e.g., Aetna, Cigna, UnitedHealthcare).
-- Plan Type: (e.g., HMO, PPO, Medicare Advantage, Employer-sponsored).
+- Plan Type: Capture the specific plan name or plan type when possible (e.g., "Choice Plus PPO", "Medicare Advantage", "Employer-sponsored PPO", "Marketplace HMO").
 - Procedure: The specific medical service or medication denied.
 - Denial Reason: The core reason for rejection (e.g., Not Medically Necessary, Experimental, Out of Network, Missing Prior Auth).
 - Denial Quote: The EXACT sentence or phrase from the letter explaining the rejection logic.

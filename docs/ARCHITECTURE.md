@@ -167,6 +167,21 @@ Critical areas:
 - safe logging and error handling
 - prompt-injection resilience around uploaded denial text and public web content
 
+## Testing Discipline
+The repository testing contract now lives in [TESTING.md](C:\Users\sashi\Projects\FightInsuranceDenials-working\TESTING.md).
+
+The practical rule is:
+1. logic changes need unit coverage
+2. route and pipeline changes need integration or contract coverage
+3. customer-facing fixes are not complete until the real failing path is rechecked after deploy
+
+For this project specifically, the riskiest areas that always need regression coverage are:
+- AI extraction and appeal generation
+- upload parsing for PDF, JPG, and PNG inputs
+- observatory API routes and production serverless handlers
+- warehouse sync and promotion logic
+- story submission and appeal generation end-to-end flows
+
 ## Handoff Guidance For Other AI Coding Engines
 If another coding engine picks this project up, these are the important truths:
 

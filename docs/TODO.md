@@ -1,6 +1,7 @@
 ﻿# FightInsuranceDenials Todo
 
 ## Active Priorities
+- [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
 - [ ] Redesign the homepage hero so it feels human, emotionally grounded, and visually coherent on desktop and mobile.
 - [ ] Replace the current hero image with a stronger healthcare-denial emotional image or a custom-generated visual if the current source still misses the feeling.
 - [ ] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.

@@ -8,6 +8,7 @@ import { Loader2, Upload, CheckCircle2, ChevronRight, ShieldCheck, Mic, MicOff }
 import { toast } from "sonner";
 import { saveUserSubmission } from "@/src/lib/observatoryRepository";
 import { validateUploadFileMeta } from "@/src/lib/intakePipeline";
+import { buildSeededStoryNarrative, mergeStoryExtraction } from "@/src/lib/storyIntake";
 
 const STORY_SEED_KEY = 'fid_story_seed';
 
@@ -24,6 +25,7 @@ export default function SubmitDenial() {
   const [extractedData, setExtractedData] = useState<ExtractionResult | null>(null);
   const [manualFields, setManualFields] = useState({
     insurer: '',
+    planType: '',
     procedure: '',
     denialReason: '',
     date: '',
@@ -47,14 +49,13 @@ export default function SubmitDenial() {
         Boolean(narrative.trim()) ||
         Boolean(rawText.trim()) ||
         Boolean(manualFields.insurer.trim()) ||
+        Boolean(manualFields.planType.trim()) ||
         Boolean(manualFields.procedure.trim()) ||
         Boolean(manualFields.denialReason.trim());
 
       if (hasExistingContent) return;
 
-      const seededNarrative = query.toLowerCase().startsWith('i ')
-        ? `${query}\n\nHas anyone else gone through this denial? Here is what happened to me:`
-        : `I have ${query}. Has anyone else gone through this denial? Here is what happened to me:`;
+      const seededNarrative = buildSeededStoryNarrative(query);
 
       setNarrative(seededNarrative);
       setRawText(seededNarrative);
@@ -101,6 +102,7 @@ export default function SubmitDenial() {
           setExtractedData(result);
           setManualFields((prev) => ({
             insurer: result.insurer || prev.insurer,
+            planType: result.planType || prev.planType,
             procedure: result.procedure || prev.procedure,
             denialReason: result.denialReason || prev.denialReason,
             date: result.date || prev.date,
@@ -133,6 +135,7 @@ export default function SubmitDenial() {
       setExtractedData(result);
       setManualFields((prev) => ({
         insurer: result.insurer || prev.insurer,
+        planType: result.planType || prev.planType,
         procedure: result.procedure || prev.procedure,
         denialReason: result.denialReason || prev.denialReason,
         date: result.date || prev.date,
@@ -194,20 +197,12 @@ export default function SubmitDenial() {
     setIsSaving(true);
     const toastId = toast.loading("Saving your story...");
     try {
-      const effectiveExtraction: ExtractionResult = extractedData || {
-        insurer: manualFields.insurer || "Unknown",
-        planType: "Unknown",
-        procedure: manualFields.procedure || "Medical Service",
-        denialReason: manualFields.denialReason || "Coverage Denial",
-        denialQuote: "",
-        appealDeadline: "",
-        isERISA: "Unknown",
-        medicalNecessityFlag: false,
-        imeInvolved: false,
-        summary: (narrative || rawText).slice(0, 280),
-        date: manualFields.date || new Date().toISOString().slice(0, 10),
-        cptCodes: [],
-      };
+      const effectiveExtraction: ExtractionResult = mergeStoryExtraction({
+        extractedData,
+        manualFields,
+        narrative,
+        rawText,
+      });
 
       await saveUserSubmission(db, {
         extractedData: effectiveExtraction,
@@ -272,6 +267,12 @@ export default function SubmitDenial() {
                       placeholder="Insurer, if you know it"
                       value={manualFields.insurer}
                       onChange={(e) => setManualFields((prev) => ({ ...prev, insurer: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
+                      placeholder="Plan type or plan name"
+                      value={manualFields.planType}
+                      onChange={(e) => setManualFields((prev) => ({ ...prev, planType: e.target.value }))}
                     />
                     <input
                       className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
@@ -357,15 +358,55 @@ export default function SubmitDenial() {
               <h3 className="border-b border-black/8 pb-6 text-3xl font-bold text-[#1f1b17]">Confirm the story details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {[
-                  { label: "Insurer", value: extractedData?.insurer || manualFields.insurer || "Unknown / not provided" },
-                  { label: "Procedure", value: extractedData?.procedure || manualFields.procedure || "Medical Service / medication" },
-                  { label: "Denial Reason", value: extractedData?.denialReason || manualFields.denialReason || "Coverage Denial" },
-                  { label: "Date", value: extractedData?.date || manualFields.date || "Not provided" },
-                  { label: "Upload attached", value: uploadReady ? "Yes" : "No" },
+                  {
+                    label: "Insurer",
+                    placeholder: "Insurer name",
+                    value: manualFields.insurer || extractedData?.insurer || "",
+                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, insurer: value })),
+                  },
+                  {
+                    label: "Plan",
+                    placeholder: "Plan type or plan name",
+                    value: manualFields.planType || extractedData?.planType || "",
+                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, planType: value })),
+                  },
+                  {
+                    label: "Procedure / drug / service",
+                    placeholder: "What was blocked?",
+                    value: manualFields.procedure || extractedData?.procedure || "",
+                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, procedure: value })),
+                  },
+                  {
+                    label: "Denial reason",
+                    placeholder: "Why did they say no?",
+                    value: manualFields.denialReason || extractedData?.denialReason || "",
+                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, denialReason: value })),
+                  },
+                  {
+                    label: "Date",
+                    placeholder: "YYYY-MM-DD",
+                    value: manualFields.date || extractedData?.date || "",
+                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, date: value })),
+                  },
+                  {
+                    label: "Upload attached",
+                    placeholder: "",
+                    value: uploadReady ? "Yes" : "No",
+                    onChange: undefined,
+                  },
                 ].map((field, i) => (
                   <div key={i} className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b7d70]">{field.label}</label>
-                    <div className="rounded-2xl border border-black/8 bg-[#f8f2ea] p-5 font-bold text-[#1f1b17]">{field.value}</div>
+                    {field.onChange ? (
+                      <input
+                        className="w-full rounded-2xl border border-black/8 bg-[#f8f2ea] p-5 font-bold text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
+                        value={field.value}
+                        placeholder={field.placeholder}
+                        onChange={(e) => field.onChange?.(e.target.value)}
+                      />
+                    ) : (
+                      <div className="rounded-2xl border border-black/8 bg-[#f8f2ea] p-5 font-bold text-[#1f1b17]">{field.value}</div>
+                    )}
                   </div>
                 ))}
               </div>
