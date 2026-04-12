@@ -15,28 +15,26 @@ type ProofPoint = {
 interface Props {
   featuredStories: DenialRecord[];
   totalStories: number;
-  topCategory: string;
-  aiStatus: string;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   onNavigate: (tab: 'share' | 'appeal' | 'insights') => void;
   proofPoints: ProofPoint[];
   confidenceNote: string;
+  topCategory: string;
 }
 
 const HERO_IMAGE =
-  'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg?auto=compress&cs=tinysrgb&w=1800';
+  'https://images.pexels.com/photos/4101143/pexels-photo-4101143.jpeg?auto=compress&cs=tinysrgb&w=1800';
 
 export default function ObservatoryExperience({
   featuredStories,
   totalStories,
-  topCategory,
-  aiStatus,
   searchTerm,
   onSearchTermChange,
   onNavigate,
   proofPoints,
   confidenceNote,
+  topCategory,
 }: Props) {
   return (
     <div className="min-h-screen bg-[#090b0f] text-[#f5efe7]">
@@ -47,16 +45,14 @@ export default function ObservatoryExperience({
               src={HERO_IMAGE}
               alt=""
               aria-hidden="true"
-              className="h-full w-full object-cover object-right opacity-[0.14] grayscale"
+              className="h-full w-full object-cover object-center opacity-[0.16] grayscale"
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,11,15,0.76)_0%,rgba(9,11,15,0.94)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(188,80,58,0.18),transparent_24%),linear-gradient(90deg,rgba(9,11,15,0.96)_0%,rgba(9,11,15,0.82)_42%,rgba(9,11,15,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(196,86,61,0.16),transparent_22%),linear-gradient(90deg,rgba(9,11,15,0.97)_0%,rgba(9,11,15,0.86)_40%,rgba(9,11,15,0.88)_100%)]" />
           </div>
 
           <div className="relative px-7 py-10 md:px-10 md:py-14 lg:px-12 lg:py-16">
-            <Badge className="rounded-full border border-white/10 bg-white/6 px-4 py-1 text-[10px] uppercase tracking-[0.35em] text-[#f1a28e]">
-              Public insurance denial observatory
-            </Badge>
+            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#f1a28e]">Public insurance denial observatory</p>
 
             <div className="mt-6 max-w-4xl">
               <motion.h1
@@ -71,8 +67,7 @@ export default function ObservatoryExperience({
               </motion.h1>
 
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[#d5cabf] md:text-xl">
-                We aggregate, normalize, and analyze health insurance denial stories in real-time. Turning thousands of individual frustrations
-                into a collective force for change.
+                Search what insurers are rejecting, see where denial pressure is clustering, and use the record to stop feeling like you are fighting the system alone.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -91,16 +86,22 @@ export default function ObservatoryExperience({
                 </Button>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-[#c8beb4]">
-                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
-                  {totalStories.toLocaleString()} cleaned denial stories in the current record
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
-                  Biggest repeated fight: {topCategory}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
-                  AI appeals: {aiStatus}
-                </span>
+              <div className="mt-7 grid max-w-3xl gap-4 border-t border-white/10 pt-6 text-sm md:grid-cols-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">In the record now</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">{totalStories.toLocaleString()}</p>
+                  <p className="mt-2 leading-6 text-[#c8beb4]">Cleaned denial stories we can already tie to a real payer, treatment, or denial pattern.</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">Biggest repeated barrier</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">{topCategory}</p>
+                  <p className="mt-2 leading-6 text-[#c8beb4]">The strongest denial pattern in the current public slice.</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">What this gives patients</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">Precedent</p>
+                  <p className="mt-2 leading-6 text-[#c8beb4]">Real stories, repeated tactics, and language you can bring into an appeal.</p>
+                </div>
               </div>
 
               <div className="mt-7 flex max-w-xl items-center gap-3 rounded-full border border-white/10 bg-white/6 p-2">
@@ -172,7 +173,7 @@ export default function ObservatoryExperience({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f1a28e]">From the current record</p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">Real cases worth opening first</h3>
+                <h3 className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">Open these first if you want to see what denial looks like in the wild</h3>
               </div>
               <Button variant="ghost" className="rounded-full px-0 text-[#f1a28e]" onClick={() => onNavigate('insights')}>
                 Open evidence patterns

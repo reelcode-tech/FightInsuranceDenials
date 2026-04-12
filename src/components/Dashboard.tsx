@@ -1,6 +1,5 @@
 import React from 'react';
 import { DenialRecord } from "@/src/types";
-import { auth } from "@/src/lib/firebase";
 import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
 
@@ -23,11 +22,6 @@ export default function Dashboard() {
   const [topCategoryLabel, setTopCategoryLabel] = React.useState<string>('N/A');
   const [searchTerm, setSearchTerm] = React.useState("");
   const [patterns, setPatterns] = React.useState<PatternsPayload | null>(null);
-  const [diagStatus, setDiagStatus] = React.useState<{
-    auth: string;
-    backend: string;
-    ai: string;
-  }>({ auth: 'Checking...', backend: 'Checking...', ai: 'Checking...' });
 
   const fetchRealCount = async () => {
     try {
@@ -81,34 +75,10 @@ export default function Dashboard() {
     }
   };
 
-  const checkAI = async () => {
-    try {
-      const resp = await fetch("/api/admin/test-ai");
-      const data = await resp.json();
-      setDiagStatus(prev => ({ ...prev, ai: data.status === "success" ? "Connected" : "Error" }));
-    } catch {
-      setDiagStatus(prev => ({ ...prev, ai: "Offline" }));
-    }
-  };
-
-  const runDiagnostics = async () => {
-    setDiagStatus(prev => ({ ...prev, auth: auth.currentUser ? `Logged in as ${auth.currentUser.email}` : 'Not logged in' }));
-
-    try {
-      const resp = await fetch("/api/health");
-      const data = await resp.json();
-      setDiagStatus(prev => ({ ...prev, backend: data.status === "ok" ? `Engine Active (v${data.engine || '1.0'})` : 'Engine Offline' }));
-    } catch (e) {
-      setDiagStatus(prev => ({ ...prev, backend: `Error: ${e}` }));
-    }
-  };
-
   React.useEffect(() => {
     fetchRealCount();
     fetchFeatured();
     fetchPatterns();
-    checkAI();
-    runDiagnostics();
 
     const refreshInterval = window.setInterval(() => {
       fetchRealCount();
@@ -156,7 +126,6 @@ export default function Dashboard() {
       featuredStories={featuredStories}
       totalStories={realCount ?? 0}
       topCategory={topCategoryLabel !== 'N/A' ? topCategoryLabel : (topCategory?.label || 'Coverage denial')}
-      aiStatus={diagStatus.ai}
       searchTerm={searchTerm}
       onSearchTermChange={setSearchTerm}
       onNavigate={(tab) => {

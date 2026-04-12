@@ -134,11 +134,11 @@ export default function Insights() {
               </div>
               <div className="max-w-3xl space-y-4">
                 <h1 className="text-4xl font-semibold tracking-[-0.05em] text-[#f7f2eb] md:text-6xl">
-                  What the denials are starting to reveal.
+                  Where denial pressure is clearest right now.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  This page is not here to dump a warehouse on people. It is here to show what is repeating clearly enough to matter, what still needs more evidence,
-                  and where patients can already start learning from the record.
+                  This page is not a warehouse dump. It is the part of the record we can already explain in plain English: what insurers keep surfacing,
+                  what kinds of care keep getting blocked, and where the data still needs more cleanup before anyone overclaims certainty.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -150,34 +150,27 @@ export default function Insights() {
                   <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh pattern review
                 </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full border-white/10 bg-white/6 text-[#f3efe9] hover:bg-white/10"
-                  onClick={() => window.open('https://lookerstudio.google.com/', '_blank')}
-                >
-                  Open Looker Studio
-                </Button>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
               {[
                 {
-                  label: 'Public record we can stand behind',
+                  label: 'Cases in the public record',
                   value: data?.overview.cleanPatternRows || 0,
-                  caption: 'Cleaned stories we are comfortable using in public-facing findings right now.',
+                  caption: 'Stories specific enough to show publicly because we can tie them to a payer, treatment, or repeat denial pattern.',
                   icon: ShieldCheck,
                 },
                 {
-                  label: 'Biggest repeated fight',
+                  label: 'Most repeated denial pattern',
                   value: topCategory?.label || 'Prior Authorization',
-                  caption: topCategory ? `${topCategory.value.toLocaleString()} cleaned stories already cluster here.` : 'This is the strongest repeat denial pattern so far.',
+                  caption: topCategory ? `${topCategory.value.toLocaleString()} cases already cluster here in the cleaned slice.` : 'This is the strongest repeat pattern so far.',
                   icon: Target,
                 },
                 {
-                  label: 'What still needs better labeling',
+                  label: 'Still under review',
                   value: `${data?.overview.unknownInsurerPct || 0}%`,
-                  caption: 'That share of raw rows still needs a confidently named insurer before we treat it as strong evidence.',
+                  caption: 'That share of raw rows still needs a confidently named insurer before we treat it as strong public evidence.',
                   icon: AlertTriangle,
                 },
               ].map((item, index) => (
@@ -209,16 +202,16 @@ export default function Insights() {
               <CardContent className="grid gap-4 md:grid-cols-3">
                 {[
                   {
-                    title: 'What we show',
-                    body: 'We only foreground patterns that are specific enough to help a patient, reporter, or advocate understand where denial pressure is actually clustering.',
+                    title: 'What we are trying to show',
+                    body: 'Not every scraped post belongs on a public dashboard. We foreground the denial fights that repeat clearly enough to help a patient, reporter, or advocate.',
                   },
                   {
-                    title: 'What we hold back',
-                    body: 'Generic insurance chatter, unlabeled rows, and weak extraction stay out of the main story until we can clean them into something more trustworthy.',
+                    title: 'What we do not show as proof',
+                    body: 'Generic insurance shopping chatter, weak extraction, and fuzzy rows stay out of the main story until we can clean them into something more trustworthy.',
                   },
                   {
-                    title: 'What to trust',
-                    body: 'The charts below are strongest on insurer, category, and procedure clusters. State-level conclusions are still more fragile and we say that openly.',
+                    title: 'What to trust most right now',
+                    body: 'The strongest current findings are insurer, denial category, and procedure clusters. State-level conclusions are still more fragile and we say that openly.',
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-[1.5rem] bg-white/6 p-5">
@@ -235,11 +228,11 @@ export default function Insights() {
               </CardHeader>
               <CardContent className="space-y-4 text-sm leading-7 text-white/78">
                 <p>
-                  We pull public-source observations from places like Reddit, patient forums, complaint platforms, advocacy groups, and official benchmark sources such as OIG, KFF, and CMS.
+                  We pull public-source observations from places like Reddit, condition communities, complaint platforms, advocacy groups, and official benchmark sources such as OIG, KFF, and CMS.
                 </p>
                 <p>
-                  Then we normalize insurer names and denial categories, try to identify procedures and treatments, and throw out obvious junk, unrelated insurance chatter,
-                  and low-signal rows.
+                  Then we normalize insurer names and denial categories, identify procedures and treatments where we can, and throw out obvious junk, generic insurance chatter,
+                  and low-signal rows that do not really belong in a denial observatory.
                 </p>
                 <p>
                   Right now the strongest repeat signals in the cleaned slice are {topProcedure?.label?.toLowerCase() || 'medication and procedure'} fights, with{' '}
@@ -297,9 +290,9 @@ export default function Insights() {
                 </CardHeader>
                 <CardContent className="grid gap-6 lg:grid-cols-3">
                   {[
-                    { title: 'Top insurers', rows: data.topInsurers },
+                    { title: 'Named insurers in the current record', rows: data.topInsurers },
                     { title: 'Top denial categories', rows: data.topCategories },
-                    { title: 'Top procedures', rows: data.topProcedures },
+                    { title: 'Most blocked care', rows: data.topProcedures },
                   ].map((block, blockIndex) => (
                     <div key={block.title} className="space-y-4">
                       <div>
@@ -379,8 +372,8 @@ export default function Insights() {
                         <div>
                           <h4 className="text-2xl font-semibold tracking-tight text-[#f7f2eb]">{cluster.procedure}</h4>
                           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c8bdb4]">
-                            This combination is recurring enough to watch. It is one of the stronger insurer-procedure-category
-                            clusters in the current cleaned slice.
+                            This combination is recurring enough to watch. It is one of the clearer insurer-procedure-category
+                            clusters in the current record and can help patients understand what kind of pushback keeps coming up.
                           </p>
                         </div>
                         <div className="text-right">
@@ -419,22 +412,25 @@ export default function Insights() {
                       </div>
                     ))}
                     <p className="text-sm leading-6 text-[#c8bdb4]">
-                      This map slice excludes suspicious state extraction, especially false Oregon hits from the word &quot;or&quot;.
+                      This slice excludes suspicious state extraction, especially false Oregon hits caused by the word &quot;or&quot; in raw text.
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                   <CardHeader>
-                    <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">Source mix</CardTitle>
+                    <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">Where this record comes from</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {data.sourceMix.map((source) => (
                       <div key={source.label} className="flex items-center justify-between rounded-[1.2rem] bg-white/6 px-4 py-3">
-                        <span className="text-sm font-semibold text-[#f7f2eb]">{source.label}</span>
+                        <span className="text-sm font-semibold text-[#f7f2eb]">{source.label.replace(/_/g, ' ')}</span>
                         <span className="text-sm text-[#c8bdb4]">{source.value}</span>
                       </div>
                     ))}
+                    <p className="text-sm leading-6 text-[#c8bdb4]">
+                      We combine public patient forums, complaint platforms, and official benchmark sources because no single place shows the full denial picture on its own.
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -468,18 +464,17 @@ export default function Insights() {
                     prior authorization, out-of-network fights, and eligibility breakdowns are all surfacing heavily.
                   </p>
                   <p>
-                    Prescription medications are the biggest procedure bucket right now, with surgery, fertility treatment, therapy services,
+                    Prescription medications are the biggest care bucket right now, with surgery, fertility treatment, therapy services,
                     and MRI close enough behind to treat them as real battlegrounds instead of edge cases.
                   </p>
                   <p>
                     The charts are already useful for pattern review, but they are not perfectly clean. The next gains will come from better
-                    insurer extraction, better denial-category normalization, and stricter procedure labeling across the raw warehouse.
+                    insurer extraction, better denial-category normalization, and stricter procedure labeling across the raw intake.
                   </p>
                   <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f0c8ba]">Looker-ready</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f0c8ba]">Why this matters</p>
                     <p className="mt-3">
-                      These slices are now structured well enough to back a Looker Studio observatory: trend dashboards, heatmaps,
-                      insurer scorecards, and data-quality views.
+                      The point is not to show pretty charts. The point is to make scattered denial complaints legible enough that patients, reporters, and advocates can finally see repeated tactics in one place.
                     </p>
                   </div>
                   <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-5">

@@ -21,6 +21,8 @@
 - [ ] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
 - [ ] Build periodic warehouse transforms that promote stronger rows into curated stories automatically.
 - [ ] Add more benchmark snapshot generation for insurer + procedure + denial category combinations.
+- [x] Add stricter pruning so generic insurance-shopping chatter is archived out of the public record instead of surfacing as denial evidence.
+- [x] Expand the trusted-source pack with stronger GLP-1, IBD, autism, mental health, ADHD, and ALS denial sources.
 
 ## Product / UX
 - [ ] Finish the Share Your Story intake so venting, voice-to-text, structured fields, upload, and consent feel cohesive.

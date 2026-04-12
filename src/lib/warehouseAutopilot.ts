@@ -368,6 +368,29 @@ export async function promoteNeonObservationsToCurated(minQuality = 75) {
   });
 }
 
+export async function pruneGenericCuratedStories() {
+  return withNeonClient(async (client) => {
+    const result = await client.query(
+      `
+      UPDATE curated_stories
+      SET status = 'archived'
+      WHERE status = 'published'
+        AND consent_level = 'public_story'
+        AND (
+          COALESCE(why_unfair_patient_quote, '') ~* '(turn 26|which plan|what plan|late enrollment|open enrollment|shopping for|marketplace quote|recommendations for)'
+          OR COALESCE(patient_narrative_summary, '') ~* '(turn 26|which plan|what plan|late enrollment|open enrollment|shopping for|marketplace quote|recommendations for)'
+          OR (
+            COALESCE(denial_category, '') IN ('', 'Unknown')
+            AND COALESCE(procedure_condition, '') IN ('', 'Unknown', 'Insurance denial evidence', 'Insurance denial or appeal evidence')
+          )
+        )
+      `
+    );
+
+    return result.rowCount || 0;
+  });
+}
+
 export async function runWarehouseAutopilotPass() {
   const seededSources = 0;
   const seededObservations = 0;
@@ -376,6 +399,7 @@ export async function runWarehouseAutopilotPass() {
   const syncedSources = await syncBigQuerySourceRecordsToNeon();
   const syncedObservations = await syncBigQueryRawObservationsToNeon();
   const promotedCuratedStories = await promoteNeonObservationsToCurated();
+  const archivedGenericStories = await pruneGenericCuratedStories();
   const summary = await fetchWarehouseSummary();
 
   return {
@@ -386,6 +410,7 @@ export async function runWarehouseAutopilotPass() {
     syncedSources,
     syncedObservations,
     promotedCuratedStories,
+    archivedGenericStories,
     summary,
   };
 }
@@ -399,6 +424,7 @@ export async function runWarehouseDeepBackfillPass() {
   const syncedSources = await syncBigQuerySourceRecordsToNeon();
   const syncedObservations = await syncBigQueryRawObservationsToNeon();
   const promotedCuratedStories = await promoteNeonObservationsToCurated(70);
+  const archivedGenericStories = await pruneGenericCuratedStories();
   const summary = await fetchWarehouseSummary();
 
   return {
@@ -407,6 +433,7 @@ export async function runWarehouseDeepBackfillPass() {
     syncedSources,
     syncedObservations,
     promotedCuratedStories,
+    archivedGenericStories,
     summary,
   };
 }
