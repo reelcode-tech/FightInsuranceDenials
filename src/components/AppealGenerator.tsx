@@ -9,13 +9,19 @@ import { ExtractionResult, DenialRecord, AppealDraft } from "@/src/types";
 import { Loader2, Upload, FileText, CheckCircle2, ChevronRight, AlertCircle, Mail, FileUp, MessageSquare, ShieldCheck, Download, Copy } from 'lucide-react';
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
-import { buildAppealDraftInput, validateUploadFileMeta } from "@/src/lib/intakePipeline";
+import {
+  buildAppealDraftInput,
+  buildEditableAppealFields,
+  mergeAppealExtraction,
+  validateUploadFileMeta,
+} from "@/src/lib/intakePipeline";
 
 export default function AppealGenerator() {
   const [step, setStep] = useState(1);
   const [isExtracting, setIsExtracting] = useState(false);
   const [rawText, setRawText] = useState("");
   const [extractedData, setExtractedData] = useState<ExtractionResult | null>(null);
+  const [editableFields, setEditableFields] = useState(() => buildEditableAppealFields(null));
   const [narrative, setNarrative] = useState("");
   const [appealDraft, setAppealDraft] = useState<AppealDraft | null>(null);
   const [isGeneratingAppeal, setIsGeneratingAppeal] = useState(false);
@@ -45,6 +51,7 @@ export default function AppealGenerator() {
           const base64 = (reader.result as string).split(',')[1];
           const result = await extractDenialData("", { data: base64, mimeType: file.type });
           setExtractedData(result);
+          setEditableFields(buildEditableAppealFields(result));
           setStep(2);
           toast.success("Document analyzed!", { id: toastId });
         } catch (err) {
@@ -67,6 +74,7 @@ export default function AppealGenerator() {
     try {
       const result = await extractDenialData(rawText);
       setExtractedData(result);
+      setEditableFields(buildEditableAppealFields(result));
       setStep(2);
       toast.success("Data extracted!", { id: toastId });
     } catch (error) {
@@ -81,7 +89,10 @@ export default function AppealGenerator() {
     setIsGeneratingAppeal(true);
     const toastId = toast.loading("Drafting professional appeal...");
     try {
-      const denial: DenialRecord = buildAppealDraftInput({ extracted: extractedData, narrative });
+      const denial: DenialRecord = buildAppealDraftInput({
+        extracted: mergeAppealExtraction({ extracted: extractedData, editable: editableFields }),
+        narrative,
+      });
       const draft = await generateAppealLetter(denial);
       setAppealDraft(draft);
       setStep(3);
@@ -148,15 +159,66 @@ export default function AppealGenerator() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               { label: "Insurer", value: extractedData.insurer || "Private Carrier" },
+              { label: "Plan", value: extractedData.planType || "Plan not found" },
               { label: "Procedure", value: extractedData.procedure || "Medical Service" },
               { label: "Reason", value: extractedData.denialReason || "Coverage Denial" },
-              { label: "Deadline", value: extractedData.appealDeadline || "Not found" }
             ].map((field, i) => (
               <div key={i} className="space-y-2">
                 <label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">{field.label}</label>
                 <div className="p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white">{field.value}</div>
               </div>
             ))}
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-xl font-bold text-white">Fix anything the AI got wrong</label>
+            <p className="text-sm leading-7 text-slate-400">
+              The draft should use your real insurer, plan, treatment, deadline, and denial language. Change anything here before we write the appeal.
+            </p>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {[
+                { key: 'insurer', label: 'Insurer', placeholder: 'UnitedHealthcare' },
+                { key: 'planType', label: 'Plan name or type', placeholder: 'Choice Plus PPO' },
+                { key: 'procedure', label: 'Drug / procedure / service', placeholder: 'Taltz' },
+                { key: 'denialReason', label: 'Denial reason', placeholder: 'Prior authorization denied' },
+                { key: 'appealDeadline', label: 'Appeal deadline', placeholder: '180 days from denial letter' },
+                { key: 'date', label: 'Denial date', placeholder: 'YYYY-MM-DD' },
+              ].map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">
+                    {field.label}
+                  </label>
+                  <Input
+                    value={editableFields[field.key as keyof typeof editableFields]}
+                    placeholder={field.placeholder}
+                    className="h-14 rounded-2xl border-white/10 bg-white/5 text-white"
+                    onChange={(e) =>
+                      setEditableFields((current) => ({
+                        ...current,
+                        [field.key]: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">
+                Exact denial language
+              </label>
+              <textarea
+                className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-white/5 p-5 font-light text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Paste the exact quote from the denial letter if the AI missed it."
+                value={editableFields.denialQuote}
+                onChange={(e) =>
+                  setEditableFields((current) => ({
+                    ...current,
+                    denialQuote: e.target.value,
+                  }))
+                }
+              />
+            </div>
           </div>
 
           <div className="space-y-4">

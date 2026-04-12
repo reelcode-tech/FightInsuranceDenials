@@ -90,7 +90,7 @@ export default function App() {
             <div>
               <p className="text-sm font-bold tracking-tight text-[#f7f2eb]">FightInsuranceDenials</p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9e9489]">
-                Public insurance denial database + patient action
+                Health insurance denial database
               </p>
             </div>
           </button>

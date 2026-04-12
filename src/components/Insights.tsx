@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowUpRight, BarChart3, MapPinned, RefreshCw } from 'lucide-react';
+import { BarChart3, MapPinned, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +17,6 @@ import {
   buildActionQuestions,
   buildMethodologySummary,
   buildSourceStory,
-  buildSummaryCards,
   type HeatmapRow,
   type MetricRow,
   type PatternsResponse,
@@ -26,7 +25,7 @@ import {
 const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
 
 function prettifyLabel(label: string) {
-  return label.length > 28 ? `${label.slice(0, 28)}…` : label;
+  return label.length > 28 ? `${label.slice(0, 28)}...` : label;
 }
 
 function MetricChart({
@@ -78,18 +77,18 @@ function MetricChart({
 function buildHeatmapExplain(item: HeatmapRow) {
   const category = item.category.toLowerCase();
   if (category.includes('prior')) {
-    return 'If this matches your case, gather your doctor’s rationale, failed-treatment history, and plan requirements early.';
+    return 'This usually means the plan is forcing extra approvals before care can move. Gather doctor notes, failed-treatment history, and the plan rule they are leaning on.';
   }
   if (category.includes('out of network')) {
-    return 'If care was already in motion, look for continuity-of-care or gap-exception arguments.';
+    return 'This is often a continuity-of-care or network adequacy fight. If treatment was already in motion, that matters.';
   }
   if (category.includes('medical necessity')) {
-    return 'If this is your denial, focus on clinical notes, guidelines, and why the insurer’s standard is too narrow.';
+    return 'This is where strong clinical notes, guidelines, and specialist letters tend to matter most.';
   }
   if (category.includes('coverage exclusion')) {
-    return 'If you were told the care is excluded, compare against the plan document and other stories involving the same service.';
+    return 'This is often less about medicine and more about plan language. The policy itself becomes part of the argument.';
   }
-  return 'If this mirrors your denial, compare the language in your letter against similar stories before you appeal.';
+  return 'This is a repeat denial pattern worth comparing your own letter against before you appeal.';
 }
 
 export default function Insights() {
@@ -142,7 +141,6 @@ export default function Insights() {
     }
   }, []);
 
-  const summaryCards = buildSummaryCards(data);
   const keyQuestions = buildActionQuestions(data);
   const sourceStory = buildSourceStory(data);
   const methodology = buildMethodologySummary(data);
@@ -151,7 +149,7 @@ export default function Insights() {
     <div className="min-h-screen bg-[#090b0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[2.7rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(199,75,60,0.16),transparent_28%),linear-gradient(135deg,#101317_0%,#12171d_55%,#151b22_100%)] shadow-[0_28px_90px_rgba(0,0,0,0.35)]">
-          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.35fr_0.9fr] lg:p-12">
+          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:p-12">
             <div className="space-y-6">
               <div className="inline-flex rounded-full border border-[#c74b3c]/25 bg-white/6 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.35em] text-[#f19a86]">
                 Evidence patterns patients can use
@@ -161,13 +159,13 @@ export default function Insights() {
                   Find the pattern that makes your denial easier to fight.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  This page is for the questions people ask after a denial: who else ran into this insurer, what excuse keeps being used, and what kind of care keeps getting blocked?
+                  This page is for the questions people ask after a denial: who else ran into this insurer, what excuse keeps getting used, and what kind of care keeps getting blocked?
                 </p>
                 {recordQuery ? (
                   <div className="rounded-[1.4rem] border border-white/10 bg-white/6 p-4 text-sm leading-7 text-[#e5d9ce]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Your question</p>
                     <p className="mt-2">
-                      We carried your question in here: <span className="font-semibold text-[#f7f2eb]">{recordQuery}</span>. Use the sections below to see whether the same insurer, treatment, or denial tactic is already repeating.
+                      We carried your question in here: <span className="font-semibold text-[#f7f2eb]">{recordQuery}</span>
                     </p>
                   </div>
                 ) : null}
@@ -192,17 +190,19 @@ export default function Insights() {
             </div>
 
             <div className="grid gap-4">
-              {summaryCards.slice(0, 3).map((item, index) => (
+              {data?.findings.slice(0, 3).map((finding, index) => (
                 <motion.div
-                  key={item.label}
+                  key={finding.title}
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.08 }}
                   className="rounded-[2rem] border border-white/8 bg-white/6 p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)]"
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">{item.label}</p>
-                  <p className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{item.value}</p>
-                  <p className="mt-2 text-sm leading-6 text-[#c8bdb4]">{item.caption}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">
+                    Key finding
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{finding.title}</p>
+                  <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{finding.body}</p>
                 </motion.div>
               ))}
             </div>
@@ -247,13 +247,13 @@ export default function Insights() {
 
             <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
               <MetricChart
-                title="Who keeps getting named"
-                subtitle="These are the insurers that appear most often in published stories specific enough to compare."
+                title="Which insurers keep getting named"
+                subtitle="Start here if you want to know whether your insurer keeps showing up in similar stories."
                 rows={data.topInsurers}
               />
               <MetricChart
                 title="What excuse keeps getting used"
-                subtitle="These are the denial reasons that surface most often once a story is specific enough to publish."
+                subtitle="These are the denial reasons that surface most often once a story is specific enough to compare."
                 rows={data.topCategories}
               />
             </section>
@@ -261,7 +261,7 @@ export default function Insights() {
             <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <MetricChart
                 title="What care keeps getting blocked"
-                subtitle="These are the treatment areas people are running into repeatedly, not just once or twice."
+                subtitle="These are the treatments and services that keep surfacing in repeat denial stories."
                 rows={data.topProcedures}
               />
 
@@ -296,7 +296,7 @@ export default function Insights() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
                     <BarChart3 className="h-5 w-5 text-[#f19a86]" />
-                    What excuse does each insurer seem to lean on?
+                    If your insurer keeps leaning on one excuse
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -308,7 +308,7 @@ export default function Insights() {
                           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{item.category}</h3>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Published stories</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Stories</p>
                           <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[#f19a86]">{item.value}</p>
                         </div>
                       </div>
@@ -359,40 +359,32 @@ export default function Insights() {
                     What this database is built from
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
                   {sourceStory.map((item) => (
-                    <div key={item.title} className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
-                      <p className="text-sm font-semibold text-[#f7f2eb]">{item.title}</p>
-                      <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{item.body}</p>
+                    <div key={item.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                      <h3 className="text-lg font-semibold text-[#f7f2eb]">{item.title}</h3>
+                      <p className="mt-2">{item.body}</p>
                     </div>
                   ))}
                 </CardContent>
               </Card>
 
-              <Card className="rounded-[2.3rem] border-white/8 bg-[linear-gradient(135deg,#171c22_0%,#1a232b_100%)] text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+              <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <CardHeader>
-                  <CardTitle className="text-2xl tracking-tight">How to use this page</CardTitle>
+                  <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
+                    How to use this page
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 text-sm leading-7 text-white/78">
-                  <p>
-                    Start with your insurer, your denial reason, or your treatment area. If that same combination is already surfacing here, you are not starting your appeal from scratch.
-                  </p>
-                  <p>
-                    Then use the repeated patterns to decide what kind of proof you need next: plan language, doctor documentation, prior authorization history, continuity-of-care records, or similar patient stories.
-                  </p>
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Current source coverage</p>
-                    <p className="mt-3 text-sm leading-7 text-white/78">
-                      Right now the published database leans most heavily on {methodology.sourceSummary}. We keep widening trusted sources so the signal gets stronger as the record grows.
-                    </p>
+                <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    Look up the insurer. Then look for your drug, procedure, or denial reason. The goal is to find a pattern you can compare yourself against, not just a chart to stare at.
                   </div>
-                  <Button
-                    variant="outline"
-                    className="rounded-full border-white/10 bg-white/6 text-[#f3efe9] hover:bg-white/10"
-                    onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'share' }))}
-                  >
-                    Add your denial to the database <ArrowUpRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    {methodology.coverageSummary}
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    Built from {methodology.sourceSummary}.
+                  </div>
                 </CardContent>
               </Card>
             </section>

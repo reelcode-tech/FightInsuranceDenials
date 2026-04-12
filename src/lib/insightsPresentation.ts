@@ -87,7 +87,7 @@ export function buildHomepageProofPoints(patterns: PatternsResponse | null): Pro
       eyebrow: 'Most common roadblock',
       title: topCategory ? `${topCategory.label} keeps surfacing.` : 'Prior authorization keeps surfacing.',
       body: topCategory
-        ? `${topCategory.value.toLocaleString()} published stories already point to the same roadblock, which means patients are not imagining this pattern.`
+        ? `${topCategory.value.toLocaleString()} published stories already point to the same roadblock. Patients are not imagining this pattern.`
         : 'The strongest early signal is still prior authorization and paperwork-driven care delays.',
     },
     {
@@ -115,7 +115,7 @@ export function buildHomepageDemo(patterns: PatternsResponse | null): DemoCard {
 
   return {
     query: 'UnitedHealthcare Choice Plus denied Taltz. Anyone else?',
-    headline: 'The database should answer that question fast.',
+    headline: 'You should be able to see the pattern fast.',
     subhead: topInsurer && topCategory && topProcedure
       ? `We are already seeing repeat stories where ${topInsurer.label} appears alongside ${topCategory.label.toLowerCase()} fights and blocked ${topProcedure.label.toLowerCase()}.`
       : 'Search by insurer, plan, drug, procedure, or denial reason and start from precedent instead of guesswork.',
@@ -143,7 +143,7 @@ export function buildSummaryCards(patterns: PatternsResponse | null): SummaryCar
 
   return [
     {
-      label: 'If your denial came before care could start',
+      label: 'Stories you can compare yourself against',
       value: patterns?.overview.cleanPatternRows?.toLocaleString() || '0',
       caption: `We already have ${patterns?.overview.cleanPatternRows?.toLocaleString() || '0'} published stories specific enough to compare. Start there instead of starting from scratch.`,
     },

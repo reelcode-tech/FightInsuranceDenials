@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, ExternalLink, Search, Sparkles } from 'lucide-react';
+import { ExternalLink, Search, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { DenialRecord } from '@/src/types';
 import type { DemoCard, ProofPoint } from '@/src/lib/insightsPresentation';
@@ -34,7 +34,6 @@ export default function ObservatoryExperience({
   onStartStoryFromQuery,
   proofPoints,
   confidenceNote,
-  topCategory,
   demoCard,
 }: Props) {
   const spotlight = featuredStories[0];
@@ -50,12 +49,12 @@ export default function ObservatoryExperience({
               aria-hidden="true"
               className="h-full w-full object-cover object-center opacity-[0.14] grayscale"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,11,15,0.66)_0%,rgba(9,11,15,0.9)_55%,rgba(9,11,15,0.98)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_22%,rgba(208,97,73,0.18),transparent_22%),linear-gradient(90deg,rgba(9,11,15,0.96)_0%,rgba(9,11,15,0.84)_46%,rgba(9,11,15,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,11,15,0.54)_0%,rgba(9,11,15,0.88)_52%,rgba(9,11,15,0.97)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(196,83,60,0.16),transparent_22%),linear-gradient(90deg,rgba(9,11,15,0.97)_0%,rgba(9,11,15,0.82)_52%,rgba(9,11,15,0.92)_100%)]" />
           </div>
 
-          <div className="relative grid gap-8 px-7 py-10 md:px-10 md:py-14 lg:grid-cols-[1.2fr_0.8fr] lg:px-12 lg:py-16">
-            <div className="max-w-4xl">
+          <div className="relative grid gap-8 px-7 py-10 md:px-10 md:py-14 lg:grid-cols-[1.15fr_0.85fr] lg:px-12 lg:py-16">
+            <div className="space-y-8">
               <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#f3a28d]">
                 Public insurance denial database
               </p>
@@ -64,18 +63,18 @@ export default function ObservatoryExperience({
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
-                className="mt-6 text-5xl font-semibold leading-[0.92] tracking-[-0.07em] text-[#f7f1ea] md:text-7xl"
+                className="max-w-5xl text-5xl font-semibold leading-[0.92] tracking-[-0.07em] text-[#f7f1ea] md:text-7xl"
               >
                 Millions of health insurance denials.
                 <br />
                 We help you fight back.
               </motion.h1>
 
-              <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[#d5cabf] md:text-xl">
-                Search by insurer, plan, drug, procedure, or denial reason. Find people who ran into the same wall. Then decide whether to share your story or use the database to build a stronger appeal.
+              <p className="max-w-2xl text-lg leading-relaxed text-[#d5cabf] md:text-xl">
+                Search by insurer, plan, drug, procedure, or denial reason. Find the people, tactics, and appeal clues that make your denial easier to challenge.
               </p>
 
-              <div className="mt-9 rounded-[2rem] border border-white/10 bg-black/20 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-sm">
+              <div className="rounded-[2rem] border border-white/10 bg-black/20 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-sm">
                 <p className="px-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">
                   Start with the exact question already in your head
                 </p>
@@ -105,10 +104,13 @@ export default function ObservatoryExperience({
                 </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-4 text-sm text-[#d5cabf]">
-                <span>{totalStories.toLocaleString()} published stories already in the database</span>
-                <span className="text-white/25">•</span>
-                <span>{topCategory} is the strongest repeat denial tactic right now</span>
+              <div className="grid gap-3 md:grid-cols-3">
+                {proofPoints.map((point) => (
+                  <div key={point.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.04] p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#f3a28d]">{point.eyebrow}</p>
+                    <h2 className="mt-2 text-lg font-semibold tracking-[-0.04em] text-[#f7f1ea]">{point.title}</h2>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -146,67 +148,52 @@ export default function ObservatoryExperience({
                     </div>
                   ))}
                 </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Button
-                    onClick={onNavigate.bind(null, 'insights')}
-                    variant="outline"
-                    className="rounded-full border-white/10 bg-white/6 text-[#f7f1ea] hover:bg-white/10"
-                  >
-                    Explore evidence patterns
-                  </Button>
-                  <Button
-                    onClick={onNavigate.bind(null, 'appeal')}
-                    className="rounded-full bg-[#f7f1ea] text-[#11151a] hover:bg-[#ece4d9]"
-                  >
-                    Build an appeal
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[0.88fr_1.12fr]">
+        <section className="mt-10 grid gap-6 lg:grid-cols-[0.88fr_1.12fr]">
           <div className="rounded-[2.2rem] border border-white/8 bg-[#10151b] p-7 md:p-8">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f3a28d]">What people use this for</p>
-            <div className="mt-5 space-y-5">
-              <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f3a28d]">Two ways in</p>
+            <div className="mt-5 grid gap-4">
+              <button
+                onClick={() => onNavigate('share')}
+                className="rounded-[1.8rem] border border-white/8 bg-white/[0.03] p-5 text-left transition-colors hover:bg-white/[0.06]"
+              >
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">Share your story</p>
                 <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">Add what happened to you.</h3>
                 <p className="mt-3 text-sm leading-7 text-[#c7bdb4]">
-                  Start with the story in your own words. Add paperwork if you want. Help other patients find a precedent instead of wondering if they are the only one.
+                  Start with the story in your own words. Add the insurer, plan, and paperwork if you have it.
                 </p>
-                <Button onClick={() => onNavigate('share')} className="mt-5 rounded-full bg-[#c2533c] text-white hover:bg-[#b14733]">
-                  Share your story
-                </Button>
-              </div>
+              </button>
 
-              <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
+              <button
+                onClick={() => onNavigate('appeal')}
+                className="rounded-[1.8rem] border border-white/8 bg-white/[0.03] p-5 text-left transition-colors hover:bg-white/[0.06]"
+              >
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">Fight back</p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">Turn the database into a better appeal.</h3>
+                <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">Upload the denial and build the appeal.</h3>
                 <p className="mt-3 text-sm leading-7 text-[#c7bdb4]">
-                  Upload the denial letter when you are ready to act. We pull forward similar stories, recurring insurer tactics, and the evidence patients needed most.
+                  Use the denial letter, repeated insurer tactics, and similar cases to write something stronger than a generic AI draft.
                 </p>
-                <Button onClick={() => onNavigate('appeal')} variant="outline" className="mt-5 rounded-full border-white/10 bg-white/6 text-[#f7f1ea] hover:bg-white/10">
-                  Fight back with AI
-                </Button>
-              </div>
+              </button>
             </div>
           </div>
 
           <div className="rounded-[2.2rem] border border-white/8 bg-[#11161b] p-7 md:p-8">
             <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f3a28d]">What is already surfacing</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f3a28d]">Why this matters</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">
-                  Use the record to see what keeps happening before you upload anything.
+                  The goal is not more complaint noise. The goal is usable precedent.
                 </h2>
-                <div className="mt-6 space-y-4">
+                <p className="mt-4 text-sm leading-7 text-[#c7bdb4]">{confidenceNote}</p>
+
+                <div className="mt-6 space-y-3">
                   {proofPoints.map((point) => (
                     <div key={point.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">{point.eyebrow}</p>
-                      <h3 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">{point.title}</h3>
+                      <h3 className="text-lg font-semibold tracking-[-0.03em] text-[#f7f1ea]">{point.title}</h3>
                       <p className="mt-2 text-sm leading-7 text-[#c7bdb4]">{point.body}</p>
                     </div>
                   ))}
@@ -214,14 +201,16 @@ export default function ObservatoryExperience({
               </div>
 
               <div className="rounded-[1.8rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.02)_100%)] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">Example from the record</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f3a28d]">Example from the database</p>
                 {spotlight ? (
                   <>
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <Badge className="rounded-full border-0 bg-white/8 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/82">
                         {spotlight.insurer || 'Private carrier'}
                       </Badge>
-                      <span className="text-[10px] uppercase tracking-[0.22em] text-white/45">{spotlight.source || 'Public source'}</span>
+                      <span className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+                        {spotlight.source || 'Public source'}
+                      </span>
                     </div>
                     <h3 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">
                       {spotlight.procedure || 'Medical service denial'}
@@ -242,13 +231,9 @@ export default function ObservatoryExperience({
                   </>
                 ) : (
                   <p className="mt-4 text-sm leading-7 text-[#c7bdb4]">
-                    The record is still warming up. As more specific stories come in, this spotlight becomes the fastest way to see what a comparable case actually looks like.
+                    The database is still warming up. As more specific stories come in, this becomes the fastest way to compare your case against a real one.
                   </p>
                 )}
-
-                <div className="mt-6 rounded-[1.4rem] border border-white/8 bg-black/18 p-4 text-sm leading-7 text-[#c7bdb4]">
-                  {confidenceNote}
-                </div>
               </div>
             </div>
           </div>

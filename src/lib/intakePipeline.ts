@@ -95,3 +95,47 @@ export function buildAppealDraftInput(args: {
     cptCodes: extracted.cptCodes,
   };
 }
+
+export type AppealEditableFields = {
+  insurer: string;
+  planType: string;
+  procedure: string;
+  denialReason: string;
+  denialQuote: string;
+  appealDeadline: string;
+  date: string;
+};
+
+export function buildEditableAppealFields(extracted: ExtractionResult | null): AppealEditableFields {
+  return {
+    insurer: extracted?.insurer || '',
+    planType: extracted?.planType || '',
+    procedure: extracted?.procedure || '',
+    denialReason: extracted?.denialReason || '',
+    denialQuote: extracted?.denialQuote || '',
+    appealDeadline: extracted?.appealDeadline || '',
+    date: extracted?.date || '',
+  };
+}
+
+export function mergeAppealExtraction(args: {
+  extracted: ExtractionResult | null;
+  editable: AppealEditableFields;
+}): ExtractionResult {
+  const { extracted, editable } = args;
+
+  return normalizeExtractionResult({
+    insurer: editable.insurer || extracted?.insurer,
+    planType: editable.planType || extracted?.planType,
+    procedure: editable.procedure || extracted?.procedure,
+    denialReason: editable.denialReason || extracted?.denialReason,
+    denialQuote: editable.denialQuote || extracted?.denialQuote,
+    appealDeadline: editable.appealDeadline || extracted?.appealDeadline,
+    isERISA: extracted?.isERISA,
+    medicalNecessityFlag: extracted?.medicalNecessityFlag,
+    imeInvolved: extracted?.imeInvolved,
+    summary: extracted?.summary,
+    date: editable.date || extracted?.date,
+    cptCodes: extracted?.cptCodes,
+  });
+}
