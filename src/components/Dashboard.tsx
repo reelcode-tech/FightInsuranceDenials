@@ -2,19 +2,7 @@ import React from 'react';
 import { DenialRecord } from "@/src/types";
 import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
-
-type MetricRow = { label: string; value: number };
-type PatternsPayload = {
-  status: 'success' | 'error';
-  overview: {
-    totalRows: number;
-    cleanPatternRows: number;
-    unknownInsurerPct: number;
-  };
-  topInsurers: MetricRow[];
-  topCategories: MetricRow[];
-  topProcedures: MetricRow[];
-};
+import { buildHomepageProofPoints, buildMethodologySummary, type PatternsResponse } from '@/src/lib/insightsPresentation';
 
 export default function Dashboard() {
   const STORY_SEED_KEY = 'fid_story_seed';
@@ -22,7 +10,7 @@ export default function Dashboard() {
   const [realCount, setRealCount] = React.useState<number | null>(null);
   const [topCategoryLabel, setTopCategoryLabel] = React.useState<string>('N/A');
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [patterns, setPatterns] = React.useState<PatternsPayload | null>(null);
+  const [patterns, setPatterns] = React.useState<PatternsResponse | null>(null);
 
   const fetchRealCount = async () => {
     try {
@@ -91,36 +79,9 @@ export default function Dashboard() {
     };
   }, []);
 
-  const topInsurer = patterns?.topInsurers?.[0];
-  const topProcedure = patterns?.topProcedures?.[0];
   const topCategory = patterns?.topCategories?.[0];
-  const proofPoints = [
-    {
-      eyebrow: 'What keeps happening first',
-      title: topCategory ? `${topCategory.label} keeps coming up.` : 'Prior authorization keeps coming up.',
-      body: topCategory
-        ? `${topCategory.value.toLocaleString()} public stories already point to the same denial tactic.`
-        : 'The strongest repeat fight in the record right now is prior authorization.',
-    },
-    {
-      eyebrow: 'Which insurer shows up most',
-      title: topInsurer ? `${topInsurer.label} is surfacing the most.` : 'Named insurer patterns are still forming.',
-      body: patterns?.topInsurers?.length
-        ? `${patterns.topInsurers.slice(0, 3).map((item) => item.label).join(', ')} are the names surfacing most often in patient stories.`
-        : 'We only foreground payer patterns once the insurer name is clear enough to compare.',
-    },
-    {
-      eyebrow: 'What care gets blocked over and over',
-      title: topProcedure ? `${topProcedure.label} keeps getting blocked.` : 'Medication and treatment access are surfacing fastest.',
-      body: topProcedure
-        ? `${topProcedure.value.toLocaleString()} public stories already point to repeat friction around ${topProcedure.label.toLowerCase()}.`
-        : 'The strongest early clusters are around medications, procedures, and specialist access.',
-    },
-  ];
-
-  const confidenceNote = patterns
-    ? `We pull from public patient stories, complaint platforms, condition communities, and benchmark sources, then narrow it down to ${patterns.overview.cleanPatternRows.toLocaleString()} stories we can already compare in plain English.`
-    : 'We pull from public patient stories, complaint platforms, and benchmark sources, then narrow it down to the patterns we can explain clearly.';
+  const proofPoints = buildHomepageProofPoints(patterns);
+  const confidenceNote = buildMethodologySummary(patterns).coverageSummary;
 
   const navigate = (tab: 'share' | 'appeal' | 'insights') => {
     window.dispatchEvent(new CustomEvent('nav', { detail: tab }));

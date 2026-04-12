@@ -29,7 +29,9 @@ This file tracks the public-source lanes currently feeding the observatory and t
 - Mayo Clinic Connect
 - GLP-1 / obesity medication coverage fights
 - Mental health parity and therapy coverage resources
+- Autism treatment and ABA coverage resources
 - Cancer and rare-disease support communities
+- Alzheimer's and dementia appeal resources
 - Court and lawsuit intelligence
 - Public Facebook discovery lane (manual review only)
 

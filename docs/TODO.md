@@ -4,7 +4,7 @@
 - [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
 - [ ] Redesign the homepage hero so it feels human, emotionally grounded, and visually coherent on desktop and mobile.
 - [ ] Replace the current hero image with a stronger healthcare-denial emotional image or a custom-generated visual if the current source still misses the feeling.
-- [ ] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
+- [x] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
 - [ ] Keep growing public-source ingestion toward 10,000+ raw observations while improving precision, not just volume.
 - [ ] Improve extraction quality so fewer rows fall into Unknown insurer, Unknown category, or generic procedure buckets.
 - [ ] Keep syncing BigQuery -> Neon -> public observatory automatically.
@@ -15,7 +15,7 @@
 - [ ] Add non-Reddit ingestion modules for Breastcancer.org public discussions.
 - [ ] Add ingestion modules for ConsumerAffairs insurer complaint pages.
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
-- [ ] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
+- [x] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
 - [x] Add a trusted public observation pack so official and community sources keep widening even when Reddit slows down.
 - [x] Validate the seven source-family ingestion lanes (California IMR, Mayo Clinic Connect, GLP-1 coverage, mental health parity, cancer/rare disease, court intelligence, public Facebook discovery).
 - [ ] Add better rate-limit handling and backoff for Reddit/PullPush ingestion.
@@ -30,7 +30,7 @@
 - [ ] Finish the Share Your Story intake so venting, voice-to-text, structured fields, upload, and consent feel cohesive.
 - [ ] Strengthen Fight Back so upload-first appeal generation feels premium and trustworthy.
 - [ ] Surface precedent-aware appeal evidence more clearly in the appeal output UI.
-- [ ] Improve Evidence Patterns storytelling so findings, methodology, and data quality are obvious to non-technical visitors.
+- [x] Improve Evidence Patterns storytelling so findings, methodology, and source context are obvious to non-technical visitors.
 - [ ] Build a cleaner B2B / Data Products page with real productized offerings and pricing logic.
 - [ ] Strengthen About / Transparency / Privacy with methodology, taxonomy, privacy boundaries, and trust language.
 - [ ] Remove any stale or conflicting design remnants from older versions of the site.
@@ -57,6 +57,10 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Add shared presentation helpers and regression tests so homepage and evidence copy stay user-facing instead of drifting back into internal analytics jargon.
+- [x] Rework the homepage around a cleaner action-first hero, clearer next steps, and stronger proof from the database.
+- [x] Reframe Evidence Patterns around patient questions, actionable findings, and source/methodology explanation.
+- [x] Expand the validated source-family pack with Mayo, Autism Speaks, and Alzheimer’s Association appeal evidence.
 - [x] Set up BigQuery warehouse tables and analytics views.
 - [x] Set up Neon operational schema.
 - [x] Wire warehouse-backed Insights / Evidence Patterns data into the app.
