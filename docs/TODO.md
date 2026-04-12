@@ -16,6 +16,7 @@
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
 - [ ] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
 - [x] Add a trusted public observation pack so official and community sources keep widening even when Reddit slows down.
+- [x] Validate the seven source-family ingestion lanes (California IMR, Mayo Clinic Connect, GLP-1 coverage, mental health parity, cancer/rare disease, court intelligence, public Facebook discovery).
 - [ ] Add better rate-limit handling and backoff for Reddit/PullPush ingestion.
 - [ ] Add source weighting and confidence scoring that flows into the observatory UI.
 - [ ] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
@@ -32,6 +33,7 @@
 - [ ] Build a cleaner B2B / Data Products page with real productized offerings and pricing logic.
 - [ ] Strengthen About / Transparency / Privacy with methodology, taxonomy, privacy boundaries, and trust language.
 - [ ] Remove any stale or conflicting design remnants from older versions of the site.
+- [x] Add a living source inventory so we can track active lanes, cautious/manual lanes, and partnership-only sources in one place.
 
 ## Deployment
 - [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.

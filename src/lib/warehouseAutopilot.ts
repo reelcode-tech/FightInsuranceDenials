@@ -1,4 +1,5 @@
 import { PUBLIC_SOURCE_CATALOG } from './publicSourceCatalog';
+import { SOURCE_FAMILY_OBSERVATIONS } from './sourceFamilyObservationPack';
 import { TRUSTED_OBSERVATION_PACK } from './trustedObservationPack';
 import { WAREHOUSE_SEED_OBSERVATIONS } from './warehouseSeedData';
 import { getBigQueryAccessToken, runBigQuerySql } from '../../scripts/_bigqueryClient';
@@ -69,11 +70,45 @@ export async function seedBigQueryWarehouseObservations() {
   return rows.length;
 }
 
-export async function upsertTrustedObservationPackToNeon() {
+async function upsertObservationPackToBigQuery(
+  observations: typeof TRUSTED_OBSERVATION_PACK,
+  ingestionLabel: string
+) {
+  const rows = observations.map((observation) => ({
+    insertId: observation.observation_id,
+    json: {
+      ...observation,
+      ingested_at: new Date().toISOString(),
+      source_label: clampText(observation.source_label, 255),
+      title: clampText(observation.title, 500),
+      raw_text: clampText(
+        `${observation.raw_text}\n\n[ingestion_lane:${ingestionLabel}]`,
+        5000
+      ),
+      story_excerpt: clampText(observation.story_excerpt, 1200),
+      insurer_raw: clampText(observation.insurer_raw, 120),
+      insurer_normalized: clampText(observation.insurer_normalized, 120),
+      procedure_raw: clampText(observation.procedure_raw, 255),
+      procedure_normalized: clampText(observation.procedure_normalized, 255),
+      denial_reason_raw: clampText(observation.denial_reason_raw, 800),
+      denial_category: clampText(observation.denial_category, 80),
+      plan_type: clampText(observation.plan_type, 80),
+      erisa_status: clampText(observation.erisa_status, 40),
+    },
+  }));
+
+  await insertAll('raw_web_observations', rows);
+  return rows.length;
+}
+
+async function upsertObservationPackToNeon(
+  observations: typeof TRUSTED_OBSERVATION_PACK,
+  ingestionLabel: string
+) {
   return withNeonClient(async (client) => {
     let upserted = 0;
 
-    for (const row of TRUSTED_OBSERVATION_PACK) {
+    for (const row of observations) {
       await client.query(
         `
         INSERT INTO raw_web_observations (
@@ -112,7 +147,7 @@ export async function upsertTrustedObservationPackToNeon() {
           row.source_label,
           row.source_weight,
           row.title,
-          row.raw_text,
+          `${row.raw_text}\n\n[ingestion_lane:${ingestionLabel}]`,
           row.story_excerpt,
           row.insurer_raw,
           row.insurer_normalized,
@@ -132,6 +167,22 @@ export async function upsertTrustedObservationPackToNeon() {
 
     return upserted;
   });
+}
+
+export async function upsertTrustedObservationPackToNeon() {
+  return upsertObservationPackToNeon(TRUSTED_OBSERVATION_PACK, 'trusted_pack');
+}
+
+export async function upsertSourceFamilyPackToNeon() {
+  return upsertObservationPackToNeon(SOURCE_FAMILY_OBSERVATIONS, 'source_family_pack');
+}
+
+export async function upsertTrustedObservationPackToBigQuery() {
+  return upsertObservationPackToBigQuery(TRUSTED_OBSERVATION_PACK, 'trusted_pack');
+}
+
+export async function upsertSourceFamilyPackToBigQuery() {
+  return upsertObservationPackToBigQuery(SOURCE_FAMILY_OBSERVATIONS, 'source_family_pack');
 }
 
 export async function syncBigQuerySourceRecordsToNeon() {
@@ -394,7 +445,10 @@ export async function pruneGenericCuratedStories() {
 export async function runWarehouseAutopilotPass() {
   const seededSources = 0;
   const seededObservations = 0;
+  const trustedPackBigQueryUpserted = await upsertTrustedObservationPackToBigQuery();
+  const sourceFamilyBigQueryUpserted = await upsertSourceFamilyPackToBigQuery();
   const trustedPackUpserted = await upsertTrustedObservationPackToNeon();
+  const sourceFamilyPackUpserted = await upsertSourceFamilyPackToNeon();
   const redditIngestion = await ingestRedditToBigQuery();
   const syncedSources = await syncBigQuerySourceRecordsToNeon();
   const syncedObservations = await syncBigQueryRawObservationsToNeon();
@@ -405,7 +459,10 @@ export async function runWarehouseAutopilotPass() {
   return {
     seededSources,
     seededObservations,
+    trustedPackBigQueryUpserted,
+    sourceFamilyBigQueryUpserted,
     trustedPackUpserted,
+    sourceFamilyPackUpserted,
     redditIngestion,
     syncedSources,
     syncedObservations,
@@ -416,7 +473,10 @@ export async function runWarehouseAutopilotPass() {
 }
 
 export async function runWarehouseDeepBackfillPass() {
+  const trustedPackBigQueryUpserted = await upsertTrustedObservationPackToBigQuery();
+  const sourceFamilyBigQueryUpserted = await upsertSourceFamilyPackToBigQuery();
   const trustedPackUpserted = await upsertTrustedObservationPackToNeon();
+  const sourceFamilyPackUpserted = await upsertSourceFamilyPackToNeon();
   const redditBackfill = await backfillHistoricalRedditToBigQuery({
     pagesPerSubreddit: 5,
     pageSize: 80,
@@ -428,7 +488,10 @@ export async function runWarehouseDeepBackfillPass() {
   const summary = await fetchWarehouseSummary();
 
   return {
+    trustedPackBigQueryUpserted,
+    sourceFamilyBigQueryUpserted,
     trustedPackUpserted,
+    sourceFamilyPackUpserted,
     redditBackfill,
     syncedSources,
     syncedObservations,

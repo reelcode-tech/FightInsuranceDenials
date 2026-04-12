@@ -3,8 +3,61 @@ import { neon } from '@neondatabase/serverless';
 type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };
 type ClusterRow = { procedure: string; insurer: string; category: string; value: number };
-type QualityRow = { metric: string; value: number };
 type FindingRow = { title: string; body: string; tone: 'high' | 'medium' | 'warning' };
+type ActionablePatternRow = {
+  insurer: string;
+  category: string;
+  procedure: string;
+  value: number;
+  takeaway: string;
+  whyItMatters: string;
+};
+
+function clusterTakeaway(category: string, procedure: string, insurer: string) {
+  const categoryKey = (category || '').toLowerCase();
+  const procedureName = procedure || 'care';
+  const insurerName = insurer || 'this insurer';
+
+  if (categoryKey.includes('prior')) {
+    return {
+      takeaway: `${insurerName} keeps forcing extra approval steps before ${procedureName.toLowerCase()} can move.`,
+      whyItMatters: 'That usually means patients need physician notes, failed-treatment history, and plan-language evidence sooner, not later.',
+    };
+  }
+
+  if (categoryKey.includes('medical necessity')) {
+    return {
+      takeaway: `${insurerName} is repeatedly making patients prove ${procedureName.toLowerCase()} is medically necessary even when clinicians support it.`,
+      whyItMatters: 'That often points to appeals that need stronger clinical documentation and side-by-side insurer language rebuttals.',
+    };
+  }
+
+  if (categoryKey.includes('out of network')) {
+    return {
+      takeaway: `${insurerName} shows a repeat pattern of pushing ${procedureName.toLowerCase()} fights into out-of-network chaos.`,
+      whyItMatters: 'That can disrupt treatment midstream, so patients often need continuity-of-care, gap exception, or network adequacy arguments.',
+    };
+  }
+
+  if (categoryKey.includes('coverage exclusion')) {
+    return {
+      takeaway: `${insurerName} keeps treating ${procedureName.toLowerCase()} as excluded or not covered care.`,
+      whyItMatters: 'That matters because people may need plan documents, formulary evidence, and comparable-case precedent, not just another resubmission.',
+    };
+  }
+
+  if (categoryKey.includes('eligibility')) {
+    return {
+      takeaway: `${insurerName} is surfacing repeat eligibility breakdowns around ${procedureName.toLowerCase()}.`,
+      whyItMatters: 'These fights often hinge on enrollment records, employer timing, or mistaken coverage lapses rather than medicine itself.',
+    };
+  }
+
+  return {
+    takeaway: `${insurerName} keeps surfacing alongside ${procedureName.toLowerCase()} denials.`,
+    whyItMatters: 'A repeat pattern like this gives patients and advocates something concrete to compare against instead of feeling like they are the only one.',
+  };
+}
 
 let sqlClient: ReturnType<typeof neon> | null = null;
 
@@ -59,7 +112,13 @@ export async function fetchObservatorySummaryFromNeon() {
         source_label,
         source_url
       FROM curated_stories
-      WHERE status = 'published' AND consent_level = 'public_story'
+      WHERE status = 'published'
+        AND consent_level = 'public_story'
+        AND COALESCE(patient_narrative_summary, '') !~* '(turn 26|which plan|what plan|late enrollment|open enrollment|shopping for|marketplace quote|recommendations for)'
+        AND (
+          COALESCE(denial_category, '') NOT IN ('', 'Unknown')
+          OR COALESCE(denial_reason_raw, '') ~* '(denied|prior auth|prior authorization|not medically necessary|out of network|coverage denied|claim denied|step therapy)'
+        )
       ORDER BY quality_score DESC, submission_timestamp DESC
       LIMIT 3
     `,
@@ -126,22 +185,7 @@ export async function fetchPatternsFromNeon() {
           SELECT COUNT(*)::int
           FROM raw_web_observations
           WHERE COALESCE(procedure_normalized, '') IN ('', 'Unknown', 'Insurance denial evidence')
-        ) AS generic_procedure_rows,
-        (
-          SELECT COUNT(*)::int
-          FROM raw_web_observations
-          WHERE COALESCE(state, '') IN ('', 'Unknown')
-        ) AS missing_state_rows,
-        (
-          SELECT COUNT(*)::int
-          FROM raw_web_observations
-          WHERE state = 'OR'
-        ) AS suspicious_or_state_rows,
-        (
-          SELECT COUNT(*)::int
-          FROM raw_web_observations
-          WHERE is_low_signal = TRUE
-        ) AS low_signal_rows
+        ) AS generic_procedure_rows
     `,
     sql`
       SELECT extracted_insurer AS label, COUNT(*)::int AS value
@@ -228,54 +272,47 @@ export async function fetchPatternsFromNeon() {
   const findings: FindingRow[] = [
     topInsurerRows[0]
       ? {
-          title: `${topInsurerRows[0].label} leads the visible insurer slice`,
-          body: `${topInsurerRows[0].label} appears in ${topInsurerRows[0].value} cleaned public stories, ahead of ${topInsurerRows[1]?.label || 'other carriers'} in the current record.`,
+          title: `${topInsurerRows[0].label} is showing up more than any other named insurer`,
+          body: `${topInsurerRows[0].label} appears in ${topInsurerRows[0].value} public stories we can actually stand behind, which makes it one of the clearest repeat payers to watch right now.`,
           tone: 'high',
         }
       : {
-          title: 'The cleaned public slice is still small',
-          body: 'We have enough signal to start tracking patterns, but the public observatory still needs more source breadth and cleaner extraction.',
+          title: 'The record is still early, but the repeat patterns are starting to show',
+          body: 'We already have enough signal to track repeated denial fights, even though the observatory still needs more source breadth and better extraction.',
           tone: 'warning',
         },
     topCategoryRows[0]
       ? {
-          title: `${topCategoryRows[0].label} is surfacing as the strongest denial pattern`,
-          body: `${topCategoryRows[0].label} is beating many classic medical-necessity narratives in the current public slice, which suggests a lot of denial pressure is still administrative and process-driven.`,
+          title: `${topCategoryRows[0].label} keeps surfacing as the main denial playbook`,
+          body: `${topCategoryRows[0].label} now leads the record, which suggests a lot of people are not just fighting medical judgment. They are fighting process, paperwork, gatekeeping, or pre-approval barriers.`,
           tone: 'medium',
         }
       : {
-          title: 'Category extraction still needs work',
-          body: 'We are collecting meaningful stories, but a lot of raw rows still need better denial-category normalization before they become public-facing evidence.',
+          title: 'We still need better categorization before every pattern is public-proof',
+          body: 'The stories are real, but not every row is labeled cleanly enough yet to treat it as public-facing evidence.',
           tone: 'warning',
         },
     topProcedureRows[0]
       ? {
-          title: `${topProcedureRows[0].label} is the biggest visible treatment bucket`,
-          body: `${topProcedureRows[0].label} is currently the largest procedure cluster in the public record, with other treatment areas stacking up behind it as the observatory grows.`,
+          title: `${topProcedureRows[0].label} is the care fight surfacing most often`,
+          body: `${topProcedureRows[0].label} is currently the biggest care bucket in the record, which tells us people are repeatedly getting blocked around this kind of treatment rather than in one isolated edge case.`,
           tone: 'medium',
         }
       : {
-          title: 'Procedure labeling is still maturing',
-          body: 'We can already see real treatment clusters, but too many rows still land in generic procedure buckets.',
+          title: 'Care-type labeling is still maturing',
+          body: 'We can already see real treatment clusters, but too many rows still land in generic buckets to make every chart useful yet.',
           tone: 'warning',
         },
     {
-      title: 'The data is useful, but not clean enough to overclaim certainty',
-      body: `${unknownInsurerPct}% of raw rows still lack a confident insurer, ${unknownCategoryPct}% still lack a clean category, and ${genericProcedurePct}% still fall into generic procedure buckets.`,
+      title: 'We are showing what repeats clearly, not pretending every row is perfect',
+      body: `A lot of raw posts still need better labeling, which is why we only promote the clearer repeat patterns into the public record instead of throwing every scraped row on the page.`,
       tone: 'warning',
     },
   ];
-
-  const dataQuality: QualityRow[] = [
-    { metric: 'total_rows', value: totalRows },
-    { metric: 'clean_pattern_rows', value: asNumber(overviewRow.clean_pattern_rows) },
-    { metric: 'unknown_insurer_rows', value: asNumber(overviewRow.unknown_insurer_rows) },
-    { metric: 'unknown_category_rows', value: asNumber(overviewRow.unknown_category_rows) },
-    { metric: 'generic_procedure_rows', value: asNumber(overviewRow.generic_procedure_rows) },
-    { metric: 'missing_state_rows', value: asNumber(overviewRow.missing_state_rows) },
-    { metric: 'suspicious_or_state_rows', value: asNumber(overviewRow.suspicious_or_state_rows) },
-    { metric: 'low_signal_rows', value: asNumber(overviewRow.low_signal_rows) },
-  ];
+  const actionablePatterns: ActionablePatternRow[] = (procedureClusters as unknown as ClusterRow[]).map((cluster) => ({
+    ...cluster,
+    ...clusterTakeaway(cluster.category, cluster.procedure, cluster.insurer),
+  }));
 
   return {
     status: 'success' as const,
@@ -285,17 +322,15 @@ export async function fetchPatternsFromNeon() {
       unknownInsurerPct,
       unknownCategoryPct,
       genericProcedurePct,
-      suspiciousOrStateRows: asNumber(overviewRow.suspicious_or_state_rows),
     },
     findings,
     topInsurers: topInsurerRows,
     topCategories: topCategoryRows,
     topProcedures: topProcedureRows,
     heatmap: heatmap as unknown as HeatmapRow[],
-    procedureClusters: procedureClusters as unknown as ClusterRow[],
+    procedureClusters: actionablePatterns,
     statePatterns: statePatterns as unknown as MetricRow[],
     sourceMix: sourceMix as unknown as MetricRow[],
-    dataQuality,
   };
 }
 

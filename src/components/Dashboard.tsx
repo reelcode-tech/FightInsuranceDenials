@@ -95,31 +95,31 @@ export default function Dashboard() {
   const topCategory = patterns?.topCategories?.[0];
   const proofPoints = [
     {
-      eyebrow: 'What patients are fighting most',
-      title: topCategory ? `${topCategory.label} is leading the current record.` : 'Prior authorization is leading the current record.',
+      eyebrow: 'What keeps happening first',
+      title: topCategory ? `${topCategory.label} keeps coming up.` : 'Prior authorization keeps coming up.',
       body: topCategory
-        ? `${topCategory.value.toLocaleString()} cleaned stories currently cluster around ${topCategory.label.toLowerCase()} fights.`
-        : 'The strongest repeat fight in the cleaned slice is prior authorization.',
+        ? `${topCategory.value.toLocaleString()} public stories already point to the same denial tactic.`
+        : 'The strongest repeat fight in the record right now is prior authorization.',
     },
     {
-      eyebrow: 'Which payers keep surfacing',
-      title: topInsurer ? `${topInsurer.label} shows up the most when the insurer is clear.` : 'Named insurer patterns are still forming.',
+      eyebrow: 'Which insurer shows up most',
+      title: topInsurer ? `${topInsurer.label} is surfacing the most.` : 'Named insurer patterns are still forming.',
       body: patterns?.topInsurers?.length
-        ? `${patterns.topInsurers.slice(0, 3).map((item) => item.label).join(', ')} lead the labeled insurer slice right now.`
-        : 'We only foreground payer patterns once the insurer can be confidently named.',
+        ? `${patterns.topInsurers.slice(0, 3).map((item) => item.label).join(', ')} are the names surfacing most often in patient stories.`
+        : 'We only foreground payer patterns once the insurer name is clear enough to compare.',
     },
     {
       eyebrow: 'What care gets blocked over and over',
-      title: topProcedure ? `${topProcedure.label} keeps getting caught in the denial loop.` : 'Medication and treatment access are surfacing fastest.',
+      title: topProcedure ? `${topProcedure.label} keeps getting blocked.` : 'Medication and treatment access are surfacing fastest.',
       body: topProcedure
-        ? `${topProcedure.value.toLocaleString()} stories already point to repeat friction around ${topProcedure.label.toLowerCase()}.`
+        ? `${topProcedure.value.toLocaleString()} public stories already point to repeat friction around ${topProcedure.label.toLowerCase()}.`
         : 'The strongest early clusters are around medications, procedures, and specialist access.',
     },
   ];
 
   const confidenceNote = patterns
-    ? `We do not blindly chart everything we pull in. The public-facing record currently shows ${patterns.overview.cleanPatternRows.toLocaleString()} cleaned stories, while a larger raw archive is still being labeled and de-noised. Right now, ${patterns.overview.unknownInsurerPct}% of raw rows still need a confidently named insurer, so we only surface patterns we can explain.`
-    : 'We only surface patterns once they are clean enough to explain in plain English.';
+    ? `We pull from public patient stories, complaint platforms, condition communities, and benchmark sources, then narrow it down to ${patterns.overview.cleanPatternRows.toLocaleString()} stories we can already compare in plain English.`
+    : 'We pull from public patient stories, complaint platforms, and benchmark sources, then narrow it down to the patterns we can explain clearly.';
 
   return (
     <ObservatoryExperience

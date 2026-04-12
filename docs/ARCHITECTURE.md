@@ -141,11 +141,14 @@ Key files:
 - scripts in [scripts](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts)
 
 Current background runner:
-- local always-on daemon in [warehouse-daemon.ps1](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\warehouse-daemon.ps1)
+- local always-on daemon in [warehouse-runner-daemon.ps1](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\warehouse-runner-daemon.ps1)
 - job entrypoint in [run-warehouse-job.ts](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\run-warehouse-job.ts)
 - wrapper entrypoint in [run-warehouse-job.ps1](C:\Users\sashi\Projects\FightInsuranceDenials-working\scripts\run-warehouse-job.ps1)
 - daemon is intended to relaunch on Windows login through `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, but that persistence step still needs a final clean verification
 - this is the current "all day" ingestion lane until production cron is fully armed in Vercel
+
+Current source-lane inventory:
+- living inventory in [SOURCE_INVENTORY.md](C:\Users\sashi\Projects\FightInsuranceDenials-working\docs\SOURCE_INVENTORY.md)
 
 Design principle:
 - raw first
