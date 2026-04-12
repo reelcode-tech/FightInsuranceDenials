@@ -18,6 +18,8 @@ interface Props {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   onNavigate: (tab: 'share' | 'appeal' | 'insights') => void;
+  onOpenRecordFromQuery: () => void;
+  onStartStoryFromQuery: () => void;
   proofPoints: ProofPoint[];
   confidenceNote: string;
   topCategory: string;
@@ -32,6 +34,8 @@ export default function ObservatoryExperience({
   searchTerm,
   onSearchTermChange,
   onNavigate,
+  onOpenRecordFromQuery,
+  onStartStoryFromQuery,
   proofPoints,
   confidenceNote,
   topCategory,
@@ -52,7 +56,7 @@ export default function ObservatoryExperience({
           </div>
 
           <div className="relative px-7 py-10 md:px-10 md:py-14 lg:px-12 lg:py-16">
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#f1a28e]">Public insurance denial observatory</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#f1a28e]">Public insurance denial database</p>
 
             <div className="mt-6 max-w-4xl">
               <motion.h1
@@ -61,13 +65,13 @@ export default function ObservatoryExperience({
                 transition={{ duration: 0.45 }}
                 className="text-5xl font-semibold leading-[0.92] tracking-[-0.07em] text-[#f7f1ea] md:text-7xl"
               >
-                Millions of denials.
+                Millions of health insurance denials.
                 <br />
-                One searchable observatory.
+                We help you fight back.
               </motion.h1>
 
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-[#d5cabf] md:text-xl">
-                Search what insurers are rejecting, see where denial pressure is clustering, and use the record to stop feeling like you are fighting the system alone.
+                Search for stories like yours, see how other patients were blocked, and turn that evidence into a smarter appeal instead of fighting the system alone.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -86,37 +90,53 @@ export default function ObservatoryExperience({
                 </Button>
               </div>
 
-              <div className="mt-7 grid max-w-3xl gap-4 border-t border-white/10 pt-6 text-sm md:grid-cols-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">In the record now</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#f7f1ea]">{totalStories.toLocaleString()}</p>
-                  <p className="mt-2 leading-6 text-[#c8beb4]">Cleaned denial stories we can already tie to a real payer, treatment, or denial pattern.</p>
+              <div className="mt-8 max-w-4xl rounded-[2rem] border border-white/10 bg-black/20 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#f1a28e]">
+                  Try a real denial search
+                </p>
+                <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#95897f]" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(e) => onSearchTermChange(e.target.value)}
+                      placeholder='I have UnitedHealthcare Choice Plus and got denied Taltz. Anyone else?'
+                      className="h-14 rounded-full border-white/10 bg-white/6 pl-11 text-sm text-[#f7f1ea] placeholder:text-[#95897f] shadow-none"
+                    />
+                  </div>
+                  <Button
+                    onClick={onOpenRecordFromQuery}
+                    className="h-14 rounded-full bg-[#f7f1ea] px-7 text-sm font-semibold text-[#11151a] hover:bg-[#ece4d9]"
+                  >
+                    Search the database
+                  </Button>
+                  <Button
+                    onClick={onStartStoryFromQuery}
+                    variant="outline"
+                    className="h-14 rounded-full border-white/10 bg-white/6 px-7 text-sm font-semibold text-[#f7f1ea] hover:bg-white/10"
+                  >
+                    Start my story
+                  </Button>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">Biggest repeated barrier</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">{topCategory}</p>
-                  <p className="mt-2 leading-6 text-[#c8beb4]">The strongest denial pattern in the current public slice.</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">What this gives patients</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#f7f1ea]">Precedent</p>
-                  <p className="mt-2 leading-6 text-[#c8beb4]">Real stories, repeated tactics, and language you can bring into an appeal.</p>
+                <div className="mt-4 flex flex-wrap gap-3 px-2 text-sm text-[#c8beb4]">
+                  <span>{totalStories.toLocaleString()} patient stories already in the record</span>
+                  <span className="text-white/25">•</span>
+                  <span>{topCategory} is surfacing the most</span>
+                  <span className="text-white/25">•</span>
+                  <span>Built to help patients, reporters, and watchdogs spot repeat insurer behavior</span>
                 </div>
               </div>
 
-              <div className="mt-7 flex max-w-xl items-center gap-3 rounded-full border border-white/10 bg-white/6 p-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#95897f]" />
-                  <Input
-                    value={searchTerm}
-                    onChange={(e) => onSearchTermChange(e.target.value)}
-                    placeholder="Search insurer, medication, procedure"
-                    className="h-11 border-0 bg-transparent pl-11 text-sm text-[#f7f1ea] placeholder:text-[#95897f] shadow-none"
-                  />
-                </div>
-                <Button onClick={() => onNavigate('insights')} className="rounded-full bg-white text-[#11151a] hover:bg-[#ece4d9]">
-                  Open the record
-                </Button>
+              <div className="mt-7 flex max-w-3xl flex-wrap gap-3 text-sm text-[#c8beb4]">
+                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
+                  Search by insurer, plan, drug, procedure, or denial reason
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
+                  Pull examples before you upload a denial letter
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-2">
+                  Carry your search straight into Share Your Story
+                </span>
               </div>
             </div>
           </div>

@@ -73,6 +73,7 @@ export default function Insights() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [recordQuery, setRecordQuery] = React.useState<string>('');
 
   const load = React.useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -103,6 +104,20 @@ export default function Insights() {
     load('initial');
   }, [load]);
 
+  React.useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem('fid_record_query');
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as { query?: string };
+      const query = parsed?.query?.trim();
+      if (!query) return;
+      setRecordQuery(query);
+      window.sessionStorage.removeItem('fid_record_query');
+    } catch (err) {
+      console.error('Failed to restore record query', err);
+    }
+  }, []);
+
   const heatMax = Math.max(...(data?.heatmap.map((item) => item.value) || [1]));
   const topCategory = data?.topCategories?.[0];
   const topProcedure = data?.topProcedures?.[0];
@@ -127,6 +142,14 @@ export default function Insights() {
                   This page is for the questions people actually ask after a denial: Who keeps doing this? What kinds of care get blocked most often?
                   Is my case isolated, or part of a pattern? We only show the parts of the record that already answer those questions clearly.
                 </p>
+                {recordQuery ? (
+                  <div className="rounded-[1.4rem] border border-white/10 bg-white/6 p-4 text-sm leading-7 text-[#e5d9ce]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Your question</p>
+                    <p className="mt-2">
+                      You searched for <span className="font-semibold text-[#f7f2eb]">{recordQuery}</span>. Use the patterns below to see what is already surfacing, then add your story if your exact denial is still missing from the record.
+                    </p>
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -271,14 +294,14 @@ export default function Insights() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
                     <BarChart3 className="h-5 w-5 text-[#f19a86]" />
-                    The clearest answers in the record right now
+                    What people keep getting denied
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-6 lg:grid-cols-3">
                   {[
-                    { title: 'Which insurers keep surfacing', rows: data.topInsurers },
-                    { title: 'Top denial categories', rows: data.topCategories },
-                    { title: 'What care gets blocked most', rows: data.topProcedures },
+                    { title: 'Which insurers show up the most', rows: data.topInsurers },
+                    { title: 'Which denial reasons keep repeating', rows: data.topCategories },
+                    { title: 'What kinds of care get blocked most', rows: data.topProcedures },
                   ].map((block, blockIndex) => (
                     <div key={block.title} className="space-y-4">
                       <div>
@@ -321,7 +344,7 @@ export default function Insights() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
                     <Target className="h-5 w-5 text-[#f19a86]" />
-                    Where the denial playbook repeats
+                    Where the same denial tactic keeps showing up
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
@@ -330,8 +353,7 @@ export default function Insights() {
                   ))}
                   <div className="md:col-span-2 rounded-[1.5rem] border border-white/8 bg-white/6 p-5">
                     <p className="text-sm leading-7 text-[#c8bdb4]">
-                      When the same insurer and denial reason keep surfacing together, it gives patients, reporters, and lawyers something more useful than a single story:
-                      a repeat tactic worth comparing, escalating, or building an appeal around.
+                      When the same insurer and denial reason keep surfacing together, it tells you this is not just bad luck. It is a repeated tactic you can compare against, cite in an appeal, or escalate to a reporter, regulator, or lawyer.
                     </p>
                   </div>
                 </CardContent>
@@ -371,7 +393,7 @@ export default function Insights() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">Stories we can compare</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#9e9489]">Matching stories</p>
                           <p className="text-4xl font-semibold tracking-[-0.05em] text-[#f19a86]">{cluster.value}</p>
                         </div>
                       </div>
@@ -385,7 +407,7 @@ export default function Insights() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-3 text-2xl tracking-tight text-[#f7f2eb]">
                       <MapPinned className="h-5 w-5 text-[#f19a86]" />
-                      Where complaints are surfacing most
+                      Which states keep surfacing in these complaints
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -406,7 +428,7 @@ export default function Insights() {
                       </div>
                     ))}
                     <p className="text-sm leading-6 text-[#c8bdb4]">
-                      This is best used as a directional signal for where repeat complaints are clustering, not as a definitive rate card of every denial in every state.
+                      Use this to spot where patients are surfacing similar coverage fights most often, especially when you are looking for local reporters, regulators, or advocacy groups already paying attention.
                     </p>
                   </CardContent>
                 </Card>

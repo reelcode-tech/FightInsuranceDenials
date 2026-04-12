@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { extractDenialData } from "@/src/lib/gemini";
 import { ExtractionResult } from "@/src/types";
@@ -8,6 +8,8 @@ import { Loader2, Upload, CheckCircle2, ChevronRight, ShieldCheck, Mic, MicOff }
 import { toast } from "sonner";
 import { saveUserSubmission } from "@/src/lib/observatoryRepository";
 import { validateUploadFileMeta } from "@/src/lib/intakePipeline";
+
+const STORY_SEED_KEY = 'fid_story_seed';
 
 export default function SubmitDenial() {
   const [step, setStep] = useState(1);
@@ -31,6 +33,37 @@ export default function SubmitDenial() {
     aggregated: true,
     research: true,
   });
+
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(STORY_SEED_KEY);
+      if (!stored) return;
+
+      const parsed = JSON.parse(stored) as { query?: string };
+      const query = parsed?.query?.trim();
+      if (!query) return;
+
+      const hasExistingContent =
+        Boolean(narrative.trim()) ||
+        Boolean(rawText.trim()) ||
+        Boolean(manualFields.insurer.trim()) ||
+        Boolean(manualFields.procedure.trim()) ||
+        Boolean(manualFields.denialReason.trim());
+
+      if (hasExistingContent) return;
+
+      const seededNarrative = query.toLowerCase().startsWith('i ')
+        ? `${query}\n\nHas anyone else gone through this denial? Here is what happened to me:`
+        : `I have ${query}. Has anyone else gone through this denial? Here is what happened to me:`;
+
+      setNarrative(seededNarrative);
+      setRawText(seededNarrative);
+      window.sessionStorage.removeItem(STORY_SEED_KEY);
+      toast.success("We started your story from that search. Add whatever details matter most.");
+    } catch (error) {
+      console.error('Failed to seed story from homepage query', error);
+    }
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

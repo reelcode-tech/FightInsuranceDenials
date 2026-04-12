@@ -17,6 +17,7 @@ type PatternsPayload = {
 };
 
 export default function Dashboard() {
+  const STORY_SEED_KEY = 'fid_story_seed';
   const [featuredStories, setFeaturedStories] = React.useState<DenialRecord[]>([]);
   const [realCount, setRealCount] = React.useState<number | null>(null);
   const [topCategoryLabel, setTopCategoryLabel] = React.useState<string>('N/A');
@@ -121,6 +122,44 @@ export default function Dashboard() {
     ? `We pull from public patient stories, complaint platforms, condition communities, and benchmark sources, then narrow it down to ${patterns.overview.cleanPatternRows.toLocaleString()} stories we can already compare in plain English.`
     : 'We pull from public patient stories, complaint platforms, and benchmark sources, then narrow it down to the patterns we can explain clearly.';
 
+  const navigate = (tab: 'share' | 'appeal' | 'insights') => {
+    window.dispatchEvent(new CustomEvent('nav', { detail: tab }));
+    if (tab === 'insights') {
+      toast.success("Opening observatory benchmarks");
+    }
+  };
+
+  const seedStoryFromQuery = () => {
+    const query = searchTerm.trim();
+    if (!query) {
+      navigate('share');
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      STORY_SEED_KEY,
+      JSON.stringify({
+        query,
+        createdAt: new Date().toISOString(),
+      }),
+    );
+    navigate('share');
+  };
+
+  const openRecordFromQuery = () => {
+    const query = searchTerm.trim();
+    if (query) {
+      window.sessionStorage.setItem(
+        'fid_record_query',
+        JSON.stringify({
+          query,
+          createdAt: new Date().toISOString(),
+        }),
+      );
+    }
+    navigate('insights');
+  };
+
   return (
     <ObservatoryExperience
       featuredStories={featuredStories}
@@ -128,12 +167,9 @@ export default function Dashboard() {
       topCategory={topCategoryLabel !== 'N/A' ? topCategoryLabel : (topCategory?.label || 'Coverage denial')}
       searchTerm={searchTerm}
       onSearchTermChange={setSearchTerm}
-      onNavigate={(tab) => {
-        window.dispatchEvent(new CustomEvent('nav', { detail: tab }));
-        if (tab === 'insights') {
-          toast.success("Opening observatory benchmarks");
-        }
-      }}
+      onNavigate={navigate}
+      onOpenRecordFromQuery={openRecordFromQuery}
+      onStartStoryFromQuery={seedStoryFromQuery}
       proofPoints={proofPoints}
       confidenceNote={confidenceNote}
     />
