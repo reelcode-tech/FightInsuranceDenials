@@ -25,10 +25,13 @@ This file tracks the public-source lanes currently feeding the observatory and t
 - CourtListener discovery lane
 
 ### Condition and advocacy communities now wired into the source-family pack
+- AARP Medicare Insurance Forum
 - California IMR / DMHC decisions
 - California Department of Insurance IMR rights materials
 - CalPERS appeal and independent-review rights
 - Mayo Clinic Connect
+- Breastcancer.org Community denial threads
+- Cancer Survivors Network
 - Myeloma Beacon
 - HealthBoards condition-specific denial threads
 - GLP-1 / obesity medication coverage fights
@@ -57,5 +60,8 @@ This file tracks the public-source lanes currently feeding the observatory and t
 - California DMHC IMR decision harvesting beyond seed observations
 - Additional state external review / IMR databases
 - Mayo Clinic Connect thread harvesting by condition and payer keywords
+- AARP Medicare thread harvesting by payer and denial reason
+- Breastcancer.org harvesting by procedure and insurer keywords
+- Cancer Survivors Network harvesting by treatment and payer keywords
 - More GLP-1, oncology, autism, ALS, Alzheimer’s, depression, anxiety, and therapy-specific communities
 - Lawsuit / docket monitoring around prior authorization and denial algorithms

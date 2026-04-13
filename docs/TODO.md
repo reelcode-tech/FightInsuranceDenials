@@ -58,6 +58,8 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Expand high-fidelity source packs for AARP, Mayo Clinic Connect, Breastcancer.org, Cancer Survivors Network, and Myeloma Beacon, then rerun normalization and warehouse autopilot.
+- [x] Add regression tests that enforce a meaningful minimum amount of seeded coverage across the higher-fidelity source families.
 - [x] Add stronger payer inference from plan and PBM clues, then rerun the Neon normalization backfill across raw and curated rows.
 - [x] Expand the higher-fidelity source pack with CalPERS appeal rights, Myeloma Beacon, and HealthBoards denial examples.
 - [x] Rerun warehouse autopilot after the normalization pass so new source-family rows and better payer inference flow into the public record.
