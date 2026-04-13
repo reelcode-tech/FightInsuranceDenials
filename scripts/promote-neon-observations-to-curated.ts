@@ -1,5 +1,11 @@
 import dotenv from 'dotenv';
 import { withNeonClient } from './_neonClient';
+import {
+  inferInsurerFromNarrativeText,
+  normalizeDenialReasonText,
+  normalizePlanType,
+  normalizeProcedureLabel,
+} from '../src/lib/normalization';
 
 dotenv.config();
 
@@ -35,6 +41,13 @@ async function main() {
     let promoted = 0;
 
     for (const row of sourceRows.rows) {
+      const normalizedInsurer = inferInsurerFromNarrativeText(
+        row.insurer_normalized || row.denial_reason_raw || row.raw_text,
+      );
+      const normalizedPlan = normalizePlanType(row.plan_type || row.raw_text);
+      const normalizedProcedure = normalizeProcedureLabel(row.procedure_normalized || row.procedure_raw || row.raw_text);
+      const normalizedReason = normalizeDenialReasonText(row.denial_reason_raw);
+
       await client.query(
         `
         INSERT INTO curated_stories (
@@ -75,13 +88,13 @@ async function main() {
           $8,
           COALESCE($9, 'Unknown'),
           COALESCE($10, 'Insurance denial evidence'),
-          COALESCE($11, 'Coverage friction, denial patterns, or appeal support evidence'),
-          COALESCE($11, 'Coverage friction, denial patterns, or appeal support evidence'),
-          LEFT(COALESCE($12, $13, 'Public source observation relevant to insurance denial analysis.'), 600),
-          LEFT(COALESCE($13, $12, 'Public source observation relevant to insurance denial analysis.'), 1200),
+          COALESCE($11, 'Coverage denial'),
+          COALESCE($11, 'Coverage denial'),
+          COALESCE($12, $13, 'Public source observation relevant to insurance denial analysis.'),
+          COALESCE($13, $12, 'Public source observation relevant to insurance denial analysis.'),
           COALESCE($14, 0),
           NOW(),
-          jsonb_build_object('promoted_from', 'raw_web_observations')
+          jsonb_build_object('promoted_from', 'raw_web_observations', 'normalization_version', 'v2')
         )
         ON CONFLICT (story_id) DO UPDATE SET
           source_type = EXCLUDED.source_type,
@@ -104,13 +117,13 @@ async function main() {
           row.source_type,
           row.source_label,
           row.canonical_url,
-          row.insurer_normalized || 'Multiple insurers',
-          row.plan_type || 'Unknown',
+          normalizedInsurer || 'Multiple insurers',
+          normalizedPlan || 'Unknown',
           row.state,
           row.erisa_status || 'Unknown',
           row.denial_category,
-          row.procedure_normalized,
-          row.denial_reason_raw,
+          normalizedProcedure,
+          normalizedReason,
           row.story_excerpt,
           row.raw_text,
           row.quality_score,

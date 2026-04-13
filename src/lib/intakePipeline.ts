@@ -1,4 +1,8 @@
 import type { DenialRecord, ExtractionResult } from '../types';
+import {
+  normalizeInsurerName,
+  normalizePlanType,
+} from './normalization';
 
 export type SupportedUploadMimeType =
   | 'application/pdf'
@@ -53,8 +57,8 @@ export function validateUploadFileMeta(file: UploadFileMeta) {
 
 export function normalizeExtractionResult(partial: Partial<ExtractionResult>): ExtractionResult {
   return {
-    insurer: partial.insurer?.trim() || 'Unknown',
-    planType: partial.planType?.trim() || 'Unknown',
+    insurer: partial.insurer?.trim() ? normalizeInsurerName(partial.insurer) : 'Unknown',
+    planType: partial.planType?.trim() ? normalizePlanType(partial.planType) : 'Unknown',
     procedure: partial.procedure?.trim() || 'Medical Service',
     denialReason: partial.denialReason?.trim() || 'Coverage Denial',
     denialQuote: partial.denialQuote?.trim() || '',

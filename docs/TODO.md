@@ -58,6 +58,9 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Add stronger payer inference from plan and PBM clues, then rerun the Neon normalization backfill across raw and curated rows.
+- [x] Expand the higher-fidelity source pack with CalPERS appeal rights, Myeloma Beacon, and HealthBoards denial examples.
+- [x] Rerun warehouse autopilot after the normalization pass so new source-family rows and better payer inference flow into the public record.
 - [x] Tighten the public storytelling layout using cleaner Claude/Granola-style hierarchy: larger hero, simpler product loop, fewer repetitive cards, and more meaningful evidence framing.
 - [x] Restructure the homepage around one sharp promise, one search-to-proof demo, and fewer repeated card layouts.
 - [x] Rewrite Evidence Patterns around patient questions and "so what" takeaways instead of internal analytics language.

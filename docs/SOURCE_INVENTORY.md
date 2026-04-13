@@ -27,7 +27,10 @@ This file tracks the public-source lanes currently feeding the observatory and t
 ### Condition and advocacy communities now wired into the source-family pack
 - California IMR / DMHC decisions
 - California Department of Insurance IMR rights materials
+- CalPERS appeal and independent-review rights
 - Mayo Clinic Connect
+- Myeloma Beacon
+- HealthBoards condition-specific denial threads
 - GLP-1 / obesity medication coverage fights
 - Mounjaro / additional GLP-1 coverage communities
 - Mental health parity and therapy coverage resources

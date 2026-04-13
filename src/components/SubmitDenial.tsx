@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { extractDenialData } from "@/src/lib/gemini";
-import { ExtractionResult } from "@/src/types";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage, db, auth, handleFirestoreError, OperationType } from "@/src/lib/firebase";
+import { Button } from '@/components/ui/button';
+import { extractDenialData } from '@/src/lib/gemini';
+import { ExtractionResult } from '@/src/types';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, db, auth, handleFirestoreError, OperationType } from '@/src/lib/firebase';
 import { Loader2, Upload, CheckCircle2, ChevronRight, ShieldCheck, Mic, MicOff } from 'lucide-react';
-import { toast } from "sonner";
-import { saveUserSubmission } from "@/src/lib/observatoryRepository";
-import { validateUploadFileMeta } from "@/src/lib/intakePipeline";
-import { buildSeededStoryNarrative, mergeStoryExtraction } from "@/src/lib/storyIntake";
+import { toast } from 'sonner';
+import { saveUserSubmission } from '@/src/lib/observatoryRepository';
+import { validateUploadFileMeta } from '@/src/lib/intakePipeline';
+import { buildSeededStoryNarrative, mergeStoryExtraction } from '@/src/lib/storyIntake';
 
 const STORY_SEED_KEY = 'fid_story_seed';
 
@@ -18,8 +18,8 @@ export default function SubmitDenial() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recognitionRef, setRecognitionRef] = useState<any>(null);
-  const [rawText, setRawText] = useState("");
-  const [narrative, setNarrative] = useState("");
+  const [rawText, setRawText] = useState('');
+  const [narrative, setNarrative] = useState('');
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [uploadReady, setUploadReady] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractionResult | null>(null);
@@ -56,15 +56,14 @@ export default function SubmitDenial() {
       if (hasExistingContent) return;
 
       const seededNarrative = buildSeededStoryNarrative(query);
-
       setNarrative(seededNarrative);
       setRawText(seededNarrative);
       window.sessionStorage.removeItem(STORY_SEED_KEY);
-      toast.success("We started your story from that search. Add whatever details matter most.");
+      toast.success('We started your story from that search. Add whatever details matter most.');
     } catch (error) {
       console.error('Failed to seed story from homepage query', error);
     }
-  }, []);
+  }, [manualFields.denialReason, manualFields.insurer, manualFields.planType, manualFields.procedure, narrative, rawText]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,7 +82,8 @@ export default function SubmitDenial() {
     }
 
     setIsExtracting(true);
-    const toastId = toast.loading("Uploading and reading your paperwork...");
+    const toastId = toast.loading('Uploading and reading your paperwork...');
+
     try {
       if (auth.currentUser) {
         const storageRef = ref(storage, `denials/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
@@ -98,7 +98,7 @@ export default function SubmitDenial() {
       reader.onloadend = async () => {
         try {
           const base64 = (reader.result as string).split(',')[1];
-          const result = await extractDenialData("", { data: base64, mimeType: file.type });
+          const result = await extractDenialData('', { data: base64, mimeType: file.type });
           setExtractedData(result);
           setManualFields((prev) => ({
             insurer: result.insurer || prev.insurer,
@@ -107,31 +107,32 @@ export default function SubmitDenial() {
             denialReason: result.denialReason || prev.denialReason,
             date: result.date || prev.date,
           }));
-          toast.success("Paperwork analyzed. You can confirm the details next.", { id: toastId });
+          toast.success('Paperwork analyzed. You can confirm the details next.', { id: toastId });
         } catch {
-          toast.success("Paperwork attached. You can confirm the details manually.", { id: toastId });
+          toast.success('Paperwork attached. You can confirm the details manually.', { id: toastId });
         } finally {
           setIsExtracting(false);
         }
       };
+
       reader.readAsDataURL(file);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to upload or read the file.", { id: toastId });
+      toast.error('Failed to upload or read the file.', { id: toastId });
       setIsExtracting(false);
     }
   };
 
   const handleExtractFromText = async () => {
-    if (!rawText.trim()) {
+    if (!rawText.trim() && !narrative.trim()) {
       setStep(2);
       return;
     }
 
     setIsExtracting(true);
-    const toastId = toast.loading("Structuring the story...");
+    const toastId = toast.loading('Structuring the story...');
     try {
-      const result = await extractDenialData(rawText);
+      const result = await extractDenialData(rawText || narrative);
       setExtractedData(result);
       setManualFields((prev) => ({
         insurer: result.insurer || prev.insurer,
@@ -140,10 +141,10 @@ export default function SubmitDenial() {
         denialReason: result.denialReason || prev.denialReason,
         date: result.date || prev.date,
       }));
-      toast.success("Story structured. You can confirm the details now.", { id: toastId });
+      toast.success('Story structured. You can confirm the details now.', { id: toastId });
     } catch (error) {
       console.error(error);
-      toast.success("We saved your story text. You can confirm the details manually.", { id: toastId });
+      toast.success('We saved your story text. You can confirm the details manually.', { id: toastId });
     } finally {
       setIsExtracting(false);
       setStep(2);
@@ -151,11 +152,9 @@ export default function SubmitDenial() {
   };
 
   const startVoiceCapture = () => {
-    const SpeechRecognitionCtor =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
-      toast.error("Voice capture is not supported in this browser.");
+      toast.error('Voice capture is not supported in this browser.');
       return;
     }
 
@@ -163,21 +162,16 @@ export default function SubmitDenial() {
     recognition.lang = 'en-US';
     recognition.interimResults = true;
     recognition.continuous = true;
-
     recognition.onresult = (event: any) => {
       let transcript = '';
-      for (let i = 0; i < event.results.length; i += 1) {
-        transcript += event.results[i][0].transcript;
-      }
+      for (let i = 0; i < event.results.length; i += 1) transcript += event.results[i][0].transcript;
       setNarrative(transcript.trim());
     };
-
     recognition.onend = () => setIsRecording(false);
-
     recognition.start();
     setRecognitionRef(recognition);
     setIsRecording(true);
-    toast.success("Listening. Tell us what happened.");
+    toast.success('Listening. Tell us what happened.');
   };
 
   const stopVoiceCapture = () => {
@@ -185,17 +179,9 @@ export default function SubmitDenial() {
     setIsRecording(false);
   };
 
-  const handleContinue = async () => {
-    if (!narrative.trim() && !rawText.trim() && !uploadReady) {
-      toast.error("Start by telling us what happened.");
-      return;
-    }
-    await handleExtractFromText();
-  };
-
   const handleSaveAndFinish = async () => {
     setIsSaving(true);
-    const toastId = toast.loading("Saving your story...");
+    const toastId = toast.loading('Saving your story...');
     try {
       const effectiveExtraction: ExtractionResult = mergeStoryExtraction({
         extractedData,
@@ -213,278 +199,236 @@ export default function SubmitDenial() {
       });
 
       setStep(3);
-      toast.success("Submission saved successfully!", { id: toastId });
+      toast.success('Submission saved successfully!', { id: toastId });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, "denials");
-      toast.error("Failed to save submission.", { id: toastId });
+      handleFirestoreError(error, OperationType.CREATE, 'denials');
+      toast.error('Failed to save submission.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f4efe8] px-5 py-10 md:px-8">
-      <div className="mx-auto max-w-5xl space-y-10">
-        <div className="space-y-6 border-b border-black/10 pb-12">
+    <div className="min-h-screen bg-[#060814] px-5 py-10 text-[#f4f3ff] md:px-8">
+      <div className="mx-auto max-w-6xl space-y-10">
+        <header className="space-y-6 border-b border-white/8 pb-12">
           <div className="flex items-center gap-4">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`w-12 h-12 flex items-center justify-center rounded-2xl font-bold text-xl transition-all duration-500 ${step === s ? 'bg-[#b43c2e] text-white shadow-[0_0_20px_rgba(180,60,46,0.25)]' : 'border border-black/8 bg-white/70 text-[#8b7d70]'}`}
+                className={`flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-xl transition-all duration-500 ${
+                  step === s ? 'bg-[#8b5cf6] text-white shadow-[0_0_28px_rgba(139,92,246,0.25)]' : 'border border-white/10 bg-white/6 text-[#9da4c4]'
+                }`}
               >
                 {s}
               </div>
             ))}
           </div>
-          <h1 className="text-6xl font-bold tracking-tighter text-[#1f1b17]">Share Your Story.</h1>
-          <p className="max-w-3xl text-xl font-light text-[#574a40]">
-            Tell us what happened in your own words first. Then we’ll help structure the details so your story can help other patients spot patterns, precedents, and what worked.
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Share your story</p>
+          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-6xl">Your data defeats denials.</h1>
+          <p className="max-w-3xl text-lg leading-8 text-[#bcb7d8]">
+            By sharing your story, you are not just adding one more complaint. You are strengthening a public record that helps other patients find precedent, patterns, and the language that actually pushes back.
           </p>
-        </div>
+        </header>
 
         {step === 1 && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="rounded-[3rem] border border-black/8 bg-white/80 p-12 space-y-12 backdrop-blur-sm">
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-[#1f1b17]">Start with the part no insurer sees</h2>
-                <p className="font-light text-[#574a40]">
-                  Let it out first. Type it or speak it. If you have the denial letter, EOB, or claim notice, you can add that too, but it is optional on this page.
-                </p>
-              </div>
+          <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="rounded-[2.5rem] border border-white/8 bg-[#0d1224] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-10">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Step 1</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">Tell us what happened first.</h2>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#bcb7d8]">
+                Start with the human story. What was denied, what did you need, what did the insurer say, and what happened to your care, finances, stress, or treatment timeline?
+              </p>
 
-              <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-6">
-                  <textarea
-                    className="min-h-[280px] w-full rounded-[2rem] border border-black/10 bg-[#f8f2ea] p-6 text-sm font-light text-[#1f1b17] outline-none transition-all focus:ring-2 focus:ring-[#b43c2e]"
-                    placeholder="What was denied? What did you need? What did the insurer say? What happened to your health, money, stress level, or treatment timeline?"
-                    value={narrative}
-                    onChange={(e) => setNarrative(e.target.value)}
-                  />
+              <textarea
+                className="mt-8 min-h-[300px] w-full rounded-[2rem] border border-white/10 bg-black/20 p-6 text-sm font-light text-white outline-none transition-all focus:ring-2 focus:ring-[#8b5cf6]"
+                placeholder="I have UnitedHealthcare Choice Plus and they denied Taltz even though my doctor says it is medically necessary..."
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+              />
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <input
-                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                      placeholder="Insurer, if you know it"
-                      value={manualFields.insurer}
-                      onChange={(e) => setManualFields((prev) => ({ ...prev, insurer: e.target.value }))}
-                    />
-                    <input
-                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                      placeholder="Plan type or plan name"
-                      value={manualFields.planType}
-                      onChange={(e) => setManualFields((prev) => ({ ...prev, planType: e.target.value }))}
-                    />
-                    <input
-                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                      placeholder="Procedure, drug, or service"
-                      value={manualFields.procedure}
-                      onChange={(e) => setManualFields((prev) => ({ ...prev, procedure: e.target.value }))}
-                    />
-                    <input
-                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                      placeholder="Why they said no"
-                      value={manualFields.denialReason}
-                      onChange={(e) => setManualFields((prev) => ({ ...prev, denialReason: e.target.value }))}
-                    />
-                    <input
-                      className="rounded-2xl border border-black/10 bg-[#f8f2ea] px-4 py-4 text-sm text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                      placeholder="Date, if you know it"
-                      value={manualFields.date}
-                      onChange={(e) => setManualFields((prev) => ({ ...prev, date: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    {!isRecording ? (
-                      <Button type="button" variant="outline" className="rounded-full border-black/10 bg-white/80" onClick={startVoiceCapture}>
-                        <Mic className="mr-2 h-4 w-4" />
-                        Record by voice
-                      </Button>
-                    ) : (
-                      <Button type="button" variant="outline" className="rounded-full border-[#b43c2e]/20 bg-[#fff6ef] text-[#b43c2e]" onClick={stopVoiceCapture}>
-                        <MicOff className="mr-2 h-4 w-4" />
-                        Stop recording
-                      </Button>
-                    )}
-                    <Button className="group h-14 rounded-full bg-[#1f1b17] px-8 text-base font-bold text-white shadow-xl shadow-black/10 hover:bg-[#2a231d]" onClick={handleContinue} disabled={isExtracting}>
-                      {isExtracting ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <ChevronRight className="mr-3 h-5 w-5 group-hover:translate-x-2 transition-transform" />}
-                      Continue
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-6 rounded-[2rem] border border-black/8 bg-[#fff6ef] p-8">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#8b7d70]">Optional paperwork</p>
-                    <h3 className="text-2xl font-bold text-[#1f1b17]">Add the denial letter if you have it</h3>
-                    <p className="text-sm leading-relaxed text-[#574a40]">
-                      Uploading a denial letter or EOB helps us structure the case faster, but it is not required to share the story.
-                    </p>
-                  </div>
-                  <div
-                    className="flex cursor-pointer flex-col items-center justify-center space-y-6 rounded-[2rem] border-2 border-dashed border-[#b43c2e]/25 bg-white p-10 transition-all duration-500 hover:border-[#b43c2e]/45 hover:bg-[#fffaf6]"
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
-                    <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#b43c2e] shadow-2xl shadow-[#b43c2e]/20">
-                      <Upload className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="text-center space-y-2">
-                      <p className="text-lg font-bold text-[#1f1b17]">Upload denial evidence</p>
-                      <p className="text-xs font-medium uppercase tracking-widest text-[#8b7d70]">PDF, JPG, PNG</p>
-                    </div>
-                    <input id="file-upload" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
-                  </div>
-
-                  <textarea
-                    className="min-h-[140px] w-full rounded-[1.5rem] border border-black/10 bg-white p-4 text-sm font-light text-[#1f1b17] outline-none transition-all focus:ring-2 focus:ring-[#b43c2e]"
-                    placeholder="If you want, paste any denial or EOB language here and we’ll try to structure it."
-                    value={rawText}
-                    onChange={(e) => setRawText(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 rounded-3xl border border-black/8 bg-white/75 p-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#8b7d70]">
-              <ShieldCheck className="w-5 h-5 text-[#b43c2e]" />
-              Public stories should be anonymized before they reach the observatory.
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="rounded-[3rem] border border-black/8 bg-white/80 p-12 space-y-12 backdrop-blur-sm">
-              <h3 className="border-b border-black/8 pb-6 text-3xl font-bold text-[#1f1b17]">Confirm the story details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[
-                  {
-                    label: "Insurer",
-                    placeholder: "Insurer name",
-                    value: manualFields.insurer || extractedData?.insurer || "",
-                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, insurer: value })),
-                  },
-                  {
-                    label: "Plan",
-                    placeholder: "Plan type or plan name",
-                    value: manualFields.planType || extractedData?.planType || "",
-                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, planType: value })),
-                  },
-                  {
-                    label: "Procedure / drug / service",
-                    placeholder: "What was blocked?",
-                    value: manualFields.procedure || extractedData?.procedure || "",
-                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, procedure: value })),
-                  },
-                  {
-                    label: "Denial reason",
-                    placeholder: "Why did they say no?",
-                    value: manualFields.denialReason || extractedData?.denialReason || "",
-                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, denialReason: value })),
-                  },
-                  {
-                    label: "Date",
-                    placeholder: "YYYY-MM-DD",
-                    value: manualFields.date || extractedData?.date || "",
-                    onChange: (value: string) => setManualFields((prev) => ({ ...prev, date: value })),
-                  },
-                  {
-                    label: "Upload attached",
-                    placeholder: "",
-                    value: uploadReady ? "Yes" : "No",
-                    onChange: undefined,
-                  },
-                ].map((field, i) => (
-                  <div key={i} className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b7d70]">{field.label}</label>
-                    {field.onChange ? (
-                      <input
-                        className="w-full rounded-2xl border border-black/8 bg-[#f8f2ea] p-5 font-bold text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                        value={field.value}
-                        placeholder={field.placeholder}
-                        onChange={(e) => field.onChange?.(e.target.value)}
-                      />
-                    ) : (
-                      <div className="rounded-2xl border border-black/8 bg-[#f8f2ea] p-5 font-bold text-[#1f1b17]">{field.value}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-xl font-bold text-[#1f1b17]">Your story</label>
-                <textarea
-                  className="min-h-[150px] w-full rounded-2xl border border-black/10 bg-[#f8f2ea] p-6 font-light text-[#1f1b17] outline-none focus:ring-2 focus:ring-[#b43c2e]"
-                  placeholder="What happened? How did the denial affect your health, care, finances, or stress level?"
-                  value={narrative}
-                  onChange={(e) => setNarrative(e.target.value)}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <input
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                  placeholder="Insurer, if you know it"
+                  value={manualFields.insurer}
+                  onChange={(e) => setManualFields((prev) => ({ ...prev, insurer: e.target.value }))}
+                />
+                <input
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                  placeholder="Plan name or plan type"
+                  value={manualFields.planType}
+                  onChange={(e) => setManualFields((prev) => ({ ...prev, planType: e.target.value }))}
+                />
+                <input
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                  placeholder="Procedure, drug, or service"
+                  value={manualFields.procedure}
+                  onChange={(e) => setManualFields((prev) => ({ ...prev, procedure: e.target.value }))}
+                />
+                <input
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                  placeholder="Why they said no"
+                  value={manualFields.denialReason}
+                  onChange={(e) => setManualFields((prev) => ({ ...prev, denialReason: e.target.value }))}
                 />
               </div>
 
-              <div className="space-y-8 border-t border-black/8 pt-8">
-                <h3 className="text-xl font-bold tracking-tight text-[#1f1b17]">Consent & privacy</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <label className="group flex cursor-pointer flex-col gap-4 rounded-2xl border border-black/8 bg-[#f8f2ea] p-6 transition-colors hover:bg-[#f4eadf]">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold uppercase tracking-wide text-[#1f1b17]">Public story</p>
-                      <input type="checkbox" checked={consent.public} onChange={(e) => setConsent(prev => ({ ...prev, public: e.target.checked }))} className="h-5 w-5 rounded border-black/20 bg-white checked:bg-[#b43c2e]" />
-                    </div>
-                    <p className="text-[10px] font-light leading-relaxed text-[#7a6859]">Share an anonymized version of this story in the public observatory.</p>
-                  </label>
-                  <label className="group flex cursor-pointer flex-col gap-4 rounded-2xl border border-black/8 bg-[#f8f2ea] p-6 transition-colors hover:bg-[#f4eadf]">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold uppercase tracking-wide text-[#1f1b17]">Aggregated data</p>
-                      <input type="checkbox" checked={consent.aggregated} onChange={(e) => setConsent(prev => ({ ...prev, aggregated: e.target.checked }))} className="h-5 w-5 rounded border-black/20 bg-white checked:bg-[#b43c2e]" />
-                    </div>
-                    <p className="text-[10px] font-light leading-relaxed text-[#7a6859]">Include this case in benchmark and trend reporting even if the full story stays private.</p>
-                  </label>
-                  <label className="group flex cursor-pointer flex-col gap-4 rounded-2xl border border-black/8 bg-[#f8f2ea] p-6 transition-colors hover:bg-[#f4eadf]">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold uppercase tracking-wide text-[#1f1b17]">Research access</p>
-                      <input type="checkbox" checked={consent.research} onChange={(e) => setConsent(prev => ({ ...prev, research: e.target.checked }))} className="h-5 w-5 rounded border-black/20 bg-white checked:bg-[#b43c2e]" />
-                    </div>
-                    <p className="text-[10px] font-light leading-relaxed text-[#7a6859]">Allow verified researchers to use anonymized data in deeper reporting and public-interest work.</p>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-8">
-                <Button variant="outline" className="h-16 rounded-full border-black/10 bg-white/70 px-10 font-bold text-[#1f1b17]" onClick={() => setStep(1)}>Back</Button>
-                <Button className="h-16 rounded-full bg-[#b43c2e] px-10 text-lg font-bold text-white shadow-xl shadow-[#b43c2e]/20 hover:bg-[#9f3226]" onClick={handleSaveAndFinish} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-3 h-5 w-5" />}
-                  Submit Story
+              <div className="mt-6 flex flex-wrap gap-3">
+                {!isRecording ? (
+                  <Button type="button" variant="outline" className="rounded-full border-white/10 bg-white/6 text-white hover:bg-white/10" onClick={startVoiceCapture}>
+                    <Mic className="mr-2 h-4 w-4" />
+                    Record by voice
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" className="rounded-full border-[#8b5cf6]/30 bg-[#18112a] text-[#d2c2ff] hover:bg-[#211738]" onClick={stopVoiceCapture}>
+                    <MicOff className="mr-2 h-4 w-4" />
+                    Stop recording
+                  </Button>
+                )}
+                <Button className="h-14 rounded-[1rem] bg-[#8b5cf6] px-8 text-base font-semibold text-white shadow-xl shadow-[#8b5cf6]/20 hover:bg-[#7b49ec]" onClick={handleExtractFromText} disabled={isExtracting}>
+                  {isExtracting ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <ChevronRight className="mr-3 h-5 w-5" />}
+                  Continue
                 </Button>
               </div>
             </div>
-          </div>
-        )}
 
-        {step === 3 && (
-          <div className="space-y-8 animate-in fade-in zoom-in duration-700">
-            <div className="relative overflow-hidden rounded-[3rem] bg-[#1d1714] p-16 text-center text-white space-y-12">
-              <ShieldCheck className="absolute -top-20 -right-20 w-80 h-80 opacity-10" />
-              <div className="space-y-6 relative z-10">
-                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-8">
-                  <CheckCircle2 className="w-12 h-12 text-white" />
-                </div>
-                <h2 className="text-6xl font-bold tracking-tighter">Story Submitted.</h2>
-                <p className="mx-auto max-w-2xl text-2xl font-light text-white/76">
-                  Thank you for adding your denial to the record. Your story now helps other patients find patterns, precedents, and proof that they are not alone.
+            <div className="space-y-6 rounded-[2.5rem] border border-white/8 bg-[#0d1224] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-10">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Optional</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">Add the paperwork if you have it.</h2>
+                <p className="mt-4 text-sm leading-7 text-[#bcb7d8]">
+                  Uploading the denial letter, EOB, or claim notice helps structure the case faster, but this page should never force paperwork before you can be heard.
                 </p>
               </div>
 
-              <div className="pt-8 relative z-10">
-                <Button
-                  size="lg"
-                  className="h-20 rounded-full bg-[#b43c2e] px-16 text-xl font-bold text-white shadow-2xl hover:bg-[#9f3226]"
-                  onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'home' }))}
-                >
-                  Return to Observatory
-                </Button>
+              <div className="rounded-[2rem] border-2 border-dashed border-[#8b5cf6]/25 bg-black/20 p-10 text-center transition-all hover:border-[#8b5cf6]/45 hover:bg-black/30" onClick={() => document.getElementById('file-upload')?.click()}>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#8b5cf6] shadow-2xl shadow-[#8b5cf6]/20">
+                  <Upload className="h-8 w-8 text-white" />
+                </div>
+                <p className="mt-6 text-lg font-semibold text-white">Upload denial evidence</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.24em] text-[#8f96b5]">PDF, JPG, PNG</p>
+                <input id="file-upload" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
+              </div>
+
+              <textarea
+                className="min-h-[180px] w-full rounded-[1.5rem] border border-white/10 bg-black/20 p-4 text-sm font-light text-white outline-none transition-all focus:ring-2 focus:ring-[#8b5cf6]"
+                placeholder="Paste any denial or EOB language here and we'll pull out the key fields."
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+              />
+
+              <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Why this matters</p>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-[#bcb7d8]">
+                  <p>Story-first intake helps us collect real denial narratives, not just paperwork fragments.</p>
+                  <p>Optional uploads let the system pull plan, insurer, denial reason, and service details faster.</p>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
         )}
+
+        {step === 2 && (
+          <section className="rounded-[2.5rem] border border-white/8 bg-[#0d1224] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Step 2</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">Confirm what the system pulled out.</h2>
+            <p className="mt-4 text-sm leading-7 text-[#bcb7d8]">
+              Fix anything that is wrong. These fields should stay editable so your story reflects what actually happened, not whatever the OCR guessed.
+            </p>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {[
+                ['Insurer', manualFields.insurer || extractedData?.insurer || '', 'insurer'],
+                ['Plan', manualFields.planType || extractedData?.planType || '', 'planType'],
+                ['Procedure / drug / service', manualFields.procedure || extractedData?.procedure || '', 'procedure'],
+                ['Denial reason', manualFields.denialReason || extractedData?.denialReason || '', 'denialReason'],
+                ['Date', manualFields.date || extractedData?.date || '', 'date'],
+              ].map(([label, value, key]) => (
+                <div key={String(key)} className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8f96b5]">{label}</label>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 p-5 font-medium text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                    value={String(value)}
+                    onChange={(event) => setManualFields((prev) => ({ ...prev, [key]: event.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 space-y-3">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8f96b5]">Your story</label>
+              <textarea
+                className="min-h-[170px] w-full rounded-2xl border border-white/10 bg-black/20 p-6 font-light text-white outline-none focus:ring-2 focus:ring-[#8b5cf6]"
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+              />
+            </div>
+
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
+              {[
+                ['Public story', consent.public, 'Share an anonymized version publicly so other patients can find it.'],
+                ['Aggregated data', consent.aggregated, 'Use this case in the statistics and pattern analysis even if the full story stays private.'],
+                ['Research access', consent.research, 'Allow anonymized use in deeper advocacy and reporting work.'],
+              ].map(([label, checked, help], index) => (
+                <label key={String(label)} className="flex cursor-pointer flex-col gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white">{label}</p>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(checked)}
+                      onChange={(e) =>
+                        setConsent((prev) => ({
+                          ...prev,
+                          [index === 0 ? 'public' : index === 1 ? 'aggregated' : 'research']: e.target.checked,
+                        }))
+                      }
+                      className="h-5 w-5 rounded border-white/20 bg-white checked:bg-[#8b5cf6]"
+                    />
+                  </div>
+                  <p className="text-sm leading-7 text-[#bcb7d8]">{help}</p>
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-10 flex justify-between">
+              <Button variant="outline" className="h-14 rounded-[1rem] border-white/10 bg-white/6 px-8 text-white hover:bg-white/10" onClick={() => setStep(1)}>
+                Back
+              </Button>
+              <Button className="h-14 rounded-[1rem] bg-[#8b5cf6] px-8 text-base font-semibold text-white hover:bg-[#7b49ec]" onClick={handleSaveAndFinish} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-3 h-5 w-5" />}
+                Submit story
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section className="rounded-[2.7rem] border border-white/8 bg-[linear-gradient(180deg,#10152b_0%,#090d1d_100%)] p-16 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+            <div className="mx-auto max-w-3xl space-y-6">
+              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
+                <CheckCircle2 className="h-12 w-12 text-white" />
+              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Story saved</p>
+              <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white">Thank you for adding to the record.</h2>
+              <p className="text-lg leading-8 text-[#bcb7d8]">
+                Your story now helps other patients find patterns, precedents, and proof that they are not alone.
+              </p>
+              <Button
+                size="lg"
+                className="mt-6 h-16 rounded-[1rem] bg-[#8b5cf6] px-12 text-lg font-semibold text-white hover:bg-[#7b49ec]"
+                onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'home' }))}
+              >
+                Return to the database
+              </Button>
+            </div>
+          </section>
+        )}
+
+        <div className="flex items-center justify-center gap-4 rounded-3xl border border-white/8 bg-white/[0.03] p-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#8f96b5]">
+          <ShieldCheck className="h-5 w-5 text-[#8b5cf6]" />
+          Public stories are anonymized before they reach the searchable database.
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,13 @@
 import { createHash } from 'crypto';
-import { computeQualityScore, inferDenialCategory, isLowSignalRecord, normalizeInsurerName } from './normalization';
+import {
+  computeQualityScore,
+  inferInsurerFromNarrativeText,
+  inferDenialCategory,
+  isLowSignalRecord,
+  normalizeDenialReasonText,
+  normalizePlanType,
+  normalizeProcedureLabel,
+} from './normalization';
 import { getBigQueryAccessToken, runBigQuerySql } from '../../scripts/_bigqueryClient';
 
 const DATASET_ID = process.env.BIGQUERY_DATASET_ID || 'fight_insurance_denials';
@@ -52,17 +60,6 @@ const SEARCH_TERMS = [
 const SUBREDDITS_PER_PASS = 3;
 const TERMS_PER_PASS = 2;
 const PULLPUSH_PAGE_SIZE = 100;
-
-const INSURER_PATTERNS: Array<[RegExp, string]> = [
-  [/(unitedhealthcare|united healthcare|uhc|optumrx|optum|navihealth)/i, 'UnitedHealthcare'],
-  [/(aetna|cvs caremark|caremark)/i, 'Aetna'],
-  [/(cigna|evernorth)/i, 'Cigna'],
-  [/(blue cross|blue shield|bcbs|anthem|premera|regence|highmark|empire)/i, 'Blue Cross Blue Shield'],
-  [/(kaiser)/i, 'Kaiser Permanente'],
-  [/(humana)/i, 'Humana'],
-  [/(centene|ambetter|wellcare)/i, 'Centene'],
-  [/(molina)/i, 'Molina Healthcare'],
-];
 
 const RELEVANCE_PATTERNS = [
   /denied/i,
@@ -137,25 +134,12 @@ const GENERIC_INSURANCE_PATTERNS = [
   /what do i do about/i,
   /shopping for/i,
   /need a plan/i,
-];
-
-const PROCEDURE_PATTERNS: Array<[RegExp, string]> = [
-  [/\bozempic\b|\bwegovy\b|\bzepbound\b|\bmounjaro\b/i, 'GLP-1 medication'],
-  [/\bmri\b/i, 'MRI'],
-  [/\bct scan\b/i, 'CT scan'],
-  [/\bpet scan\b/i, 'PET scan'],
-  [/\bivf\b|\bfertility\b/i, 'Fertility treatment'],
-  [/\bbreast reduction\b/i, 'Breast reduction'],
-  [/\bproton therapy\b/i, 'Proton therapy'],
-  [/\bgenetic test/i, 'Genetic testing'],
-  [/\binfusion\b/i, 'Infusion therapy'],
-  [/\bwheelchair\b|\bdme\b|\bdurable medical equipment\b/i, 'Durable medical equipment'],
-  [/\bhome health\b|\bhome care\b/i, 'Home health services'],
-  [/\btherapy\b|\bpt\b|\bphysical therapy\b/i, 'Therapy services'],
-  [/\bautism\b|\baba\b/i, 'Autism therapy'],
-  [/\banesthesia\b/i, 'Anesthesia'],
-  [/\bsurgery\b/i, 'Surgery'],
-  [/\bmedication\b|\bdrug\b|\bprescription\b/i, 'Prescription medication'],
+  /\birmaa\b/i,
+  /\bssa[- ]?44\b/i,
+  /authorized representative/i,
+  /advanced nomination/i,
+  /critical illness insurance/i,
+  /ada request/i,
 ];
 
 const STATE_PATTERNS: Array<[RegExp, string]> = [
@@ -169,29 +153,15 @@ const STATE_PATTERNS: Array<[RegExp, string]> = [
 ];
 
 function inferProcedure(text: string) {
-  for (const [pattern, label] of PROCEDURE_PATTERNS) {
-    if (pattern.test(text)) return label;
-  }
-  return 'Insurance denial evidence';
+  return normalizeProcedureLabel(text);
 }
 
 function extractInsurer(text: string) {
-  for (const [pattern, canonical] of INSURER_PATTERNS) {
-    if (pattern.test(text)) return canonical;
-  }
-  return 'Unknown';
+  return inferInsurerFromNarrativeText(text);
 }
 
 function inferPlanType(text: string) {
-  if (/medicare advantage/i.test(text)) return 'Medicare Advantage';
-  if (/\bmedicare\b/i.test(text)) return 'Medicare Advantage';
-  if (/\bmedicaid\b/i.test(text)) return 'Medicaid';
-  if (/marketplace|aca plan|obamacare/i.test(text)) return 'Marketplace';
-  if (/employer|job.?based|through work|group plan/i.test(text)) return 'Employer Sponsored';
-  if (/\bppo\b/i.test(text)) return 'PPO';
-  if (/\bhmo\b/i.test(text)) return 'HMO';
-  if (/\bepo\b/i.test(text)) return 'EPO';
-  return 'Unknown';
+  return normalizePlanType(text);
 }
 
 function inferErisaStatus(text: string) {
@@ -231,8 +201,9 @@ function toObservation(post: any, subreddit: string) {
 
   if (!text || !seemsRelevant(text)) return null;
 
-  const insurer = normalizeInsurerName(extractInsurer(text));
+  const insurer = extractInsurer(text);
   const procedure = inferProcedure(text);
+  const normalizedReason = normalizeDenialReasonText(text);
   const denialCategory = inferDenialCategory({
     denialReason: text,
     procedure,
@@ -242,7 +213,7 @@ function toObservation(post: any, subreddit: string) {
   const recordForScoring = {
     insurer,
     procedure,
-    denialReason: denialCategory === 'Unknown' ? text.slice(0, 180) : denialCategory,
+    denialReason: denialCategory === 'Unknown' ? normalizedReason : denialCategory,
     summary: title,
     narrative: body,
     source: `Reddit r/${subreddit}`,
