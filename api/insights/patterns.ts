@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };
 type ClusterRow = { procedure: string; insurer: string; category: string; value: number };
+type CarePatternRow = { procedure: string; category: string; value: number; takeaway: string; whyItMatters: string };
 type FindingRow = { title: string; body: string; tone: 'high' | 'medium' | 'warning' };
 type ActionablePatternRow = {
   insurer: string;
@@ -33,7 +34,7 @@ function clusterTakeaway(category: string, procedure: string, insurer: string) {
   if (categoryKey.includes('medical necessity')) {
     return {
       takeaway: `${insurerName} repeatedly demands proof that ${procedureName.toLowerCase()} is medically necessary even when clinicians support it.`,
-      whyItMatters: 'That often means appeals need stronger clinical documentation and direct rebuttals to the insurer’s own wording.',
+      whyItMatters: "That often means appeals need stronger clinical documentation and direct rebuttals to the insurer's own wording.",
     };
   }
 
@@ -81,6 +82,7 @@ async function fetchPatternsFromNeon() {
     topInsurers,
     topCategories,
     topProcedures,
+    carePatterns,
     heatmap,
     procedureClusters,
     statePatterns,
@@ -141,6 +143,17 @@ async function fetchPatternsFromNeon() {
       LIMIT 6
     `,
     sql`
+      SELECT procedure_condition AS procedure, denial_category AS category, COUNT(*)::int AS value
+      FROM curated_stories
+      WHERE status = 'published'
+        AND consent_level = 'public_story'
+        AND COALESCE(denial_category, '') NOT IN ('', 'Unknown')
+        AND COALESCE(procedure_condition, '') NOT IN ('', 'Unknown', 'Insurance denial evidence')
+      GROUP BY procedure_condition, denial_category
+      ORDER BY value DESC
+      LIMIT 10
+    `,
+    sql`
       SELECT extracted_insurer AS insurer, denial_category AS category, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -191,6 +204,10 @@ async function fetchPatternsFromNeon() {
   const topInsurerRows = topInsurers as MetricRow[];
   const topCategoryRows = topCategories as MetricRow[];
   const topProcedureRows = topProcedures as MetricRow[];
+  const carePatternRows: CarePatternRow[] = (carePatterns as Array<{ procedure: string; category: string; value: number }>).map((row) => ({
+    ...row,
+    ...clusterTakeaway(row.category, row.procedure, ''),
+  }));
 
   const findings: FindingRow[] = [
     topInsurerRows[0]
@@ -246,6 +263,7 @@ async function fetchPatternsFromNeon() {
     topInsurers: topInsurerRows,
     topCategories: topCategoryRows,
     topProcedures: topProcedureRows,
+    carePatterns: carePatternRows,
     heatmap: heatmap as unknown as HeatmapRow[],
     procedureClusters: actionablePatterns,
     statePatterns: statePatterns as unknown as MetricRow[],

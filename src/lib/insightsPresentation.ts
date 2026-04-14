@@ -8,6 +8,13 @@ export type ClusterRow = {
   takeaway: string;
   whyItMatters: string;
 };
+export type CarePatternRow = {
+  procedure: string;
+  category: string;
+  value: number;
+  takeaway: string;
+  whyItMatters: string;
+};
 export type FindingRow = {
   title: string;
   body: string;
@@ -27,6 +34,7 @@ export type PatternsResponse = {
   topInsurers: MetricRow[];
   topCategories: MetricRow[];
   topProcedures: MetricRow[];
+  carePatterns: CarePatternRow[];
   heatmap: HeatmapRow[];
   procedureClusters: ClusterRow[];
   statePatterns: MetricRow[];

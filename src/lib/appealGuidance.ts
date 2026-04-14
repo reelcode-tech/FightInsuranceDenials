@@ -4,9 +4,13 @@ export interface GuidanceLink {
 }
 
 export interface NewsCard {
+  narrative: string;
   source: string;
   title: string;
   summary: string;
+  stat: string;
+  pullQuote: string;
+  whatThisMeans: string;
   url: string;
   published: string;
 }
@@ -20,38 +24,56 @@ export interface AppealTip {
 
 export const HOMEPAGE_NEWS: NewsCard[] = [
   {
-    source: 'CMS',
-    title: 'CMS is pushing payers to give a specific reason when they deny prior authorization.',
-    summary:
-      'Federal prior authorization rules now put more pressure on plans to return a specific denial reason. That matters because vague denials are much harder to challenge.',
-    url: 'https://www.cms.gov/files/document/fact-sheet-cms-interoperability-and-prior-authorization-final-rule-cms-0057-f.pdf',
-    published: 'CMS final rule guidance',
-  },
-  {
+    narrative: 'The system is failing patients',
     source: 'KFF',
-    title: "KFF says prior authorization is now the public's biggest insurance burden.",
+    title: 'Insurance denials are exploding, and patients are paying the price.',
     summary:
-      'A February 2026 KFF poll found prior authorization ranks as the biggest burden in getting care, and many people say denials or delays damage their mental health and finances.',
+      'KFF found prior authorization now ranks as the biggest burden people face when they try to get care, with delays spilling into mental health, finances, and treatment timelines.',
+    stat: 'Prior authorization is now the #1 burden to getting care',
+    pullQuote:
+      'Delays are not just administrative. They hit treatment timelines, mental health, and family finances at the same time.',
+    whatThisMeans:
+      'If your denial feels exhausting and isolating, that is not a one-off. Patients across the country are hitting the same wall.',
     url: 'https://www.kff.org/public-opinion/kff-health-tracking-poll-prior-authorizations-rank-as-publics-biggest-burden-when-getting-health-care/',
     published: 'Feb 2, 2026',
   },
   {
-    source: 'KFF',
-    title: 'Medicare Advantage prior authorization still points to the same access problem.',
+    narrative: 'Regulators are finally pushing back',
+    source: 'CMS',
+    title: 'Regulators are forcing insurers to be more specific when they say no.',
     summary:
-      "KFF's Medicare Advantage analysis keeps surfacing the same issue: large volumes of prior authorization requests, denials, and appeals that beneficiaries often do not feel equipped to navigate.",
-    url: 'https://www.kff.org/medicare/issue-brief/medicare-advantage-and-prior-authorization/',
-    published: 'KFF Medicare analysis',
+      'CMS now requires payers to return more specific prior authorization denial reasons and faster responses, which should make vague stonewalling harder to hide behind.',
+    stat: 'Plans must return specific denial reasons under the CMS final rule',
+    pullQuote:
+      'A vague denial is much harder to fight. Specific reasons create a paper trail patients and regulators can actually challenge.',
+    whatThisMeans:
+      'The rules are getting better, but patients still need to know how to use those reasons against the insurer in an appeal.',
+    url: 'https://www.cms.gov/files/document/fact-sheet-cms-interoperability-and-prior-authorization-final-rule-cms-0057-f.pdf',
+    published: 'CMS final rule guidance',
+  },
+  {
+    narrative: 'Patients still lack the evidence to fight',
+    source: 'Fight Insurance Denials',
+    title: 'That is where this database becomes the missing piece.',
+    summary:
+      'Regulators can force better process, but they cannot hand a patient comparable stories, repeat insurer language, or plan-specific precedent. That is what this database is for.',
+    stat: '1,000+ published stories already in the record',
+    pullQuote:
+      'Scattered frustration is easy for insurers to ignore. A searchable public record is much harder to shrug off.',
+    whatThisMeans:
+      'This turns isolated stories into evidence you can search, compare, and use when you decide whether to appeal or share your own denial.',
+    url: '/evidence-patterns',
+    published: 'Live observatory signal',
   },
 ];
 
 export const APPEAL_SUCCESS_TIPS: AppealTip[] = [
   {
-    title: 'Ask for the exact rule they used to deny you.',
+    title: 'Demand the exact rule they used to deny you.',
     detail:
-      `Do not settle for "not medically necessary" or "not covered." Ask for the plan provision, clinical criteria, coverage policy, or utilization-management guideline they relied on.`,
+      'Do not settle for "not medically necessary" or "not covered." Ask for the plan provision, clinical criteria, formulary policy, or utilization-management rule they actually relied on.',
     whyItWorks:
-      "A stronger appeal argues against the insurer's actual logic, not a vague summary of it. Specific denial reasons are also becoming an explicit regulatory expectation.",
+      "A strong appeal argues against the insurer's real logic, not a vague summary of it. Specific denial reasons are also becoming a clearer regulatory expectation.",
     links: [
       {
         label: 'CMS prior authorization final rule guidance',
@@ -66,9 +88,9 @@ export const APPEAL_SUCCESS_TIPS: AppealTip[] = [
   {
     title: "Match your doctor's evidence to the denial reason.",
     detail:
-      'If the denial says prior authorization, medical necessity, experimental, or out-of-network, answer that exact issue with chart notes, treatment history, guidelines, and a specialist letter.',
+      'If the denial says prior authorization, medical necessity, experimental, step therapy, or out-of-network, answer that exact issue with chart notes, treatment history, guidelines, and a specialist letter.',
     whyItWorks:
-      'Appeals improve when the record directly answers the insurer’s stated reason instead of just repeating that care is important.',
+      "Appeals improve when the record directly answers the insurer's stated reason instead of just repeating that care is important.",
     links: [
       {
         label: 'Patient Advocate Foundation appeal tips',
@@ -81,11 +103,11 @@ export const APPEAL_SUCCESS_TIPS: AppealTip[] = [
     ],
   },
   {
-    title: 'Watch the deadline like it can end the case, because it often can.',
+    title: 'Watch the deadline like it can end the case.',
     detail:
       'Track denial date, internal appeal deadline, and external review deadline in one place. Medicare, ERISA, marketplace, and state-regulated plans all work differently.',
     whyItWorks:
-      'People lose good cases by missing a procedural step. The timeline is part of the appeal, not an administrative afterthought.',
+      'People lose strong cases by missing procedural steps. The timeline is part of the appeal, not an administrative afterthought.',
     links: [
       {
         label: 'CMS appeal rights fact sheet',
@@ -98,7 +120,7 @@ export const APPEAL_SUCCESS_TIPS: AppealTip[] = [
     ],
   },
   {
-    title: 'Keep a call log and document who said what.',
+    title: 'Keep a call log and save every document.',
     detail:
       'Save denial notices, call dates, reference numbers, representative names, and any statement about policy, timing, or documentation requirements.',
     whyItWorks:

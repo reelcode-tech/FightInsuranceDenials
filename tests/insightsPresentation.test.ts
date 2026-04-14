@@ -22,6 +22,15 @@ const mockPatterns: PatternsResponse = {
   topInsurers: [{ label: 'UnitedHealthcare', value: 88 }],
   topCategories: [{ label: 'Prior Authorization', value: 194 }],
   topProcedures: [{ label: 'Prescription medication', value: 201 }],
+  carePatterns: [
+    {
+      procedure: 'Prescription medication',
+      category: 'Prior Authorization',
+      value: 53,
+      takeaway: 'Prior authorization keeps blocking prescription medication.',
+      whyItMatters: 'This gives patients something specific to compare against.',
+    },
+  ],
   heatmap: [],
   procedureClusters: [],
   statePatterns: [],

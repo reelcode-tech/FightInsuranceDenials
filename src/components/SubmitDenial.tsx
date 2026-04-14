@@ -227,7 +227,7 @@ export default function SubmitDenial() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Share your story</p>
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-white md:text-6xl">Your data defeats denials.</h1>
           <p className="max-w-3xl text-lg leading-8 text-[#bcb7d8]">
-            By sharing your story, you are not just adding one more complaint. You are strengthening a public record that helps other patients find precedent, patterns, and the language that actually pushes back.
+            You're not just venting - you're building the public record that forces insurers to change.
           </p>
         </header>
 
@@ -298,7 +298,7 @@ export default function SubmitDenial() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8ea9ff]">Optional</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">Add the paperwork if you have it.</h2>
                 <p className="mt-4 text-sm leading-7 text-[#bcb7d8]">
-                  Uploading the denial letter, EOB, or claim notice helps structure the case faster, but this page should never force paperwork before you can be heard.
+                  This helps us pull exact denial reasons faster, but this page should never force paperwork before you can be heard.
                 </p>
               </div>
 
@@ -328,6 +328,12 @@ export default function SubmitDenial() {
             </div>
           </section>
         )}
+
+        <section className="rounded-[2rem] border border-white/8 bg-[#0b1020] px-6 py-5 text-center">
+          <p className="text-sm leading-7 text-[#c9d1ee]">
+            1,135 stories already published. Yours will be anonymized before it goes public.
+          </p>
+        </section>
 
         {step === 2 && (
           <section className="rounded-[2.5rem] border border-white/8 bg-[#0d1224] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-10">

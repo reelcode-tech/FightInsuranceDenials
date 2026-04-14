@@ -11,13 +11,22 @@ import { Menu, ShieldAlert, X } from 'lucide-react';
 import { auth } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { toast } from 'sonner';
-
-type AppTab = 'home' | 'share' | 'appeal' | 'insights' | 'b2b' | 'about';
+import { AppTab, getTabFromPath, TAB_PATHS } from './lib/siteRoutes';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>(() => getTabFromPath(window.location.pathname));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const navigateToTab = React.useCallback((tab: AppTab) => {
+    const nextPath = TAB_PATHS[tab];
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({ tab }, '', nextPath);
+    }
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -26,15 +35,22 @@ export default function App() {
 
     const handleNav = (event: Event) => {
       const detail = (event as CustomEvent<AppTab>).detail;
-      if (detail) setActiveTab(detail);
+      if (detail) navigateToTab(detail);
+    };
+
+    const handlePopState = () => {
+      setActiveTab(getTabFromPath(window.location.pathname));
+      setIsMobileMenuOpen(false);
     };
 
     window.addEventListener('nav', handleNav);
+    window.addEventListener('popstate', handlePopState);
     return () => {
       unsubscribe();
       window.removeEventListener('nav', handleNav);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [navigateToTab]);
 
   const handleLogin = async () => {
     try {
@@ -83,7 +99,7 @@ export default function App() {
     <div className="min-h-screen bg-[#0a0c0f] text-[#f3efe9]">
       <header className="sticky top-0 z-50 border-b border-white/8 bg-[rgba(10,12,15,0.82)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
-          <button className="flex items-center gap-3 text-left" onClick={() => setActiveTab('home')}>
+          <button className="flex items-center gap-3 text-left" onClick={() => navigateToTab('home')}>
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#b43c2e] text-white shadow-[0_14px_40px_rgba(180,60,46,0.28)]">
               <ShieldAlert className="h-6 w-6" />
             </div>
@@ -99,7 +115,7 @@ export default function App() {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => navigateToTab(item.id)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   activeTab === item.id
                     ? 'bg-[#f3efe9] text-[#131313]'
@@ -150,8 +166,7 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveTab(item.id);
-                    setIsMobileMenuOpen(false);
+                    navigateToTab(item.id);
                   }}
                   className={`rounded-2xl px-4 py-3 text-left text-sm font-semibold ${
                     activeTab === item.id ? 'bg-[#f3efe9] text-[#131313]' : 'bg-white/6 text-[#d2cbc2]'

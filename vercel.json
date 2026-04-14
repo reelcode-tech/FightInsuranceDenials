@@ -1,4 +1,26 @@
 {
+  "rewrites": [
+    {
+      "source": "/share-your-story",
+      "destination": "/"
+    },
+    {
+      "source": "/fight-back",
+      "destination": "/"
+    },
+    {
+      "source": "/evidence-patterns",
+      "destination": "/"
+    },
+    {
+      "source": "/data-products",
+      "destination": "/"
+    },
+    {
+      "source": "/about-trust",
+      "destination": "/"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/overnight-ingest",

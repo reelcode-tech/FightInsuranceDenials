@@ -15,8 +15,6 @@ import {
 } from 'recharts';
 import {
   buildActionQuestions,
-  buildMethodologySummary,
-  buildSourceStory,
   type HeatmapRow,
   type MetricRow,
   type PatternsResponse,
@@ -142,10 +140,11 @@ export default function Insights() {
   }, []);
 
   const keyQuestions = buildActionQuestions(data);
-  const sourceStory = buildSourceStory(data);
-  const methodology = buildMethodologySummary(data);
   const leadFinding = data?.findings[0];
   const supportingFindings = data?.findings.slice(1, 3) || [];
+  const topInsurer = data?.topInsurers[0]?.label || 'Blue Cross Blue Shield';
+  const topCategory = data?.topCategories[0]?.label || 'Prior Authorization';
+  const topProcedure = data?.topProcedures[0]?.label || 'Prescription medication';
 
   return (
     <div className="min-h-screen bg-[#090b0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
@@ -161,7 +160,7 @@ export default function Insights() {
                   Find the pattern that makes your denial easier to fight.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-[#c8bdb4] md:text-lg">
-                  Start with the questions people actually ask after a denial: did this insurer do this to anyone else, what excuse do they keep leaning on, and what kind of care keeps getting blocked most often?
+                  {topInsurer} is surfacing more than any other named insurer right now. Here is how these denials keep showing up, what excuses keep repeating, and where patients are finding leverage.
                 </p>
                 {recordQuery ? (
                   <div className="rounded-[1.4rem] border border-white/10 bg-white/6 p-4 text-sm leading-7 text-[#e5d9ce]">
@@ -188,6 +187,26 @@ export default function Insights() {
                 >
                   Add your story
                 </Button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  `My insurer is ${topInsurer}`,
+                  `They used ${topCategory}`,
+                  `They denied my ${topProcedure.toLowerCase()}`,
+                ].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setRecordQuery(item);
+                      window.sessionStorage.setItem('fid_record_query', JSON.stringify({ query: item, createdAt: new Date().toISOString() }));
+                    }}
+                    className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-left text-sm font-semibold text-[#f7f2eb] transition-colors hover:border-[#c74b3c]/40 hover:bg-white/[0.06]"
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -340,25 +359,22 @@ export default function Insights() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {data.procedureClusters.slice(0, 5).map((cluster) => (
-                    <div key={`${cluster.insurer}-${cluster.category}-${cluster.procedure}`} className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                  {data.carePatterns.slice(0, 5).map((pattern) => (
+                    <div key={`${pattern.category}-${pattern.procedure}`} className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-[#3c1f1b] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[#f19a86]">
-                          {cluster.insurer}
-                        </span>
                         <span className="rounded-full bg-white/8 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/70">
-                          {cluster.category}
+                          {pattern.category}
                         </span>
                       </div>
                       <div className="mt-4 flex items-start justify-between gap-5">
                         <div>
-                          <h3 className="text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{cluster.procedure}</h3>
-                          <p className="mt-3 text-sm leading-7 text-[#ddd1c6]">{cluster.takeaway}</p>
-                          <p className="mt-3 text-sm leading-7 text-[#b8aea5]">{cluster.whyItMatters}</p>
+                          <h3 className="text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{pattern.procedure}</h3>
+                          <p className="mt-3 text-sm leading-7 text-[#ddd1c6]">{pattern.takeaway}</p>
+                          <p className="mt-3 text-sm leading-7 text-[#b8aea5]">{pattern.whyItMatters}</p>
                         </div>
                         <div className="min-w-[96px] text-right">
                           <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#9e9489]">Stories</p>
-                          <p className="mt-3 text-5xl font-semibold tracking-[-0.06em] text-[#f19a86]">{cluster.value}</p>
+                          <p className="mt-3 text-5xl font-semibold tracking-[-0.06em] text-[#f19a86]">{pattern.value}</p>
                         </div>
                       </div>
                     </div>
@@ -367,48 +383,33 @@ export default function Insights() {
               </Card>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
-                <CardHeader>
-                  <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    What this page is meant to help you do
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    Start with the insurer, denial reason, or treatment that matches your case. Then use the repeated patterns here to decide what evidence, plan language, or precedent you need next.
-                  </div>
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    {methodology.coverageSummary} This page only highlights the parts of the record that are specific enough to help someone compare their own denial.
-                  </div>
-                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                    If you are trying to appeal, move from this page into Fight Back and bring the insurer, treatment, and denial reason with you.
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-[2.3rem] border-white/8 bg-[#12161b] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
-                <CardHeader>
-                  <CardTitle className="text-2xl tracking-tight text-[#f7f2eb]">
-                    Why this data is different
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm leading-7 text-[#c8bdb4]">
-                  {sourceStory.slice(0, 2).map((item) => (
-                    <div key={item.title} className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-                      <h3 className="text-lg font-semibold text-[#f7f2eb]">{item.title}</h3>
-                      <p className="mt-2">{item.body}</p>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'about' }))}
-                    className="inline-flex items-center text-sm font-semibold text-[#f19a86]"
+            <section className="rounded-[2.3rem] border border-white/8 bg-[#12161b] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+              <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">What this is for</p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">
+                    If your exact denial reason appears here, you are not alone - and you now have precedent.
+                  </h2>
+                  <p className="mt-4 text-sm leading-7 text-[#c8bdb4]">
+                    Use the insurer, treatment, and denial reason that matches your case. Then bring that combination into Fight Back and build an appeal around the patterns already in the record.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-4 lg:justify-end">
+                  <Button
+                    onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'appeal' }))}
+                    className="rounded-full bg-[#8b5cf6] px-6 text-white hover:bg-[#7b49ec]"
                   >
-                    See methodology and trust details <ArrowRight className="ml-2 h-4 w-4" />
-                  </button>
-                </CardContent>
-              </Card>
+                    See if your denial matches 1,135 others
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'about' }))}
+                    className="rounded-full border-white/10 bg-white/6 text-[#f3efe9] hover:bg-white/10"
+                  >
+                    View methodology & trust details <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </section>
           </>
         ) : null}
