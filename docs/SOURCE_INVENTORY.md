@@ -1,67 +1,131 @@
 # Source Inventory
 
-This file tracks the public-source lanes currently feeding the observatory and the high-priority lanes still being expanded.
+This file tracks where the observatory is learning from, what is already automated, what is still only lightly seeded, and which lanes require manual review or partnership instead of scraping.
 
-## Active automated lanes
+## Status legend
+- `live_harvester`: automated lane is actively ingesting on the current pipeline
+- `seeded_only`: source is represented in the data, but only via manual or static seed packs
+- `needs_harvester`: strong candidate with enough value to justify a dedicated connector
+- `manual_review`: use carefully, public-only review, or legal/compliance review before automation
+- `partnership_only`: do not scrape directly; pursue partnership, consented data sharing, or manual citation only
+
+## Live automated lanes
 
 ### Core public communities and complaint sources
-- Reddit denial and condition communities
-- AARP Medicare / insurance discussions
-- Breastcancer.org denial discussions
-- ConsumerAffairs insurer complaint pages
-- Better Business Bureau complaint pages
+| Source | Status | Current note |
+| --- | --- | --- |
+| Reddit denial and condition communities | `live_harvester` | Largest volume driver, still too noisy in broad communities |
+| AARP Medicare Insurance Forum | `live_harvester` | Higher-fidelity stories, currently around 10 live records |
+| Breastcancer.org Community | `live_harvester` | Strong payer + treatment signal, currently around 8 live records |
+| ConsumerAffairs insurer complaint pages | `live_harvester` | Useful insurer naming, still moderate noise |
+| Better Business Bureau complaint pages | `seeded_only` | Tracked as a target, but not yet producing rows in the active dataset |
 
-### Official and benchmark sources
-- CMS
-- HHS OIG
-- KFF
-- NY DFS and state insurance complaint / appeal resources
-- Department of Labor mental health parity guidance
-- Patient Advocate Foundation
+### Official, benchmark, and policy sources
+| Source | Status | Current note |
+| --- | --- | --- |
+| CMS prior authorization / denial rules | `live_harvester` | Benchmark and policy context, not patient-story heavy |
+| HHS OIG | `live_harvester` | Structured oversight and audit signal |
+| KFF / KFF Health News | `live_harvester` | Benchmark and news lane; use for "why now" cards and policy framing |
+| NY DFS and other state insurance resources | `live_harvester` | Useful regulator and external-review context |
+| Department of Labor parity guidance | `live_harvester` | Strong for mental health parity framing |
+| Patient Advocate Foundation | `live_harvester` | Advocacy and appeals best-practice source |
+| California DMHC IMR | `seeded_only` | Very high-value source, but only lightly represented so far |
+| CalPERS appeal and independent-review rights | `seeded_only` | Good benchmark lane, not yet harvested deeply |
 
 ### Investigative and legal intelligence
-- ProPublica
-- STAT
-- CourtListener discovery lane
+| Source | Status | Current note |
+| --- | --- | --- |
+| ProPublica | `live_harvester` | Good high-trust journalism and complaint signal |
+| STAT | `live_harvester` | Investigative lane for policy and systemic denials |
+| CourtListener | `seeded_only` | Great legal and pattern lane, but deeper harvesting still missing |
 
-### Condition and advocacy communities now wired into the source-family pack
-- AARP Medicare Insurance Forum
-- California IMR / DMHC decisions
-- California Department of Insurance IMR rights materials
-- CalPERS appeal and independent-review rights
-- Mayo Clinic Connect
-- Breastcancer.org Community denial threads
-- Cancer Survivors Network
-- Myeloma Beacon
-- HealthBoards condition-specific denial threads
-- GLP-1 / obesity medication coverage fights
-- Mounjaro / additional GLP-1 coverage communities
-- Mental health parity and therapy coverage resources
-- Mental Health America access-to-care benchmarks
-- Autism treatment and ABA coverage resources
-- Cancer and rare-disease support communities
-- Alzheimer's and dementia appeal resources
-- Court and lawsuit intelligence
-- ProPublica autism-treatment investigations
-- Public Facebook discovery lane (manual review only)
+## Higher-fidelity patient and condition communities
 
-## Manual review or cautious discovery lanes
-- Public Facebook advocacy pages and public group discussions
-- Inspire
-- Smart Patients
-- YouTube comments on denial investigations
+### Already represented in the data
+| Source | Status | Current note |
+| --- | --- | --- |
+| Mayo Clinic Connect | `live_harvester` | Very clean narratives, currently around 10 live records |
+| Cancer Survivors Network | `live_harvester` | Useful oncology denial stories, currently around 6 live records |
+| Myeloma Beacon Forum | `live_harvester` | Small but high-value rare-disease treatment lane |
+| HealthBoards | `live_harvester` | Small and still sparse, but strong denial-specific threads |
+| Autism Speaks | `seeded_only` | Good support and appeal content, limited story volume so far |
+| Alzheimer's Association | `seeded_only` | Good public-support and benefits content |
+| The ALS Association | `seeded_only` | Good benefits and access signal |
+| Mental Health America | `seeded_only` | Better as an advocacy benchmark than a complaint feed |
 
-## Partnership-only / do-not-scrape-private lanes
-- Private Facebook groups
-- PatientsLikeMe
-- HealthUnlocked private or restricted communities
+### Clear next harvesters to build
+| Source | Status | Why it matters |
+| --- | --- | --- |
+| Cancer Support Community | `needs_harvester` | Cancer prior auth and access barriers are well documented and high stakes |
+| JDRF / Breakthrough T1D | `needs_harvester` | Insulin, CGM, and diabetes-supply access is a strong repeated-denial lane |
+| T1International | `needs_harvester` | Aggressive insulin access advocacy with strong payer and pharma pressure themes |
+| ADHD / depression / anxiety public communities | `needs_harvester` | Mental health and neurodivergence care denials are clearly underrepresented |
+| GLP-1 and obesity medication communities beyond Reddit | `needs_harvester` | High-denial, high-volume, strong plan-specific patterns |
 
-## Next likely source expansions
-- California DMHC IMR decision harvesting beyond seed observations
-- Additional state external review / IMR databases
-- Mayo Clinic Connect thread harvesting by condition and payer keywords
-- AARP Medicare thread harvesting by payer and denial reason
-- Breastcancer.org harvesting by procedure and insurer keywords
-- Cancer Survivors Network harvesting by treatment and payer keywords
-- More GLP-1, oncology, autism, ALS, Alzheimer’s, depression, anxiety, and therapy-specific communities
-- Lawsuit / docket monitoring around prior authorization and denial algorithms
+## New candidate lanes from current research
+
+| Source | Status | Why it matters |
+| --- | --- | --- |
+| PAF / PAN TotalAssist | `needs_harvester` | High-value access-barrier and patient-assistance ecosystem after the March 2026 merger |
+| KFF Health News "Bill of the Month" | `needs_harvester` | Gold-standard crowdsourced storytelling around systemic billing and coverage failures |
+| Dollar For | `needs_harvester` | Strong hospital-bill relief and charity-care access lane that overlaps with denial stress and appeals |
+| FAIR Health Consumer | `needs_harvester` | Strong insurance issue guidance and appeal context |
+| Commonwealth Fund insurance denial research | `needs_harvester` | Excellent "why now" policy framing and benchmark stats |
+| ValuePenguin denial and appeals research | `needs_harvester` | Useful benchmark and explainer lane, especially for public context cards |
+| JMIR paper `e73427` | `needs_harvester` | Research-grade signal on complaint and patient-voice patterns |
+| Quora health insurance denial questions | `manual_review` | Can reveal repeated phrasing and pain points, but quality varies heavily |
+| insurance-forums.com and similar boards | `manual_review` | Lower volume, older discussions, but sometimes explicit claims and appeal detail |
+| Public X / Twitter complaint threads | `manual_review` | Good for rapid signal and hashtags, but noisy and context-light |
+| ProPublica / investigative article comments | `manual_review` | Can surface repeat experiences, but quality and moderation vary |
+
+## Manual-review or cautious discovery lanes
+
+| Source | Status | Notes |
+| --- | --- | --- |
+| Public Facebook advocacy pages | `manual_review` | Public-only, no private or closed groups |
+| Public Facebook groups | `manual_review` | Must verify public visibility and relevance; no private scraping |
+| Nextdoor public references | `manual_review` | Very cautious lane, likely too local and noisy without explicit public visibility |
+| YouTube comments on denial investigations | `manual_review` | Better as discovery than primary evidence |
+| Smart Patients | `manual_review` | Valuable community, but treat carefully and prefer cited public content only |
+| Inspire | `manual_review` | Very strong candidate for partnership; avoid blind scraping |
+
+## Partnership-only or do-not-scrape-private lanes
+
+| Source | Status | Notes |
+| --- | --- | --- |
+| Private Facebook groups | `partnership_only` | No scraping; consented or partnered access only |
+| Inspire private or member-gated content | `partnership_only` | Prefer partnership or explicit permission |
+| PatientsLikeMe | `partnership_only` | Do not scrape |
+| HealthUnlocked private or restricted communities | `partnership_only` | Do not scrape |
+
+## Current high-fidelity source counts
+
+Snapshot from the live Neon published slice on `2026-04-14`:
+
+| Source | Published rows |
+| --- | ---: |
+| AARP Medicare Insurance Forum | 10 |
+| Mayo Clinic Connect | 10 |
+| Breastcancer.org Community | 8 |
+| Alzheimer's Association | 6 |
+| Cancer Survivors Network | 6 |
+| Autism Speaks | 4 |
+| The ALS Association | 4 |
+| Myeloma Beacon Forum | 3 |
+| ProPublica | 2 |
+| ConsumerAffairs | 1 |
+| California DMHC IMR | 1 |
+| HealthBoards | 1 |
+| Mental Health America | 1 |
+
+## What the tracker is telling us
+
+- The higher-fidelity sources are cleaner than Reddit, but still under-harvested.
+- The next unlock is not another one-off seed. It is dedicated thread harvesters for:
+  - AARP
+  - Mayo Clinic Connect
+  - Breastcancer.org
+  - Cancer Survivors Network
+  - California DMHC IMR
+  - mental-health and diabetes-access communities
+- Public Facebook, X, Quora, and insurance boards should be treated as discovery or manual-review lanes first, not trusted volume lanes.

@@ -13,6 +13,12 @@
 ## Data Engine
 - [ ] Add non-Reddit ingestion modules for AARP public threads.
 - [ ] Add non-Reddit ingestion modules for Breastcancer.org public discussions.
+- [ ] Build true thread harvesters for AARP, Mayo Clinic Connect, Breastcancer.org, and Cancer Survivors Network so those higher-fidelity lanes move from single digits into meaningful volume.
+- [ ] Add state external-review / IMR harvesters, starting with California DMHC and then expanding to additional state review datasets.
+- [ ] Add stronger mental-health / ADHD / depression / anxiety community harvesting with better payer extraction.
+- [ ] Add diabetes-access harvesting lanes for JDRF / Breakthrough T1D and T1International.
+- [ ] Add research and advocacy harvesters for PAF / PAN TotalAssist, KFF Health News Bill of the Month, Dollar For, FAIR Health Consumer, Commonwealth Fund, and ValuePenguin.
+- [ ] Decide which cautious discovery lanes should stay manual-review only: public Facebook, Quora, insurance forums, X complaint threads, investigative article comments, Inspire.
 - [ ] Add ingestion modules for ConsumerAffairs insurer complaint pages.
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
 - [x] Expand trusted-source seeding for GLP-1, cancer, autism, mental health, ALS, and Alzheimer’s communities and advocacy organizations.
@@ -25,6 +31,30 @@
 - [ ] Add more benchmark snapshot generation for insurer + procedure + denial category combinations.
 - [x] Add stricter pruning so generic insurance-shopping chatter is archived out of the public record instead of surfacing as denial evidence.
 - [x] Expand the trusted-source pack with stronger GLP-1, IBD, autism, mental health, ADHD, and ALS denial sources.
+
+## Source Expansion Tracker
+- [x] Reddit denial and condition communities: live harvester
+- [x] AARP Medicare Insurance Forum: live harvester, still lightly harvested
+- [x] Mayo Clinic Connect: live harvester, still lightly harvested
+- [x] Breastcancer.org Community: live harvester, still lightly harvested
+- [x] ConsumerAffairs: live harvester
+- [ ] Better Business Bureau: connector tracked, not yet producing live rows
+- [x] CMS / HHS OIG / KFF / DOL parity / Patient Advocate Foundation: benchmark and policy lanes live
+- [x] ProPublica / STAT: investigative lanes live
+- [ ] CourtListener: seeded and tracked, needs deeper legal harvester
+- [x] California DMHC IMR / CDI / CalPERS: seeded benchmark lanes, needs real harvesting
+- [x] Cancer Survivors Network / Myeloma Beacon / HealthBoards: live but sparse
+- [x] Autism Speaks / ALS Association / Alzheimer's Association / Mental Health America: seeded advocacy lanes
+- [ ] PAF / PAN TotalAssist: researched, not yet connected
+- [ ] KFF Health News Bill of the Month: researched, not yet connected
+- [ ] Dollar For: researched, not yet connected
+- [ ] FAIR Health Consumer: researched, not yet connected
+- [ ] Commonwealth Fund denial research: researched, not yet connected
+- [ ] ValuePenguin denial / appeals research: researched, not yet connected
+- [ ] JDRF / Breakthrough T1D and T1International: researched, not yet connected
+- [ ] Public Facebook pages / groups: manual-review lane only for now
+- [ ] Quora / insurance-forums.com / X complaint threads / investigative comment communities: manual-review candidates only for now
+- [ ] Inspire / Smart Patients / private groups: partnership-only or do-not-scrape
 
 ## Product / UX
 - [ ] Finish the Share Your Story intake so venting, voice-to-text, structured fields, upload, and consent feel cohesive.
