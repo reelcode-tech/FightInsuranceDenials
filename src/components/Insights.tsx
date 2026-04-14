@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, BarChart3, MapPinned, RefreshCw } from 'lucide-react';
+import { ArrowRight, BarChart3, MapPinned, RefreshCw, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,8 @@ import {
   type MetricRow,
   type PatternsResponse,
 } from '@/src/lib/insightsPresentation';
+import type { DenialRecord } from '@/src/types';
+import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
 
 const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
 
@@ -95,6 +97,10 @@ export default function Insights() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [recordQuery, setRecordQuery] = React.useState<string>('');
+  const [storyQuery, setStoryQuery] = React.useState('');
+  const [stories, setStories] = React.useState<DenialRecord[]>([]);
+  const [storyLoading, setStoryLoading] = React.useState(false);
+  const [expandedStoryId, setExpandedStoryId] = React.useState<string | null>(null);
 
   const load = React.useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -133,11 +139,39 @@ export default function Insights() {
       const query = parsed?.query?.trim();
       if (!query) return;
       setRecordQuery(query);
+      setStoryQuery(query);
       window.sessionStorage.removeItem('fid_record_query');
     } catch (err) {
       console.error('Failed to restore record query', err);
     }
   }, []);
+
+  const loadStories = React.useCallback(async (query: string) => {
+    setStoryLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set('q', query.trim());
+      params.set('limit', '12');
+      const response = await fetch(`/api/observatory/stories?${params.toString()}`, { cache: 'no-store' });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Story endpoint did not return JSON');
+      }
+      const payload = await response.json();
+      if (!response.ok || payload.status !== 'success') {
+        throw new Error(payload.error || 'Failed to load stories');
+      }
+      setStories(payload.stories || []);
+    } catch (err) {
+      console.error('Failed to load story browser', err);
+    } finally {
+      setStoryLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadStories(storyQuery);
+  }, [loadStories, storyQuery]);
 
   const keyQuestions = buildActionQuestions(data);
   const leadFinding = data?.findings[0];
@@ -200,6 +234,7 @@ export default function Insights() {
                     type="button"
                     onClick={() => {
                       setRecordQuery(item);
+                      setStoryQuery(item);
                       window.sessionStorage.setItem('fid_record_query', JSON.stringify({ query: item, createdAt: new Date().toISOString() }));
                     }}
                     className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-left text-sm font-semibold text-[#f7f2eb] transition-colors hover:border-[#c74b3c]/40 hover:bg-white/[0.06]"
@@ -411,9 +446,126 @@ export default function Insights() {
                 </div>
               </div>
             </section>
+
+            <section className="rounded-[2.3rem] border border-white/8 bg-[#12161b] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Search the story database</p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb] md:text-4xl">
+                    Scan real stories without reading a wall of text.
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">
+                    Search by insurer, plan, treatment, or denial reason. We show a clean preview first, then let you open the stories that actually match your situation.
+                  </p>
+                </div>
+                <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#d9e0ff]">
+                  {storyLoading ? 'Refreshing stories...' : `${stories.length} stories ready to scan`}
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 md:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8a93b5]" />
+                  <input
+                    value={storyQuery}
+                    onChange={(event) => setStoryQuery(event.target.value)}
+                    placeholder="Try: UnitedHealthcare Taltz, prior authorization, MRI..."
+                    className="h-14 w-full rounded-[1.2rem] border border-white/10 bg-[#0c1016] pl-12 pr-4 text-base text-white outline-none transition focus:border-[#8b5cf6]/70"
+                  />
+                </div>
+                <Button
+                  onClick={() => loadStories(storyQuery)}
+                  className="h-14 rounded-[1.2rem] bg-[#8b5cf6] px-6 text-base font-semibold text-white hover:bg-[#7b49ec]"
+                >
+                  Search stories
+                </Button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                {[
+                  `My insurer is ${topInsurer}`,
+                  `${topCategory}`,
+                  `${topProcedure}`,
+                  'UnitedHealthcare Taltz',
+                ].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setStoryQuery(item)}
+                    className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm font-medium text-[#e8ebff] transition-colors hover:bg-white/10"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8 grid gap-5 xl:grid-cols-3">
+                {stories.map((story) => {
+                  const expanded = expandedStoryId === story.id;
+                  const tags = buildStoryTags(story);
+                  return (
+                    <article key={story.id} className="flex h-full flex-col rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                      <div className="flex flex-wrap gap-2">
+                        {tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={`${story.id}-${tag}`}
+                            className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d7dcf4]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        <span className="rounded-full bg-[#301a18] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#f3a08e]">
+                          {buildStoryActionTag(story)}
+                        </span>
+                      </div>
+
+                      <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-white">{buildStoryTitle(story)}</h3>
+                      <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
+                        What was denied: {story.procedure || story.procedure_condition || 'Care access'}
+                      </p>
+                      <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
+                        {expanded ? cleanStoryBody(story) : buildStorySummary(story)}
+                      </p>
+
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-6">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedStoryId(expanded ? null : story.id)}
+                          className="text-sm font-semibold text-[#bfa8ff]"
+                        >
+                          {expanded ? 'Show less' : 'Read more'}
+                        </button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            const searchValue = `${story.insurer || story.extracted_insurer || ''} ${story.procedure || story.procedure_condition || ''}`.trim();
+                            setRecordQuery(searchValue);
+                            setStoryQuery(searchValue);
+                          }}
+                          className="rounded-full border-white/10 bg-white/6 text-white hover:bg-white/10"
+                        >
+                          This matches my situation
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
           </>
         ) : null}
       </div>
     </div>
   );
+}
+
+function cleanStoryBody(story: DenialRecord) {
+  const longText =
+    story.narrative ||
+    story.summary ||
+    story.denialReason ||
+    story.denial_reason_raw ||
+    'A patient documented how an insurer blocked care and what happened next.';
+
+  return longText.replace(/\s+/g, ' ').trim();
 }

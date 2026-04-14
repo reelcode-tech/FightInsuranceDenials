@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
 
 function asNumber(value: unknown) {
   const numeric = Number(value);
@@ -43,6 +44,7 @@ export default async function handler(_req: any, res: any) {
         SELECT
           story_id,
           extracted_insurer,
+          plan_type,
           procedure_condition,
           denial_reason_raw,
           patient_narrative_summary,
@@ -67,22 +69,32 @@ export default async function handler(_req: any, res: any) {
       sourceRecordCount: asNumber((counts as any).source_record_count),
       totalVisibleCount: asNumber((counts as any).total_visible_count),
       topCategory: (topCategoryResult[0] as any)?.denial_category || 'Coverage Denial',
-      featuredStories: (featuredResult as any[]).map((row: any) => ({
-        id: row.story_id,
-        insurer: row.extracted_insurer || 'Private carrier',
-        procedure: row.procedure_condition || 'Medical service denial',
-        denialReason: row.denial_reason_raw || 'Coverage denial',
-        summary: row.patient_narrative_summary || row.denial_reason_raw || 'A denial story from the public observatory.',
-        source: row.source_label || 'Public source',
-        url: row.source_url || undefined,
-        status: 'denied',
-        tags: [],
-        isPublic: true,
-        createdAt: null,
-        date: '',
-        narrative: '',
-        planType: '',
-      })),
+      featuredStories: (featuredResult as any[]).map((row: any) => {
+        const story = {
+          id: row.story_id,
+          insurer: row.extracted_insurer || 'Private carrier',
+          procedure: row.procedure_condition || 'Medical service denial',
+          denialReason: row.denial_reason_raw || 'Coverage denial',
+          summary: row.patient_narrative_summary || row.denial_reason_raw || 'A denial story from the public observatory.',
+          source: row.source_label || 'Public source',
+          url: row.source_url || undefined,
+          status: 'denied' as const,
+          tags: [],
+          isPublic: true,
+          createdAt: null,
+          date: '',
+          narrative: row.patient_narrative_summary || '',
+          planType: row.plan_type || '',
+        };
+
+        return {
+          ...story,
+          title: buildStoryTitle(story),
+          summary: buildStorySummary(story),
+          actionTag: buildStoryActionTag(story),
+          tags: buildStoryTags(story),
+        };
+      }),
     });
   } catch (error) {
     res.status(500).json({

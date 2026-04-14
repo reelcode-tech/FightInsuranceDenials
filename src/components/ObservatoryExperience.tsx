@@ -3,6 +3,7 @@ import { ArrowRight, ExternalLink, Search, Sparkles, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import type { DenialRecord } from '@/src/types';
 import { HOMEPAGE_NEWS } from '@/src/lib/appealGuidance';
+import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
 
 type ObservatoryExperienceProps = {
   featuredStories: DenialRecord[];
@@ -18,27 +19,16 @@ type ObservatoryExperienceProps = {
 const SEARCH_EXAMPLES = ['prior authorization...', 'MRI...', 'UnitedHealthcare...', 'ADHD medication...'];
 const SEARCH_CHIPS = ['Prior Authorization', 'UnitedHealthcare', 'ADHD Medication', 'MRI'];
 
-function storyTitle(story: DenialRecord) {
-  const insurer = story.insurer || story.extracted_insurer || 'Insurer';
-  const procedure = story.procedure || story.procedure_condition || 'care';
-  return `${insurer} denied ${procedure}`;
-}
-
-function storySummary(story: DenialRecord) {
+function storyBody(story: DenialRecord) {
   return (
+    story.narrative ||
     story.summary ||
     story.denialReason ||
     story.denial_reason_raw ||
-    story.narrative ||
     'A patient documented how an insurer blocked care and what happened next.'
-  );
-}
-
-function storyActionTag(story: DenialRecord) {
-  const reason = story.denialReason || story.denial_reason_raw || '';
-  if (/overturn|approved|won/i.test(reason + ' ' + (story.summary || ''))) return 'Appeal succeeded';
-  if (/appeal|external review|grievance/i.test(reason + ' ' + (story.summary || ''))) return 'Appeal filed';
-  return 'Still fighting back';
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export default function ObservatoryExperience({
@@ -121,7 +111,7 @@ export default function ObservatoryExperience({
       ...SEARCH_CHIPS,
       ...trendingSearches,
       ...liveStories.flatMap((story) => [
-        storyTitle(story),
+        buildStoryTitle(story),
         [story.insurer || story.extracted_insurer, story.planType || story.plan_type, story.procedure || story.procedure_condition]
           .filter(Boolean)
           .join(' - '),
@@ -349,30 +339,39 @@ export default function ObservatoryExperience({
           <div className="mt-8 grid gap-5 lg:grid-cols-3">
             {liveStories.slice(0, 3).map((story) => {
               const expanded = expandedStoryId === story.id;
+              const tags = buildStoryTags(story);
+              const title = (story as any).title || buildStoryTitle(story);
+              const summary = buildStorySummary(story);
+              const actionTag = (story as any).actionTag || buildStoryActionTag(story);
               return (
-                <article key={story.id} className="rounded-[1.9rem] border border-white/8 bg-white/[0.03] p-6">
+                <article key={story.id} className="flex h-full flex-col rounded-[1.9rem] border border-white/8 bg-white/[0.03] p-6">
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-[#26173f] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d0b4ff]">
-                      What was denied: {story.procedure || story.procedure_condition || 'care'}
-                    </span>
-                    <span className="rounded-full bg-white/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d7dcf4]">
-                      {story.insurer || story.extracted_insurer || 'Named payer'}
-                    </span>
+                    {tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={`${story.id}-${tag}`}
+                        className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d7dcf4]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                     <span className="rounded-full bg-[#301a18] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f3a08e]">
-                      {storyActionTag(story)}
+                      {actionTag}
                     </span>
                   </div>
-                  <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-white">{storyTitle(story)}</h3>
-                  <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
-                    {expanded ? storySummary(story) : `${storySummary(story).slice(0, 160)}${storySummary(story).length > 160 ? '...' : ''}`}
+                  <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h3>
+                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
+                    What was denied: {story.procedure || story.procedure_condition || 'Care access'}
                   </p>
-                  <div className="mt-6 flex items-center justify-between gap-4">
+                  <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
+                    {expanded ? storyBody(story) : summary}
+                  </p>
+                  <div className="mt-auto flex items-center justify-between gap-4 pt-6">
                     <button
                       type="button"
                       onClick={() => setExpandedStoryId(expanded ? null : story.id)}
                       className="text-sm font-semibold text-[#bfa8ff]"
                     >
-                      {expanded ? 'Show less' : 'Read more'}
+                      {expanded ? 'Show less' : 'Read story'}
                     </button>
                     <Button
                       variant="outline"
