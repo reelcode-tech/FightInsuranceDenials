@@ -12,10 +12,15 @@ test('higher-fidelity source families have enough seeded observations to matter'
   assert.ok(countByLabel('Breastcancer.org Community') >= 4);
   assert.ok(countByLabel('Cancer Survivors Network') >= 5);
   assert.ok(countByLabel('Myeloma Beacon Forum') >= 2);
+  assert.ok(countByLabel('PAF / PAN TotalAssist') >= 1);
+  assert.ok(countByLabel('KFF Health News Bill of the Month') >= 1);
+  assert.ok(countByLabel('Cancer Support Community') >= 1);
+  assert.ok(countByLabel('JDRF / Breakthrough T1D') >= 1);
+  assert.ok(countByLabel('T1International') >= 1);
 });
 
 test('source-family pack stays meaningfully diversified across trusted lanes', () => {
   const uniqueLabels = new Set(SOURCE_FAMILY_OBSERVATIONS.map((observation) => observation.source_label));
-  assert.ok(uniqueLabels.size >= 20);
-  assert.ok(SOURCE_FAMILY_OBSERVATIONS.length >= 45);
+  assert.ok(uniqueLabels.size >= 25);
+  assert.ok(SOURCE_FAMILY_OBSERVATIONS.length >= 55);
 });

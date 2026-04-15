@@ -17,7 +17,7 @@
 - [ ] Add state external-review / IMR harvesters, starting with California DMHC and then expanding to additional state review datasets.
 - [ ] Add stronger mental-health / ADHD / depression / anxiety community harvesting with better payer extraction.
 - [ ] Add diabetes-access harvesting lanes for JDRF / Breakthrough T1D and T1International.
-- [ ] Add research and advocacy harvesters for PAF / PAN TotalAssist, KFF Health News Bill of the Month, Dollar For, FAIR Health Consumer, Commonwealth Fund, and ValuePenguin.
+- [ ] Deepen the seeded research and advocacy lanes for PAF / PAN TotalAssist, KFF Health News Bill of the Month, Dollar For, FAIR Health Consumer, Commonwealth Fund, and ValuePenguin into real harvesters.
 - [ ] Decide which cautious discovery lanes should stay manual-review only: public Facebook, Quora, insurance forums, X complaint threads, investigative article comments, Inspire.
 - [ ] Add ingestion modules for ConsumerAffairs insurer complaint pages.
 - [ ] Add ingestion modules for BBB complaint data where public pages are accessible.
@@ -45,13 +45,13 @@
 - [x] California DMHC IMR / CDI / CalPERS: seeded benchmark lanes, needs real harvesting
 - [x] Cancer Survivors Network / Myeloma Beacon / HealthBoards: live but sparse
 - [x] Autism Speaks / ALS Association / Alzheimer's Association / Mental Health America: seeded advocacy lanes
-- [ ] PAF / PAN TotalAssist: researched, not yet connected
-- [ ] KFF Health News Bill of the Month: researched, not yet connected
-- [ ] Dollar For: researched, not yet connected
-- [ ] FAIR Health Consumer: researched, not yet connected
-- [ ] Commonwealth Fund denial research: researched, not yet connected
-- [ ] ValuePenguin denial / appeals research: researched, not yet connected
-- [ ] JDRF / Breakthrough T1D and T1International: researched, not yet connected
+- [x] PAF / PAN TotalAssist: seeded and tracked, needs deeper harvester
+- [x] KFF Health News Bill of the Month: seeded and tracked, needs deeper harvester
+- [x] Dollar For: seeded and tracked, needs deeper harvester
+- [x] FAIR Health Consumer: seeded and tracked, needs deeper harvester
+- [x] Commonwealth Fund denial research: seeded and tracked, needs deeper harvester
+- [x] ValuePenguin denial / appeals research: seeded and tracked, needs deeper harvester
+- [x] JDRF / Breakthrough T1D and T1International: seeded and tracked, needs deeper harvester
 - [ ] Public Facebook pages / groups: manual-review lane only for now
 - [ ] Quora / insurance-forums.com / X complaint threads / investigative comment communities: manual-review candidates only for now
 - [ ] Inspire / Smart Patients / private groups: partnership-only or do-not-scrape

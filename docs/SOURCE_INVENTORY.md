@@ -56,9 +56,9 @@ This file tracks where the observatory is learning from, what is already automat
 ### Clear next harvesters to build
 | Source | Status | Why it matters |
 | --- | --- | --- |
-| Cancer Support Community | `needs_harvester` | Cancer prior auth and access barriers are well documented and high stakes |
-| JDRF / Breakthrough T1D | `needs_harvester` | Insulin, CGM, and diabetes-supply access is a strong repeated-denial lane |
-| T1International | `needs_harvester` | Aggressive insulin access advocacy with strong payer and pharma pressure themes |
+| Cancer Support Community | `seeded_only` | Now represented in the source pack; next step is a real thread/resource harvester |
+| JDRF / Breakthrough T1D | `seeded_only` | Now represented in the source pack; next step is deeper diabetes-access harvesting |
+| T1International | `seeded_only` | Now represented in the source pack; next step is stronger insulin-access harvesting |
 | ADHD / depression / anxiety public communities | `needs_harvester` | Mental health and neurodivergence care denials are clearly underrepresented |
 | GLP-1 and obesity medication communities beyond Reddit | `needs_harvester` | High-denial, high-volume, strong plan-specific patterns |
 
@@ -66,12 +66,12 @@ This file tracks where the observatory is learning from, what is already automat
 
 | Source | Status | Why it matters |
 | --- | --- | --- |
-| PAF / PAN TotalAssist | `needs_harvester` | High-value access-barrier and patient-assistance ecosystem after the March 2026 merger |
-| KFF Health News "Bill of the Month" | `needs_harvester` | Gold-standard crowdsourced storytelling around systemic billing and coverage failures |
-| Dollar For | `needs_harvester` | Strong hospital-bill relief and charity-care access lane that overlaps with denial stress and appeals |
-| FAIR Health Consumer | `needs_harvester` | Strong insurance issue guidance and appeal context |
-| Commonwealth Fund insurance denial research | `needs_harvester` | Excellent "why now" policy framing and benchmark stats |
-| ValuePenguin denial and appeals research | `needs_harvester` | Useful benchmark and explainer lane, especially for public context cards |
+| PAF / PAN TotalAssist | `seeded_only` | Added to the source pack; next step is a deeper access-barrier harvester |
+| KFF Health News "Bill of the Month" | `seeded_only` | Added to the source pack; next step is issue-level story harvesting |
+| Dollar For | `seeded_only` | Added to the source pack; next step is deeper hospital-billing and charity-care harvesting |
+| FAIR Health Consumer | `seeded_only` | Added to the source pack; next step is connecting issue guides into appeal logic |
+| Commonwealth Fund insurance denial research | `seeded_only` | Added to the source pack; next step is benchmark and news-card extraction |
+| ValuePenguin denial and appeals research | `seeded_only` | Added to the source pack; next step is benchmark extraction and comparison logic |
 | JMIR paper `e73427` | `needs_harvester` | Research-grade signal on complaint and patient-voice patterns |
 | Quora health insurance denial questions | `manual_review` | Can reveal repeated phrasing and pain points, but quality varies heavily |
 | insurance-forums.com and similar boards | `manual_review` | Lower volume, older discussions, but sometimes explicit claims and appeal detail |
