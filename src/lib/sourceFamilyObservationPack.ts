@@ -1,4 +1,5 @@
 import type { TrustedObservation } from './trustedObservationPack';
+import { dedupeObservations, hydrateObservation } from './sourceSignals';
 
 type SourceFamily =
   | 'california-imr'
@@ -19,7 +20,14 @@ export interface SourceFamilyPack {
   observations: TrustedObservation[];
 }
 
-export const SOURCE_FAMILY_PACKS: SourceFamilyPack[] = [
+function hydrateSourceFamilyPacks(packs: SourceFamilyPack[]): SourceFamilyPack[] {
+  return packs.map((family) => ({
+    ...family,
+    observations: dedupeObservations(family.observations).map((observation) => hydrateObservation(observation)),
+  }));
+}
+
+export const SOURCE_FAMILY_PACKS: SourceFamilyPack[] = hydrateSourceFamilyPacks([
   {
     id: 'access-advocacy-research',
     name: 'Access advocacy, patient assistance, and denial research',
@@ -1602,6 +1610,6 @@ export const SOURCE_FAMILY_PACKS: SourceFamilyPack[] = [
       },
     ],
   },
-];
+]);
 
 export const SOURCE_FAMILY_OBSERVATIONS: TrustedObservation[] = SOURCE_FAMILY_PACKS.flatMap((family) => family.observations);

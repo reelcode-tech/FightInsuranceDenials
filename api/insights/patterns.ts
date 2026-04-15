@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { enforceRateLimit, sendSafeError } from '../_lib/http';
 
 type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };
@@ -272,13 +273,14 @@ async function fetchPatternsFromNeon() {
 }
 
 export default async function handler(_req: any, res: any) {
+  if (!enforceRateLimit(_req, res, { key: 'insights-patterns', limit: 40, windowMs: 60_000 })) {
+    return;
+  }
+
   try {
     const payload = await fetchPatternsFromNeon();
     res.status(200).json(payload);
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      error: error instanceof Error ? error.message : String(error),
-    });
+    sendSafeError(res, 500, 'We could not load evidence patterns right now.', error, 'insights-patterns');
   }
 }

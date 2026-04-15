@@ -20,7 +20,7 @@ import {
   type PatternsResponse,
 } from '@/src/lib/insightsPresentation';
 import type { DenialRecord } from '@/src/types';
-import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
+import { buildStoryActionTag, buildStoryPreview, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
 
 const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
 
@@ -503,6 +503,8 @@ export default function Insights() {
                 {stories.map((story) => {
                   const expanded = expandedStoryId === story.id;
                   const tags = buildStoryTags(story);
+                  const preview = story.preview || buildStoryPreview(story);
+                  const whatWasDenied = story.whatWasDenied || buildWhatWasDenied(story);
                   return (
                     <article key={story.id} className="flex h-full flex-col rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
                       <div className="flex flex-wrap gap-2">
@@ -521,11 +523,16 @@ export default function Insights() {
 
                       <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-white">{buildStoryTitle(story)}</h3>
                       <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
-                        What was denied: {story.procedure || story.procedure_condition || 'Care access'}
+                        What was denied: {whatWasDenied}
                       </p>
                       <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
-                        {expanded ? cleanStoryBody(story) : buildStorySummary(story)}
+                        {expanded ? cleanStoryBody(story) : preview}
                       </p>
+                      {story.sourceConfidenceLabel ? (
+                        <p className="mt-4 text-xs leading-6 text-[#9da7d1]">
+                          {story.sourceConfidenceLabel}: {story.sourceTrustNote}
+                        </p>
+                      ) : null}
 
                       <div className="mt-auto flex items-center justify-between gap-3 pt-6">
                         <button

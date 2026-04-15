@@ -1,5 +1,6 @@
 import { PUBLIC_SOURCE_CATALOG } from './publicSourceCatalog';
 import { SOURCE_FAMILY_OBSERVATIONS } from './sourceFamilyObservationPack';
+import { hydrateObservation } from './sourceSignals';
 import { TRUSTED_OBSERVATION_PACK } from './trustedObservationPack';
 import { WAREHOUSE_SEED_OBSERVATIONS } from './warehouseSeedData';
 import { getBigQueryAccessToken, runBigQuerySql } from '../../scripts/_bigqueryClient';
@@ -74,28 +75,31 @@ async function upsertObservationPackToBigQuery(
   observations: typeof TRUSTED_OBSERVATION_PACK,
   ingestionLabel: string
 ) {
-  const rows = observations.map((observation) => ({
-    insertId: observation.observation_id,
-    json: {
-      ...observation,
-      ingested_at: new Date().toISOString(),
-      source_label: clampText(observation.source_label, 255),
-      title: clampText(observation.title, 500),
-      raw_text: clampText(
-        `${observation.raw_text}\n\n[ingestion_lane:${ingestionLabel}]`,
-        5000
-      ),
-      story_excerpt: clampText(observation.story_excerpt, 1200),
-      insurer_raw: clampText(observation.insurer_raw, 120),
-      insurer_normalized: clampText(observation.insurer_normalized, 120),
-      procedure_raw: clampText(observation.procedure_raw, 255),
-      procedure_normalized: clampText(observation.procedure_normalized, 255),
-      denial_reason_raw: clampText(observation.denial_reason_raw, 800),
-      denial_category: clampText(observation.denial_category, 80),
-      plan_type: clampText(observation.plan_type, 80),
-      erisa_status: clampText(observation.erisa_status, 40),
-    },
-  }));
+  const rows = observations.map((sourceObservation) => {
+    const observation = hydrateObservation(sourceObservation);
+    return {
+      insertId: observation.observation_id,
+      json: {
+        ...observation,
+        ingested_at: new Date().toISOString(),
+        source_label: clampText(observation.source_label, 255),
+        title: clampText(observation.title, 500),
+        raw_text: clampText(
+          `${observation.raw_text}\n\n[ingestion_lane:${ingestionLabel}]`,
+          5000
+        ),
+        story_excerpt: clampText(observation.story_excerpt, 1200),
+        insurer_raw: clampText(observation.insurer_raw, 120),
+        insurer_normalized: clampText(observation.insurer_normalized, 120),
+        procedure_raw: clampText(observation.procedure_raw, 255),
+        procedure_normalized: clampText(observation.procedure_normalized, 255),
+        denial_reason_raw: clampText(observation.denial_reason_raw, 800),
+        denial_category: clampText(observation.denial_category, 80),
+        plan_type: clampText(observation.plan_type, 80),
+        erisa_status: clampText(observation.erisa_status, 40),
+      },
+    };
+  });
 
   await insertAll('raw_web_observations', rows);
   return rows.length;
@@ -108,7 +112,8 @@ async function upsertObservationPackToNeon(
   return withNeonClient(async (client) => {
     let upserted = 0;
 
-    for (const row of observations) {
+    for (const sourceRow of observations) {
+      const row = hydrateObservation(sourceRow);
       await client.query(
         `
         INSERT INTO raw_web_observations (

@@ -1,8 +1,13 @@
 import { extractDenialDataWithAI } from '../_lib/aiPipeline';
+import { enforceRateLimit, methodNotAllowed, sendSafeError } from '../_lib/http';
 
 export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (!methodNotAllowed(req, res, 'POST')) {
+    return;
+  }
+
+  if (!enforceRateLimit(req, res, { key: 'ai-extract', limit: 10, windowMs: 5 * 60_000 })) {
+    return;
   }
 
   try {
@@ -10,6 +15,12 @@ export default async function handler(req: any, res: any) {
     const result = await extractDenialDataWithAI(String(text || ''), fileData);
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    return sendSafeError(
+      res,
+      500,
+      'We could not read that denial file right now. Please try again in a moment.',
+      error,
+      'ai-extract'
+    );
   }
 }

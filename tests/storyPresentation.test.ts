@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
+import { buildStoryActionTag, buildStoryPreview, buildStorySummary, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
 
 test('buildStoryTitle prefers procedure and insurer over raw narrative', () => {
   assert.equal(
@@ -41,4 +41,25 @@ test('buildStoryActionTag detects successful appeals', () => {
     }),
     'Appeal won'
   );
+});
+
+test('buildWhatWasDenied keeps the denied field concise for story cards', () => {
+  assert.equal(
+    buildWhatWasDenied({
+      procedure: 'What was denied: No prior authorization put in for my assessment? So, as the text may say, I am being tested for autism as most people in my life generally think I have it',
+    }),
+    'No prior authorization put in for my...'
+  );
+});
+
+test('buildStoryPreview produces a shorter preview than the full summary', () => {
+  const story = {
+    summary:
+      'My insurer kept denying Taltz even after my doctor documented failed medications and worsening symptoms. I appealed twice and still got pushed back into another prior authorization cycle.',
+  };
+
+  const summary = buildStorySummary(story);
+  const preview = buildStoryPreview(story);
+
+  assert.ok(preview.length < summary.length);
 });

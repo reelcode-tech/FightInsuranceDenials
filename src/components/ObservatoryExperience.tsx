@@ -3,7 +3,7 @@ import { ArrowRight, ExternalLink, Search, Sparkles, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import type { DenialRecord } from '@/src/types';
 import { HOMEPAGE_NEWS } from '@/src/lib/appealGuidance';
-import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
+import { buildStoryActionTag, buildStoryPreview, buildStorySummary, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
 
 type ObservatoryExperienceProps = {
   featuredStories: DenialRecord[];
@@ -341,8 +341,9 @@ export default function ObservatoryExperience({
               const expanded = expandedStoryId === story.id;
               const tags = buildStoryTags(story);
               const title = (story as any).title || buildStoryTitle(story);
-              const summary = buildStorySummary(story);
+              const summary = story.preview || buildStoryPreview(story);
               const actionTag = (story as any).actionTag || buildStoryActionTag(story);
+              const whatWasDenied = story.whatWasDenied || buildWhatWasDenied(story);
               return (
                 <article key={story.id} className="flex h-full flex-col rounded-[1.9rem] border border-white/8 bg-white/[0.03] p-6">
                   <div className="flex flex-wrap gap-2">
@@ -360,11 +361,16 @@ export default function ObservatoryExperience({
                   </div>
                   <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h3>
                   <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
-                    What was denied: {story.procedure || story.procedure_condition || 'Care access'}
+                    What was denied: {whatWasDenied}
                   </p>
                   <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
                     {expanded ? storyBody(story) : summary}
                   </p>
+                  {story.sourceConfidenceLabel ? (
+                    <p className="mt-4 text-xs leading-6 text-[#9da7d1]">
+                      {story.sourceConfidenceLabel}: {story.sourceTrustNote}
+                    </p>
+                  ) : null}
                   <div className="mt-auto flex items-center justify-between gap-4 pt-6">
                     <button
                       type="button"

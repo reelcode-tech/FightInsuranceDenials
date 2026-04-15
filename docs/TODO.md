@@ -25,8 +25,8 @@
 - [x] Add a trusted public observation pack so official and community sources keep widening even when Reddit slows down.
 - [x] Validate the seven source-family ingestion lanes (California IMR, Mayo Clinic Connect, GLP-1 coverage, mental health parity, cancer/rare disease, court intelligence, public Facebook discovery).
 - [ ] Add better rate-limit handling and backoff for Reddit/PullPush ingestion.
-- [ ] Add source weighting and confidence scoring that flows into the observatory UI.
-- [ ] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
+- [x] Add source weighting and confidence scoring that flows into the observatory UI.
+- [x] Add dedupe fingerprints across source text, URLs, insurer, procedure, and denial reason.
 - [ ] Build periodic warehouse transforms that promote stronger rows into curated stories automatically.
 - [ ] Add more benchmark snapshot generation for insurer + procedure + denial category combinations.
 - [x] Add stricter pruning so generic insurance-shopping chatter is archived out of the public record instead of surfacing as denial evidence.
@@ -79,15 +79,18 @@
 - [ ] Set up a cleaner preview -> production promotion workflow for future checkpoints.
 
 ## Security / Hardening
-- [ ] Add request rate limiting to public endpoints.
+- [x] Add request rate limiting to public endpoints.
 - [ ] Add spam / abuse protections for story submission.
 - [ ] Validate and constrain file uploads by type, size, and processing path.
 - [ ] Audit public vs private data boundaries around stories and uploads.
 - [ ] Review secrets handling for local, Vercel, Firebase, BigQuery, and Neon.
-- [ ] Add safe error handling so sensitive internals are not exposed to end users.
+- [x] Add safe error handling so sensitive internals are not exposed to end users.
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Add shared source-confidence scoring and fingerprint generation so higher-fidelity sources carry consistent trust metadata and dedupe keys.
+- [x] Add API guard helpers for rate limiting and safe public error responses, then wire them into observatory and AI routes.
+- [x] Clean up public story previews so homepage and evidence story cards stay scannable instead of dumping raw extracted text.
 - [x] Expand high-fidelity source packs for AARP, Mayo Clinic Connect, Breastcancer.org, Cancer Survivors Network, and Myeloma Beacon, then rerun normalization and warehouse autopilot.
 - [x] Add regression tests that enforce a meaningful minimum amount of seeded coverage across the higher-fidelity source families.
 - [x] Add stronger payer inference from plan and PBM clues, then rerun the Neon normalization backfill across raw and curated rows.

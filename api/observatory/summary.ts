@@ -1,5 +1,7 @@
 import { neon } from '@neondatabase/serverless';
-import { buildStoryActionTag, buildStorySummary, buildStoryTags, buildStoryTitle } from '@/src/lib/storyPresentation';
+import { describeSourceConfidence } from '@/src/lib/sourceSignals';
+import { buildStoryActionTag, buildStoryPreview, buildStorySummary, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
+import { enforceRateLimit, sendSafeError } from '../_lib/http';
 
 function asNumber(value: unknown) {
   const numeric = Number(value);
@@ -7,6 +9,10 @@ function asNumber(value: unknown) {
 }
 
 export default async function handler(_req: any, res: any) {
+  if (!enforceRateLimit(_req, res, { key: 'observatory-summary', limit: 60, windowMs: 60_000 })) {
+    return;
+  }
+
   try {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
@@ -49,7 +55,9 @@ export default async function handler(_req: any, res: any) {
           denial_reason_raw,
           patient_narrative_summary,
           source_label,
-          source_url
+          source_type,
+          source_url,
+          quality_score
         FROM curated_stories
         WHERE status = 'published' AND consent_level = 'public_story'
           AND COALESCE(denial_category, '') NOT IN ('', 'Unknown')
@@ -85,21 +93,42 @@ export default async function handler(_req: any, res: any) {
           date: '',
           narrative: row.patient_narrative_summary || '',
           planType: row.plan_type || '',
+          source_type: row.source_type || '',
+          quality_score: row.quality_score || 0,
         };
+
+        const sourceConfidence = describeSourceConfidence({
+          canonical_url: row.source_url || '',
+          source_label: row.source_label || 'Public source',
+          source_type: row.source_type || 'public_patient_forum',
+          source_weight: row.source_type || 'public_patient_forum',
+          insurer_raw: row.extracted_insurer || '',
+          insurer_normalized: row.extracted_insurer || '',
+          procedure_raw: row.procedure_condition || '',
+          procedure_normalized: row.procedure_condition || '',
+          denial_reason_raw: row.denial_reason_raw || '',
+          denial_category: '',
+          plan_type: row.plan_type || '',
+          quality_score: row.quality_score || 0,
+          is_low_signal: false,
+          fingerprint: '',
+        });
 
         return {
           ...story,
           title: buildStoryTitle(story),
           summary: buildStorySummary(story),
+          preview: buildStoryPreview(story),
+          whatWasDenied: buildWhatWasDenied(story),
           actionTag: buildStoryActionTag(story),
           tags: buildStoryTags(story),
+          sourceConfidenceLabel: sourceConfidence.label,
+          sourceConfidenceScore: sourceConfidence.score,
+          sourceTrustNote: sourceConfidence.note,
         };
       }),
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      error: error instanceof Error ? error.message : String(error),
-    });
+    sendSafeError(res, 500, 'We could not load the public database summary right now.', error, 'observatory-summary');
   }
 }

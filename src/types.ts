@@ -19,6 +19,11 @@ export interface DenialRecord {
   createdAt: any;
   source?: string;
   url?: string;
+  preview?: string;
+  whatWasDenied?: string;
+  sourceConfidenceLabel?: string;
+  sourceConfidenceScore?: number;
+  sourceTrustNote?: string;
   cptCodes?: string[];
   anomalyDetected?: boolean;
   anomalyReason?: string;

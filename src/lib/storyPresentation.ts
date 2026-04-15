@@ -4,6 +4,27 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function compactFieldLabel(value?: string | null, maxLength = 44) {
+  if (!value) return '';
+
+  const cleaned = normalizeWhitespace(
+    value
+      .replace(/^what was denied[:\-\s]*/i, '')
+      .replace(/^plan noted[:\-\s]*/i, '')
+      .replace(/^still fighting back[:\-\s]*/i, '')
+  );
+
+  if (!cleaned) return '';
+
+  const words = cleaned.split(' ').filter(Boolean);
+  if (words.length > 7 || cleaned.length > maxLength) {
+    const shortened = truncateStoryText(cleaned, maxLength);
+    return shortened.endsWith('...') ? shortened : `${shortened}...`;
+  }
+
+  return cleaned;
+}
+
 function dedupeSentences(value: string) {
   const seen = new Set<string>();
   const parts = value
@@ -31,8 +52,8 @@ export function truncateStoryText(value: string, maxLength = 180) {
 }
 
 export function buildStoryTitle(story: Partial<DenialRecord>) {
-  const insurer = cleanStoryText(story.insurer || story.extracted_insurer || '');
-  const procedure = cleanStoryText(story.procedure || story.procedure_condition || '');
+  const insurer = compactFieldLabel(story.insurer || story.extracted_insurer || '');
+  const procedure = compactFieldLabel(story.procedure || story.procedure_condition || '');
   const category = cleanStoryText(story.denialReason || story.denial_reason_raw || story.denial_category || '');
 
   if (procedure && insurer && insurer !== 'Unknown' && insurer !== 'Unknown insurer') {
@@ -74,6 +95,14 @@ export function buildStorySummary(story: Partial<DenialRecord>) {
   return truncateStoryText(concise || sourceText, 220);
 }
 
+export function buildStoryPreview(story: Partial<DenialRecord>) {
+  return truncateStoryText(buildStorySummary(story), 150);
+}
+
+export function buildWhatWasDenied(story: Partial<DenialRecord>) {
+  return compactFieldLabel(story.procedure || story.procedure_condition || story.denialReason || story.denial_reason_raw || '') || 'Care access';
+}
+
 export function buildStoryActionTag(story: Partial<DenialRecord>) {
   const text = `${story.denialReason || ''} ${story.denial_reason_raw || ''} ${story.summary || ''} ${story.narrative || ''}`.toLowerCase();
   if (/(overturn|reversed|approved after appeal|won appeal)/.test(text)) return 'Appeal won';
@@ -83,8 +112,8 @@ export function buildStoryActionTag(story: Partial<DenialRecord>) {
 
 export function buildStoryTags(story: Partial<DenialRecord>) {
   return [
-    cleanStoryText(story.procedure || story.procedure_condition || ''),
-    cleanStoryText(story.insurer || story.extracted_insurer || ''),
-    cleanStoryText(story.planType || story.plan_type || ''),
+    compactFieldLabel(story.procedure || story.procedure_condition || ''),
+    compactFieldLabel(story.insurer || story.extracted_insurer || ''),
+    compactFieldLabel(story.planType || story.plan_type || ''),
   ].filter((value) => value && !/^unknown/i.test(value));
 }
