@@ -9,8 +9,8 @@ function countByLabel(label: string) {
 test('higher-fidelity source families have enough seeded observations to matter', () => {
   assert.ok(countByLabel('AARP Medicare Insurance Forum') >= 5);
   assert.ok(countByLabel('Mayo Clinic Connect') >= 8);
-  assert.ok(countByLabel('Breastcancer.org Community') >= 4);
-  assert.ok(countByLabel('Cancer Survivors Network') >= 5);
+  assert.ok(countByLabel('Breastcancer.org Community') >= 5);
+  assert.ok(countByLabel('Cancer Survivors Network') >= 8);
   assert.ok(countByLabel('Myeloma Beacon Forum') >= 2);
   assert.ok(countByLabel('PAF / PAN TotalAssist') >= 1);
   assert.ok(countByLabel('KFF Health News Bill of the Month') >= 1);
@@ -22,5 +22,5 @@ test('higher-fidelity source families have enough seeded observations to matter'
 test('source-family pack stays meaningfully diversified across trusted lanes', () => {
   const uniqueLabels = new Set(SOURCE_FAMILY_OBSERVATIONS.map((observation) => observation.source_label));
   assert.ok(uniqueLabels.size >= 25);
-  assert.ok(SOURCE_FAMILY_OBSERVATIONS.length >= 55);
+  assert.ok(SOURCE_FAMILY_OBSERVATIONS.length >= 60);
 });
