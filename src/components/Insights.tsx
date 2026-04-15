@@ -314,6 +314,35 @@ export default function Insights() {
               ))}
             </section>
 
+            <section className="grid gap-6 xl:grid-cols-3">
+              {(data.questionInsights || []).map((item, index) => (
+                <motion.div
+                  key={item.question}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  className="rounded-[2rem] border border-white/10 bg-[#12161b] p-6"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">Start with this question</p>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{item.question}</h3>
+                  <p className="mt-4 text-sm leading-7 text-[#c8bdb4]">{item.answer}</p>
+                  <div className="mt-5 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Matching stories</p>
+                      <p className="mt-1 text-3xl font-semibold tracking-[-0.05em] text-[#f19a86]">{item.count}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setStoryQuery(item.filter)}
+                      className="rounded-full border-white/10 bg-white/6 text-white hover:bg-white/10"
+                    >
+                      See matches
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </section>
+
             <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
               <MetricChart
                 title="Which insurers keep surfacing"
@@ -358,6 +387,36 @@ export default function Insights() {
                   </div>
                 </CardContent>
               </Card>
+            </section>
+
+            <section className="rounded-[2.3rem] border border-white/8 bg-[#12161b] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-5 w-5 text-[#f19a86]" />
+                <h2 className="text-2xl font-semibold tracking-tight text-[#f7f2eb]">
+                  How different plan types keep denying care
+                </h2>
+              </div>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-[#c8bdb4]">
+                These are broader plan-level patterns, which usually matter more than tiny one-off clusters because they tell you whether your denial is tied to the way a whole kind of plan keeps behaving.
+              </p>
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                {data.planPatterns.slice(0, 6).map((pattern) => (
+                  <div key={`${pattern.planType}-${pattern.category}`} className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#f19a86]">{pattern.planType}</p>
+                        <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{pattern.category}</h3>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Stories</p>
+                        <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[#f19a86]">{pattern.value}</p>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-[#ddd1c6]">{pattern.takeaway}</p>
+                    <p className="mt-3 text-sm leading-7 text-[#b8aea5]">{pattern.whyItMatters}</p>
+                  </div>
+                ))}
+              </div>
             </section>
 
             <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -525,7 +584,7 @@ export default function Insights() {
                       <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
                         What was denied: {whatWasDenied}
                       </p>
-                      <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
+                      <p className="mt-4 min-h-[84px] text-sm leading-7 text-[#c6cde8]">
                         {expanded ? cleanStoryBody(story) : preview}
                       </p>
                       {story.sourceConfidenceLabel ? (
@@ -540,7 +599,7 @@ export default function Insights() {
                           onClick={() => setExpandedStoryId(expanded ? null : story.id)}
                           className="text-sm font-semibold text-[#bfa8ff]"
                         >
-                          {expanded ? 'Show less' : 'Read more'}
+                          {expanded ? 'Show less' : 'Expand story'}
                         </button>
                         <Button
                           variant="outline"

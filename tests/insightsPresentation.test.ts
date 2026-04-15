@@ -31,6 +31,23 @@ const mockPatterns: PatternsResponse = {
       whyItMatters: 'This gives patients something specific to compare against.',
     },
   ],
+  planPatterns: [
+    {
+      planType: 'Medicare Advantage',
+      category: 'Administrative',
+      value: 18,
+      takeaway: 'Medicare Advantage plans keep turning these into administrative fights.',
+      whyItMatters: 'Patients need enrollment and approval details.',
+    },
+  ],
+  questionInsights: [
+    {
+      question: 'Is prior authorization the main way patients are being blocked from prescription medication?',
+      answer: 'Yes, it keeps surfacing.',
+      count: 53,
+      filter: 'Prescription medication Prior Authorization',
+    },
+  ],
   heatmap: [],
   procedureClusters: [],
   statePatterns: [],
@@ -71,6 +88,11 @@ test('action questions turn metrics into end-user questions', () => {
   assert.equal(questions.length, 4);
   assert.match(questions[0].title, /Am I the only one/);
   assert.match(questions[3].body, /UnitedHealthcare/);
+});
+
+test('patterns response supports broader plan and question insights', () => {
+  assert.equal(mockPatterns.planPatterns[0].planType, 'Medicare Advantage');
+  assert.equal(mockPatterns.questionInsights[0].count, 53);
 });
 
 test('source story explains source coverage without internal QA language', () => {

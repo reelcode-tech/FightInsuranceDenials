@@ -4,6 +4,33 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function extractTopicLabel(value?: string | null) {
+  const text = cleanStoryText(value).toLowerCase();
+  if (!text) return '';
+
+  const matchers: Array<[RegExp, string]> = [
+    [/\btaltz\b/, 'Taltz'],
+    [/\bozempic\b|\bmounjaro\b|\bzepbound\b|\bwegovy\b|\bglp-?1\b/, 'GLP-1 medication'],
+    [/\binsulin\b/, 'Insulin'],
+    [/\bivf\b|\bfertilit/, 'Fertility treatment'],
+    [/\bmri\b/, 'MRI'],
+    [/\bct scan\b|\bimaging\b/, 'Imaging'],
+    [/\bautism\b.*\bassessment\b|\bassessment\b.*\bautism\b/, 'Autism assessment'],
+    [/\badhd\b.*\bmed/, 'ADHD medication'],
+    [/\btherapy\b|\bcounseling\b/, 'Therapy services'],
+    [/\bsurgery\b|\bsurgical\b/, 'Surgery'],
+    [/\binfusion\b/, 'Infusion therapy'],
+    [/\bprescription\b|\bmedication\b|\bdrug\b/, 'Prescription medication'],
+    [/\badult day\b/, 'Adult day program access'],
+  ];
+
+  for (const [pattern, label] of matchers) {
+    if (pattern.test(text)) return label;
+  }
+
+  return '';
+}
+
 function compactFieldLabel(value?: string | null, maxLength = 44) {
   if (!value) return '';
 
@@ -53,7 +80,17 @@ export function truncateStoryText(value: string, maxLength = 180) {
 
 export function buildStoryTitle(story: Partial<DenialRecord>) {
   const insurer = compactFieldLabel(story.insurer || story.extracted_insurer || '');
-  const procedure = compactFieldLabel(story.procedure || story.procedure_condition || '');
+  const procedure =
+    extractTopicLabel(
+      story.procedure ||
+      story.procedure_condition ||
+      story.summary ||
+      story.narrative ||
+      story.denialReason ||
+      story.denial_reason_raw ||
+      ''
+    ) ||
+    compactFieldLabel(story.procedure || story.procedure_condition || '', 30);
   const category = cleanStoryText(story.denialReason || story.denial_reason_raw || story.denial_category || '');
 
   if (procedure && insurer && insurer !== 'Unknown' && insurer !== 'Unknown insurer') {
@@ -100,7 +137,19 @@ export function buildStoryPreview(story: Partial<DenialRecord>) {
 }
 
 export function buildWhatWasDenied(story: Partial<DenialRecord>) {
-  return compactFieldLabel(story.procedure || story.procedure_condition || story.denialReason || story.denial_reason_raw || '') || 'Care access';
+  return (
+    extractTopicLabel(
+      story.procedure ||
+      story.procedure_condition ||
+      story.summary ||
+      story.narrative ||
+      story.denialReason ||
+      story.denial_reason_raw ||
+      ''
+    ) ||
+    compactFieldLabel(story.procedure || story.procedure_condition || story.denialReason || story.denial_reason_raw || '') ||
+    'Care access'
+  );
 }
 
 export function buildStoryActionTag(story: Partial<DenialRecord>) {

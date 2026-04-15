@@ -7,6 +7,8 @@
 - [x] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
 - [ ] Keep growing public-source ingestion toward 10,000+ raw observations while improving precision, not just volume.
 - [ ] Improve extraction quality so fewer rows fall into Unknown insurer, Unknown category, or generic procedure buckets.
+- [ ] Pivot the evidence layer toward broader question-first aggregates so public pages stop relying on tiny insurer+procedure+category clusters.
+- [ ] Build scheduled BigQuery summary marts and anomaly views, then serve the site from curated snapshots instead of exploratory aggregates.
 - [ ] Keep syncing BigQuery -> Neon -> public observatory automatically.
 - [ ] Harden the public site before broader launch: uploads, rate limiting, auth boundaries, logging, secrets, abuse controls.
 
@@ -91,6 +93,7 @@
 - [x] Add shared source-confidence scoring and fingerprint generation so higher-fidelity sources carry consistent trust metadata and dedupe keys.
 - [x] Add API guard helpers for rate limiting and safe public error responses, then wire them into observatory and AI routes.
 - [x] Clean up public story previews so homepage and evidence story cards stay scannable instead of dumping raw extracted text.
+- [x] Add BigQuery views for question-first denial marts and anomaly watch summaries so the analytics layer can move beyond tiny micro-clusters.
 - [x] Expand high-fidelity source packs for AARP, Mayo Clinic Connect, Breastcancer.org, Cancer Survivors Network, and Myeloma Beacon, then rerun normalization and warehouse autopilot.
 - [x] Add regression tests that enforce a meaningful minimum amount of seeded coverage across the higher-fidelity source families.
 - [x] Add stronger payer inference from plan and PBM clues, then rerun the Neon normalization backfill across raw and curated rows.

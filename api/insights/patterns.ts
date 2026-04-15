@@ -5,6 +5,7 @@ type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };
 type ClusterRow = { procedure: string; insurer: string; category: string; value: number };
 type CarePatternRow = { procedure: string; category: string; value: number; takeaway: string; whyItMatters: string };
+type PlanPatternRow = { planType: string; category: string; value: number; takeaway: string; whyItMatters: string };
 type FindingRow = { title: string; body: string; tone: 'high' | 'medium' | 'warning' };
 type ActionablePatternRow = {
   insurer: string;
@@ -13,6 +14,12 @@ type ActionablePatternRow = {
   value: number;
   takeaway: string;
   whyItMatters: string;
+};
+type QuestionInsightRow = {
+  question: string;
+  answer: string;
+  count: number;
+  filter: string;
 };
 
 function asNumber(value: unknown) {
@@ -66,6 +73,94 @@ function clusterTakeaway(category: string, procedure: string, insurer: string) {
   };
 }
 
+function planPatternTakeaway(category: string, planType: string) {
+  const categoryKey = (category || '').toLowerCase();
+  const planName = planType || 'this plan type';
+
+  if (categoryKey.includes('prior')) {
+    return {
+      takeaway: `${planName} plans keep turning this into a prior-authorization fight before care can even move.`,
+      whyItMatters: 'If your plan type shows up here, gather the actual plan criteria, approval timeline, and every failed step before you file your appeal.',
+    };
+  }
+
+  if (categoryKey.includes('eligibility')) {
+    return {
+      takeaway: `${planName} plans are surfacing repeated eligibility and coverage-activation problems.`,
+      whyItMatters: 'That often means the appeal needs enrollment records, employer timing, or proof that coverage should have been active.',
+    };
+  }
+
+  if (categoryKey.includes('medical necessity')) {
+    return {
+      takeaway: `${planName} plans keep demanding stronger proof that care is medically necessary.`,
+      whyItMatters: 'That is a documentation fight: specialist letters, guidelines, chart notes, and direct rebuttals to the plan rationale all matter.',
+    };
+  }
+
+  return {
+    takeaway: `${planName} plans keep surfacing alongside the same denial excuse.`,
+    whyItMatters: 'That is useful because it turns a private frustration into a repeat pattern you can compare your own letter against.',
+  };
+}
+
+function buildQuestionInsights(
+  carePatterns: CarePatternRow[],
+  planPatterns: PlanPatternRow[],
+  heatmap: HeatmapRow[]
+): QuestionInsightRow[] {
+  const questionRows: QuestionInsightRow[] = [];
+
+  const strongestCareFight = carePatterns[0];
+  if (strongestCareFight) {
+    questionRows.push({
+      question: `Is ${strongestCareFight.category.toLowerCase()} the main way patients are being blocked from ${strongestCareFight.procedure.toLowerCase()}?`,
+      answer: strongestCareFight.takeaway,
+      count: strongestCareFight.value,
+      filter: `${strongestCareFight.procedure} ${strongestCareFight.category}`,
+    });
+  }
+
+  const planFight = planPatterns[0];
+  if (planFight) {
+    questionRows.push({
+      question: `Do ${planFight.planType} plans keep using ${planFight.category.toLowerCase()} to delay care?`,
+      answer: planFight.takeaway,
+      count: planFight.value,
+      filter: `${planFight.planType} ${planFight.category}`,
+    });
+  }
+
+  const insurerFight = heatmap[0];
+  if (insurerFight) {
+    questionRows.push({
+      question: `Is ${insurerFight.insurer} leaning on ${insurerFight.category.toLowerCase()} more than anyone else?`,
+      answer: buildHeatmapTakeaway(insurerFight),
+      count: insurerFight.value,
+      filter: `${insurerFight.insurer} ${insurerFight.category}`,
+    });
+  }
+
+  return questionRows;
+}
+
+function buildHeatmapTakeaway(item: HeatmapRow) {
+  const category = item.category.toLowerCase();
+  if (category.includes('prior')) {
+    return `${item.insurer} keeps forcing extra approval steps before care can move, which usually means the appeal needs plan criteria, doctor notes, and failed-treatment history lined up early.`;
+  }
+  if (category.includes('out of network')) {
+    return `${item.insurer} keeps pushing these cases into out-of-network chaos, which often turns the fight into continuity-of-care or network adequacy rather than a routine resubmission.`;
+  }
+  if (category.includes('medical necessity')) {
+    return `${item.insurer} keeps framing the fight as medical necessity, so the strongest appeals usually center on specialist letters, clinical guidelines, and rebutting the insurer's exact wording.`;
+  }
+  if (category.includes('coverage exclusion')) {
+    return `${item.insurer} keeps treating care as excluded, which usually means the policy language itself becomes part of the argument.`;
+  }
+  return `${item.insurer} is surfacing alongside a repeat denial excuse often enough to compare your own case against it.`;
+}
+
 function getSql() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -84,6 +179,7 @@ async function fetchPatternsFromNeon() {
     topCategories,
     topProcedures,
     carePatterns,
+    planPatterns,
     heatmap,
     procedureClusters,
     statePatterns,
@@ -155,6 +251,17 @@ async function fetchPatternsFromNeon() {
       LIMIT 10
     `,
     sql`
+      SELECT plan_type AS "planType", denial_category AS category, COUNT(*)::int AS value
+      FROM curated_stories
+      WHERE status = 'published'
+        AND consent_level = 'public_story'
+        AND COALESCE(plan_type, '') NOT IN ('', 'Unknown')
+        AND COALESCE(denial_category, '') NOT IN ('', 'Unknown')
+      GROUP BY plan_type, denial_category
+      ORDER BY value DESC
+      LIMIT 10
+    `,
+    sql`
       SELECT extracted_insurer AS insurer, denial_category AS category, COUNT(*)::int AS value
       FROM curated_stories
       WHERE status = 'published'
@@ -209,6 +316,11 @@ async function fetchPatternsFromNeon() {
     ...row,
     ...clusterTakeaway(row.category, row.procedure, ''),
   }));
+  const planPatternRows: PlanPatternRow[] = (planPatterns as Array<{ planType: string; category: string; value: number }>).map((row) => ({
+    ...row,
+    ...planPatternTakeaway(row.category, row.planType),
+  }));
+  const heatmapRows = heatmap as unknown as HeatmapRow[];
 
   const findings: FindingRow[] = [
     topInsurerRows[0]
@@ -250,6 +362,7 @@ async function fetchPatternsFromNeon() {
     ...cluster,
     ...clusterTakeaway(cluster.category, cluster.procedure, cluster.insurer),
   }));
+  const questionInsights = buildQuestionInsights(carePatternRows, planPatternRows, heatmapRows);
 
   return {
     status: 'success' as const,
@@ -265,7 +378,9 @@ async function fetchPatternsFromNeon() {
     topCategories: topCategoryRows,
     topProcedures: topProcedureRows,
     carePatterns: carePatternRows,
-    heatmap: heatmap as unknown as HeatmapRow[],
+    planPatterns: planPatternRows,
+    questionInsights,
+    heatmap: heatmapRows,
     procedureClusters: actionablePatterns,
     statePatterns: statePatterns as unknown as MetricRow[],
     sourceMix: sourceMix as unknown as MetricRow[],

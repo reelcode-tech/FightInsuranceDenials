@@ -11,6 +11,8 @@ const VIEW_FILES = [
   'sql/warehouse/v_data_quality_monitor.sql',
   'sql/warehouse/v_source_mix.sql',
   'sql/warehouse/v_state_patterns_clean.sql',
+  'sql/warehouse/v_denial_question_mart.sql',
+  'sql/warehouse/v_denial_anomaly_watch.sql',
 ];
 
 async function runSql(sql: string) {

@@ -15,10 +15,23 @@ export type CarePatternRow = {
   takeaway: string;
   whyItMatters: string;
 };
+export type PlanPatternRow = {
+  planType: string;
+  category: string;
+  value: number;
+  takeaway: string;
+  whyItMatters: string;
+};
 export type FindingRow = {
   title: string;
   body: string;
   tone: 'high' | 'medium' | 'warning';
+};
+export type QuestionInsightRow = {
+  question: string;
+  answer: string;
+  count: number;
+  filter: string;
 };
 
 export type PatternsResponse = {
@@ -35,6 +48,8 @@ export type PatternsResponse = {
   topCategories: MetricRow[];
   topProcedures: MetricRow[];
   carePatterns: CarePatternRow[];
+  planPatterns: PlanPatternRow[];
+  questionInsights: QuestionInsightRow[];
   heatmap: HeatmapRow[];
   procedureClusters: ClusterRow[];
   statePatterns: MetricRow[];

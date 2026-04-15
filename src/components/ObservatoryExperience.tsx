@@ -1,9 +1,9 @@
 import React from 'react';
 import { ArrowRight, ExternalLink, Search, Sparkles, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { DenialRecord } from '@/src/types';
 import { HOMEPAGE_NEWS } from '@/src/lib/appealGuidance';
-import { buildStoryActionTag, buildStoryPreview, buildStorySummary, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
+import { buildStoryActionTag, buildStoryPreview, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
+import type { DenialRecord } from '@/src/types';
 
 type ObservatoryExperienceProps = {
   featuredStories: DenialRecord[];
@@ -19,18 +19,6 @@ type ObservatoryExperienceProps = {
 const SEARCH_EXAMPLES = ['prior authorization...', 'MRI...', 'UnitedHealthcare...', 'ADHD medication...'];
 const SEARCH_CHIPS = ['Prior Authorization', 'UnitedHealthcare', 'ADHD Medication', 'MRI'];
 
-function storyBody(story: DenialRecord) {
-  return (
-    story.narrative ||
-    story.summary ||
-    story.denialReason ||
-    story.denial_reason_raw ||
-    'A patient documented how an insurer blocked care and what happened next.'
-  )
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 export default function ObservatoryExperience({
   featuredStories,
   totalStories,
@@ -43,7 +31,6 @@ export default function ObservatoryExperience({
 }: ObservatoryExperienceProps) {
   const [placeholderIndex, setPlaceholderIndex] = React.useState(0);
   const [focused, setFocused] = React.useState(false);
-  const [expandedStoryId, setExpandedStoryId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (searchTerm.trim()) return;
@@ -338,7 +325,6 @@ export default function ObservatoryExperience({
 
           <div className="mt-8 grid gap-5 lg:grid-cols-3">
             {liveStories.slice(0, 3).map((story) => {
-              const expanded = expandedStoryId === story.id;
               const tags = buildStoryTags(story);
               const title = (story as any).title || buildStoryTitle(story);
               const summary = story.preview || buildStoryPreview(story);
@@ -363,9 +349,7 @@ export default function ObservatoryExperience({
                   <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a39bfd]">
                     What was denied: {whatWasDenied}
                   </p>
-                  <p className="mt-4 text-sm leading-7 text-[#c6cde8]">
-                    {expanded ? storyBody(story) : summary}
-                  </p>
+                  <p className="mt-4 min-h-[112px] text-sm leading-7 text-[#c6cde8]">{summary}</p>
                   {story.sourceConfidenceLabel ? (
                     <p className="mt-4 text-xs leading-6 text-[#9da7d1]">
                       {story.sourceConfidenceLabel}: {story.sourceTrustNote}
@@ -374,10 +358,13 @@ export default function ObservatoryExperience({
                   <div className="mt-auto flex items-center justify-between gap-4 pt-6">
                     <button
                       type="button"
-                      onClick={() => setExpandedStoryId(expanded ? null : story.id)}
+                      onClick={() => {
+                        onSearchTermChange(`${story.insurer || story.extracted_insurer || ''} ${story.procedure || story.procedure_condition || ''}`.trim());
+                        onOpenRecordFromQuery();
+                      }}
                       className="text-sm font-semibold text-[#bfa8ff]"
                     >
-                      {expanded ? 'Show less' : 'Read story'}
+                      Read story
                     </button>
                     <Button
                       variant="outline"

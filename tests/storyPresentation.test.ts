@@ -48,7 +48,7 @@ test('buildWhatWasDenied keeps the denied field concise for story cards', () => 
     buildWhatWasDenied({
       procedure: 'What was denied: No prior authorization put in for my assessment? So, as the text may say, I am being tested for autism as most people in my life generally think I have it',
     }),
-    'No prior authorization put in for my...'
+    'Autism assessment'
   );
 });
 
@@ -62,4 +62,13 @@ test('buildStoryPreview produces a shorter preview than the full summary', () =>
   const preview = buildStoryPreview(story);
 
   assert.ok(preview.length < summary.length);
+});
+
+test('buildStoryTitle extracts a cleaner topic from messy denial text', () => {
+  assert.equal(
+    buildStoryTitle({
+      summary: 'No prior authorization put in for my assessment? I am being tested for autism and the plan keeps delaying approval.',
+    }),
+    'Autism assessment denial'
+  );
 });
