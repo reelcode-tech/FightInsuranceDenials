@@ -23,6 +23,15 @@ test('infers insurer from plan, PBM, and narrative clues', () => {
   assert.equal(inferInsurerFromNarrativeText('Medicare Advantage plan keeps cutting off rehab days'), 'Medicare Advantage organizations');
 });
 
+test('does not let long narrative text become an insurer or plan label', () => {
+  const noisyNarrative =
+    "How do I get my autistic adult brother into an adult day program in Houston? I have a younger brother and I want to put him into an adult day care center during the day.";
+
+  assert.equal(inferInsurerFromNarrativeText(noisyNarrative), 'Unknown');
+  assert.equal(normalizeInsurerName(noisyNarrative), 'Unknown');
+  assert.equal(normalizePlanType(noisyNarrative), 'Unknown');
+});
+
 test('normalizes plan names and plan types into reusable buckets', () => {
   assert.equal(normalizePlanType('UHC Choice Plus PPO'), 'Choice Plus PPO');
   assert.equal(normalizePlanType('my employer HMO plan'), 'Employer Sponsored');
@@ -34,6 +43,10 @@ test('collapses denial reason variants into a canonical phrase', () => {
   assert.equal(normalizeDenialReasonText('Coverage denied pending prior authorization review'), 'Prior authorization required');
   assert.equal(normalizeDenialReasonText('Service is not medically necessary according to plan policy'), 'Not medically necessary');
   assert.equal(normalizeDenialReasonText('Claim denied because this benefit is excluded under your plan'), 'Coverage exclusion');
+  assert.equal(
+    normalizeDenialReasonText('My doctor told me that last time there was a prior auth but now the pharmacy says they need paperwork again and I am panicking'),
+    'Prior authorization required',
+  );
 });
 
 test('groups same care fights together even when the wording differs', () => {
@@ -41,6 +54,10 @@ test('groups same care fights together even when the wording differs', () => {
   assert.equal(normalizeProcedureLabel('Need Ozempic coverage through my plan'), 'GLP-1 medication');
   assert.equal(normalizeProcedureLabel('ABA therapy hours were denied'), 'ABA therapy');
   assert.equal(normalizeProcedureLabel('Remicade infusion denied at Mount Sinai'), 'Infusion therapy');
+  assert.equal(
+    normalizeProcedureLabel('How do I get my autistic adult brother into an adult day program and what place can pick him up and drop him off?'),
+    'Insurance denial evidence',
+  );
 });
 
 test('normalizes a legacy denial into denser canonical fields', () => {

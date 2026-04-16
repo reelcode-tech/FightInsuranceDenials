@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit",
     "test": "node --test --import tsx tests/*.test.ts",
     "warehouse:normalize": "tsx scripts/normalize-neon-observations.ts",
+    "warehouse:promote": "tsx scripts/promote-neon-observations-to-curated.ts",
     "warehouse:autopilot": "tsx scripts/run-warehouse-job.ts autopilot",
     "warehouse:deep-backfill": "tsx scripts/run-warehouse-job.ts deep-backfill"
   },

@@ -94,6 +94,34 @@ const DENIAL_REASON_PATTERNS: Array<[RegExp, string]> = [
   [/(medical records needed|additional records|need chart notes)/i, 'Insufficient documentation'],
 ];
 
+function compactWhitespace(value: string) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function looksLikeStructuredLabel(
+  value: string,
+  {
+    maxLength = 64,
+    maxWords = 8,
+  }: {
+    maxLength?: number;
+    maxWords?: number;
+  } = {},
+) {
+  const compact = compactWhitespace(value);
+  if (!compact) return false;
+  if (compact.length > maxLength) return false;
+
+  const words = compact.split(' ').filter(Boolean);
+  if (words.length > maxWords) return false;
+
+  if (/[.!?]/.test(compact)) return false;
+  if (/[:;]/.test(compact)) return false;
+  if (/\b(i|my|doctor|hospital|denied|appeal|because|they|their|tomorrow|yesterday)\b/i.test(compact)) return false;
+
+  return /^[a-z0-9&+/'().,\-\s]+$/i.test(compact);
+}
+
 export function normalizeInsurerName(input?: string): string {
   if (!input || input.trim() === '' || input.trim().toLowerCase() === 'unknown') return 'Unknown';
   for (const [pattern, canonical] of INSURER_ALIASES) {
@@ -102,7 +130,7 @@ export function normalizeInsurerName(input?: string): string {
   for (const [pattern, canonical] of INSURER_INFERENCE_PATTERNS) {
     if (pattern.test(input)) return canonical;
   }
-  return input.trim();
+  return looksLikeStructuredLabel(input, { maxLength: 48, maxWords: 6 }) ? compactWhitespace(input) : 'Unknown';
 }
 
 export function inferInsurerFromNarrativeText(input?: string): string {
@@ -118,7 +146,7 @@ export function normalizePlanType(input?: string): string {
   for (const [pattern, canonical] of PLAN_PATTERNS) {
     if (pattern.test(input)) return canonical;
   }
-  return input.trim();
+  return looksLikeStructuredLabel(input, { maxLength: 52, maxWords: 7 }) ? compactWhitespace(input) : 'Unknown';
 }
 
 export function normalizeProcedureLabel(input?: string): string {
@@ -126,7 +154,7 @@ export function normalizeProcedureLabel(input?: string): string {
   for (const [pattern, canonical] of PROCEDURE_PATTERNS) {
     if (pattern.test(input)) return canonical;
   }
-  return input.trim();
+  return looksLikeStructuredLabel(input, { maxLength: 56, maxWords: 8 }) ? compactWhitespace(input) : 'Insurance denial evidence';
 }
 
 export function normalizeDenialReasonText(input?: string): string {
@@ -134,7 +162,7 @@ export function normalizeDenialReasonText(input?: string): string {
   for (const [pattern, canonical] of DENIAL_REASON_PATTERNS) {
     if (pattern.test(input)) return canonical;
   }
-  return input.trim();
+  return looksLikeStructuredLabel(input, { maxLength: 72, maxWords: 10 }) ? compactWhitespace(input) : 'Coverage denial';
 }
 
 export function inferDenialCategory(record: Partial<DenialRecord> & Record<string, any>): DenialCategory {
