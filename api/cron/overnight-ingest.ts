@@ -1,4 +1,4 @@
-import { runWarehouseAutopilotPass } from '../../src/lib/warehouseAutopilot';
+import { runWarehouseAutopilotPass } from '../../src/lib/warehouseAutopilot.js';
 
 export default async function handler(req: any, res: any) {
   const authHeader = req.headers.authorization;

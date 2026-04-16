@@ -1,7 +1,14 @@
 import { neon } from '@neondatabase/serverless';
-import { describeSourceConfidence } from '@/src/lib/sourceSignals';
-import { buildStoryActionTag, buildStoryPreview, buildStorySummary, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
-import { enforceRateLimit, sendSafeError } from '../_lib/http';
+import { describeSourceConfidence } from '../../src/lib/sourceSignals.js';
+import {
+  buildStoryActionTag,
+  buildStoryPreview,
+  buildStorySummary,
+  buildStoryTags,
+  buildStoryTitle,
+  buildWhatWasDenied,
+} from '../../src/lib/storyPresentation.js';
+import { enforceRateLimit, sendSafeError } from '../_lib/http.js';
 
 function asString(value: unknown) {
   return typeof value === 'string' ? value : '';

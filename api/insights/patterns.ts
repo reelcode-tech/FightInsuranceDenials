@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { enforceRateLimit, sendSafeError } from '../_lib/http';
+import { enforceRateLimit, sendSafeError } from '../_lib/http.js';
 
 type MetricRow = { label: string; value: number };
 type HeatmapRow = { insurer: string; category: string; value: number };

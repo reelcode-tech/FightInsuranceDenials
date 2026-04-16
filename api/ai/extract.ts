@@ -1,5 +1,5 @@
-import { extractDenialDataWithAI } from '../_lib/aiPipeline';
-import { enforceRateLimit, methodNotAllowed, sendSafeError } from '../_lib/http';
+import { extractDenialDataWithAI } from '../_lib/aiPipeline.js';
+import { enforceRateLimit, methodNotAllowed, sendSafeError } from '../_lib/http.js';
 
 export default async function handler(req: any, res: any) {
   if (!methodNotAllowed(req, res, 'POST')) {

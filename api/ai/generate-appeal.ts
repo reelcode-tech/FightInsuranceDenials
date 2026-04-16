@@ -1,6 +1,6 @@
-import type { DenialRecord } from '../../src/types';
-import { generateAppealWithAI } from '../_lib/aiPipeline';
-import { enforceRateLimit, methodNotAllowed, sendSafeError } from '../_lib/http';
+import type { DenialRecord } from '../../src/types.js';
+import { generateAppealWithAI } from '../_lib/aiPipeline.js';
+import { enforceRateLimit, methodNotAllowed, sendSafeError } from '../_lib/http.js';
 
 export default async function handler(req: any, res: any) {
   if (!methodNotAllowed(req, res, 'POST')) {

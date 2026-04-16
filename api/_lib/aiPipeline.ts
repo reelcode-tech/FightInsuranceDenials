@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import type { AppealDraft, DenialRecord, ExtractionResult } from '../../src/types';
-import { runBigQuerySql } from '../../src/lib/bigquery';
-import { normalizeExtractionResult } from '../../src/lib/intakePipeline';
+import type { AppealDraft, DenialRecord, ExtractionResult } from '../../src/types.js';
+import { runBigQuerySql } from '../../src/lib/bigquery.js';
+import { normalizeExtractionResult } from '../../src/lib/intakePipeline.js';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
