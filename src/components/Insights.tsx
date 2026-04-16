@@ -21,6 +21,11 @@ import {
 } from '@/src/lib/insightsPresentation';
 import type { DenialRecord } from '@/src/types';
 import { buildStoryActionTag, buildStoryPreview, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
+import {
+  WAREHOUSE_INSIGHT_CARDS,
+  WAREHOUSE_QUESTION_CARDS,
+  WAREHOUSE_SNAPSHOT_META,
+} from '@/src/lib/warehouseInsightsSnapshot';
 
 const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
 
@@ -294,6 +299,39 @@ export default function Insights() {
 
         {data ? (
           <>
+            <section className="rounded-[2.3rem] border border-[#8b5cf6]/18 bg-[linear-gradient(180deg,#0c1020_0%,#10162b_100%)] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-4xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#b79dff]">What the broader record is showing</p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb] md:text-4xl">
+                    Stronger warehouse patterns are already clearer than the public story count makes them look.
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">
+                    We are now pulling from a larger BigQuery snapshot layer to show the repeat fights that matter most: which denial excuse keeps showing up, which treatment categories are hit hardest, and how plan type changes the appeal strategy.
+                  </p>
+                </div>
+                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.03] px-5 py-4 text-right">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#b79dff]">{WAREHOUSE_SNAPSHOT_META.updatedLabel}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{WAREHOUSE_SNAPSHOT_META.usableRows}</p>
+                  <p className="mt-1 text-sm text-[#c8bdb4]">usable warehouse rows</p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-5 xl:grid-cols-4">
+                {WAREHOUSE_INSIGHT_CARDS.map((card) => (
+                  <div key={card.title} className="rounded-[1.8rem] border border-white/8 bg-white/[0.03] p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#f19a86]">{card.eyebrow}</p>
+                    <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{card.title}</h3>
+                    <p className="mt-4 text-sm leading-7 text-[#ddd1c6]">{card.body}</p>
+                    <div className="mt-5 rounded-[1.2rem] border border-[#8b5cf6]/18 bg-[#151a31] px-4 py-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#b79dff]">{card.countLabel}</p>
+                      <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white">{card.countValue}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <section className="grid gap-5 lg:grid-cols-4">
               {keyQuestions.map((item, index) => (
                 <motion.div
@@ -310,6 +348,26 @@ export default function Insights() {
                       <p className="text-sm leading-7 text-[#c8bdb4]">{item.body}</p>
                     </CardContent>
                   </Card>
+                </motion.div>
+              ))}
+            </section>
+
+            <section className="grid gap-6 xl:grid-cols-3">
+              {WAREHOUSE_QUESTION_CARDS.map((item, index) => (
+                <motion.div
+                  key={item.question}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  className="rounded-[2rem] border border-white/10 bg-[#12161b] p-6"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">BigQuery question we can answer</p>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{item.question}</h3>
+                  <p className="mt-4 text-sm leading-7 text-[#ddd1c6]">{item.answer}</p>
+                  <div className="mt-5 rounded-[1.3rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Current evidence</p>
+                    <p className="mt-2 text-sm leading-7 text-[#c8bdb4]">{item.evidence}</p>
+                  </div>
                 </motion.div>
               ))}
             </section>

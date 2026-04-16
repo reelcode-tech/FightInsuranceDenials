@@ -2,6 +2,8 @@
 
 ## Active Priorities
 - [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
+- [ ] Work through the structured MVP review tracker in `docs/MVP_FEEDBACK_TRACKER.md`, closing page-by-page UX, analytics, and data-visualization gaps with visible progress.
+- [ ] Turn the warehouse findings in `docs/BIGQUERY_INSIGHTS_REPORT.md` into public evidence modules so the site reflects stronger BigQuery-scale insight instead of tiny public-slice counts.
 - [ ] Keep refining the homepage so it feels premium, emotionally grounded, and visually coherent on desktop and mobile.
 - [ ] Replace the current hero image with a stronger healthcare-denial emotional image or a custom-generated visual if the current source still misses the feeling.
 - [x] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
@@ -59,6 +61,7 @@
 - [ ] Inspire / Smart Patients / private groups: partnership-only or do-not-scrape
 
 ## Product / UX
+- [ ] Close out the homepage/demo/dashboard/story-browser feedback captured in `docs/MVP_FEEDBACK_TRACKER.md`.
 - [ ] Finish the Share Your Story intake so venting, voice-to-text, structured fields, upload, and consent feel cohesive.
 - [ ] Strengthen Fight Back so upload-first appeal generation feels premium and trustworthy.
 - [ ] Surface precedent-aware appeal evidence more clearly in the appeal output UI.
@@ -90,6 +93,8 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Pull together a BigQuery insights report that translates the current warehouse into real patient questions, stronger treatment x denial patterns, plan-type patterns, and insurer-family patterns.
+- [x] Turn the latest detailed product review into a page-by-page execution tracker so design, analytics, and data-visualization feedback are now measurable instead of floating in chat.
 - [x] Add shared source-confidence scoring and fingerprint generation so higher-fidelity sources carry consistent trust metadata and dedupe keys.
 - [x] Add API guard helpers for rate limiting and safe public error responses, then wire them into observatory and AI routes.
 - [x] Clean up public story previews so homepage and evidence story cards stay scannable instead of dumping raw extracted text.
