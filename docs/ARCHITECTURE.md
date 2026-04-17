@@ -193,6 +193,11 @@ If another coding engine picks this project up, these are the important truths:
 6. Raw observation growth matters, but public observatory trust matters more than inflated counts.
 7. Prefer additive migration and compatibility layers over hard cutovers while the app is still evolving.
 
+Read first:
+- [HANDOFF_START_HERE.md](C:\Users\sashi\Projects\FightInsuranceDenials-working\docs\HANDOFF_START_HERE.md)
+- [AGENT_CURRENT_STATE.md](C:\Users\sashi\Projects\FightInsuranceDenials-working\docs\AGENT_CURRENT_STATE.md)
+- [AGENT_EXECUTION_GUIDE.md](C:\Users\sashi\Projects\FightInsuranceDenials-working\docs\AGENT_EXECUTION_GUIDE.md)
+
 ## Immediate Priorities
 - Improve homepage emotional clarity and visual coherence
 - Expand non-Reddit trusted-source ingestion

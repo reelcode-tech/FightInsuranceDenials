@@ -1,6 +1,7 @@
 ﻿# FightInsuranceDenials Todo
 
 ## Active Priorities
+- [x] Create a clean handoff package so another coding agent can pick up the repo, understand the architecture, and continue execution without rereading the full chat history.
 - [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
 - [ ] Work through the structured MVP review tracker in `docs/MVP_FEEDBACK_TRACKER.md`, closing page-by-page UX, analytics, and data-visualization gaps with visible progress.
 - [ ] Turn the warehouse findings in `docs/BIGQUERY_INSIGHTS_REPORT.md` into public evidence modules so the site reflects stronger BigQuery-scale insight instead of tiny public-slice counts.
@@ -93,6 +94,7 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Add dedicated handoff docs for the next coding agent, including latest code location, current state, architecture orientation, and exact execution commands.
 - [x] Pull together a BigQuery insights report that translates the current warehouse into real patient questions, stronger treatment x denial patterns, plan-type patterns, and insurer-family patterns.
 - [x] Turn the latest detailed product review into a page-by-page execution tracker so design, analytics, and data-visualization feedback are now measurable instead of floating in chat.
 - [x] Add a real footer/sitemap-style public shell so the daughter pages are easier to discover without hunting through the app.
