@@ -22,9 +22,8 @@ import {
 import type { DenialRecord } from '@/src/types';
 import { buildStoryActionTag, buildStoryPreview, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
 import {
-  WAREHOUSE_INSIGHT_CARDS,
-  WAREHOUSE_QUESTION_CARDS,
-  WAREHOUSE_SNAPSHOT_META,
+  buildWarehouseDashboardSnapshot,
+  type WarehouseDashboardSnapshot,
 } from '@/src/lib/warehouseInsightsSnapshot';
 
 const BAR_COLORS = ['#c74b3c', '#eb7857', '#f1ac8f', '#8aa4b5', '#5b7286', '#344151'];
@@ -106,6 +105,7 @@ export default function Insights() {
   const [stories, setStories] = React.useState<DenialRecord[]>([]);
   const [storyLoading, setStoryLoading] = React.useState(false);
   const [expandedStoryId, setExpandedStoryId] = React.useState<string | null>(null);
+  const [dashboardSnapshot, setDashboardSnapshot] = React.useState<WarehouseDashboardSnapshot | null>(null);
 
   const load = React.useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -113,17 +113,33 @@ export default function Insights() {
     setError(null);
 
     try {
-      const response = await fetch('/api/insights/patterns', { cache: 'no-store' });
-      const contentType = response.headers.get('content-type') || '';
+      const [patternsResponse, dashboardResponse] = await Promise.all([
+        fetch('/api/insights/patterns', { cache: 'no-store' }),
+        fetch('/api/insights/dashboard', { cache: 'no-store' }),
+      ]);
+
+      const contentType = patternsResponse.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
-        const raw = await response.text();
+        const raw = await patternsResponse.text();
         throw new Error(raw.slice(0, 180) || 'Pattern endpoint did not return JSON');
       }
-      const payload = await response.json();
-      if (!response.ok || payload.status !== 'success') {
+      const payload = await patternsResponse.json();
+      if (!patternsResponse.ok || payload.status !== 'success') {
         throw new Error(payload.error || 'Failed to load evidence patterns');
       }
       setData(payload);
+
+      const dashboardContentType = dashboardResponse.headers.get('content-type') || '';
+      if (dashboardResponse.ok && dashboardContentType.includes('application/json')) {
+        const dashboardPayload = await dashboardResponse.json();
+        if (dashboardPayload?.status === 'success' && dashboardPayload?.snapshot) {
+          setDashboardSnapshot(dashboardPayload.snapshot);
+        } else {
+          setDashboardSnapshot(buildWarehouseDashboardSnapshot(payload));
+        }
+      } else {
+        setDashboardSnapshot(buildWarehouseDashboardSnapshot(payload));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load evidence patterns');
     } finally {
@@ -178,12 +194,13 @@ export default function Insights() {
     loadStories(storyQuery);
   }, [loadStories, storyQuery]);
 
-  const keyQuestions = buildActionQuestions(data);
   const leadFinding = data?.findings[0];
   const supportingFindings = data?.findings.slice(1, 3) || [];
   const topInsurer = data?.topInsurers[0]?.label || 'Blue Cross Blue Shield';
   const topCategory = data?.topCategories[0]?.label || 'Prior Authorization';
   const topProcedure = data?.topProcedures[0]?.label || 'Prescription medication';
+  const actionQuestions = buildActionQuestions(data).slice(0, 2);
+  const liveSnapshot = dashboardSnapshot || (data ? buildWarehouseDashboardSnapshot(data) : null);
 
   return (
     <div className="min-h-screen bg-[#090b0f] px-5 py-10 text-[#f3efe9] md:px-8 lg:px-10">
@@ -250,7 +267,7 @@ export default function Insights() {
               </div>
             </div>
 
-            <div className="flex flex-col justify-between gap-4">
+            <div className="grid gap-4">
               {leadFinding ? (
                 <motion.div
                   initial={{ opacity: 0, y: 18 }}
@@ -265,20 +282,26 @@ export default function Insights() {
                 </motion.div>
               ) : null}
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {supportingFindings.map((finding, index) => (
-                  <motion.div
-                    key={finding.title}
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.08 }}
-                    className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5"
-                  >
-                    <p className="text-lg font-semibold tracking-[-0.04em] text-[#f7f2eb]">{finding.title}</p>
-                    <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{finding.body}</p>
-                  </motion.div>
-                ))}
-              </div>
+              {liveSnapshot ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#b79dff]">{liveSnapshot.meta.updatedLabel}</p>
+                    <p className="mt-3 text-4xl font-semibold tracking-[-0.06em] text-[#f7f2eb]">{liveSnapshot.meta.usableRows}</p>
+                    <p className="mt-2 text-sm leading-7 text-[#c8bdb4]">{liveSnapshot.meta.source}</p>
+                  </div>
+                  {supportingFindings[0] ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 }}
+                      className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5"
+                    >
+                      <p className="text-lg font-semibold tracking-[-0.04em] text-[#f7f2eb]">{supportingFindings[0].title}</p>
+                      <p className="mt-3 text-sm leading-7 text-[#c8bdb4]">{supportingFindings[0].body}</p>
+                    </motion.div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -311,14 +334,14 @@ export default function Insights() {
                   </p>
                 </div>
                 <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.03] px-5 py-4 text-right">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#b79dff]">{WAREHOUSE_SNAPSHOT_META.updatedLabel}</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{WAREHOUSE_SNAPSHOT_META.usableRows}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#b79dff]">{liveSnapshot?.meta.updatedLabel || 'Loading snapshot'}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">{liveSnapshot?.meta.usableRows || '0'}</p>
                   <p className="mt-1 text-sm text-[#c8bdb4]">usable warehouse rows</p>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-5 xl:grid-cols-4">
-                {WAREHOUSE_INSIGHT_CARDS.map((card) => (
+                {(liveSnapshot?.cards || []).map((card) => (
                   <div key={card.title} className="rounded-[1.8rem] border border-white/8 bg-white/[0.03] p-5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#f19a86]">{card.eyebrow}</p>
                     <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{card.title}</h3>
@@ -332,42 +355,25 @@ export default function Insights() {
               </div>
             </section>
 
-            <section className="grid gap-5 lg:grid-cols-4">
-              {keyQuestions.map((item, index) => (
+            <section className="grid gap-5 lg:grid-cols-5">
+              {[...actionQuestions, ...(liveSnapshot?.questions || [])].slice(0, 5).map((item: any, index) => (
                 <motion.div
-                  key={item.title}
+                  key={item.title || item.question}
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.06 }}
                 >
                   <Card className="h-full rounded-[2rem] border border-white/10 bg-[#12161b]">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-xl tracking-tight text-[#f7f2eb]">{item.title}</CardTitle>
+                      <CardTitle className="text-xl tracking-tight text-[#f7f2eb]">{item.title || item.question}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm leading-7 text-[#c8bdb4]">{item.body}</p>
+                      <p className="text-sm leading-7 text-[#c8bdb4]">{item.body || item.answer}</p>
+                      {'evidence' in item ? (
+                        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#b79dff]">{item.evidence}</p>
+                      ) : null}
                     </CardContent>
                   </Card>
-                </motion.div>
-              ))}
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-3">
-              {WAREHOUSE_QUESTION_CARDS.map((item, index) => (
-                <motion.div
-                  key={item.question}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.06 }}
-                  className="rounded-[2rem] border border-white/10 bg-[#12161b] p-6"
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f19a86]">BigQuery question we can answer</p>
-                  <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#f7f2eb]">{item.question}</h3>
-                  <p className="mt-4 text-sm leading-7 text-[#ddd1c6]">{item.answer}</p>
-                  <div className="mt-5 rounded-[1.3rem] border border-white/8 bg-white/[0.03] px-4 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#9e9489]">Current evidence</p>
-                    <p className="mt-2 text-sm leading-7 text-[#c8bdb4]">{item.evidence}</p>
-                  </div>
                 </motion.div>
               ))}
             </section>

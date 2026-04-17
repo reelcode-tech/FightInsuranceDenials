@@ -12,12 +12,16 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [patterns, setPatterns] = React.useState<PatternsResponse | null>(null);
 
-  const fetchRealCount = async () => {
+  const fetchHomepageData = async () => {
     try {
-      const warehouseResp = await fetch('/api/observatory/summary', { cache: 'no-store' });
-      const contentType = warehouseResp.headers.get('content-type') || '';
-      if (warehouseResp.ok && contentType.includes('application/json')) {
-        const warehouseData = await warehouseResp.json();
+      const [summaryResp, patternsResp] = await Promise.all([
+        fetch('/api/observatory/summary', { cache: 'no-store' }),
+        fetch('/api/insights/patterns', { cache: 'no-store' }),
+      ]);
+
+      const summaryContentType = summaryResp.headers.get('content-type') || '';
+      if (summaryResp.ok && summaryContentType.includes('application/json')) {
+        const warehouseData = await summaryResp.json();
         if (warehouseData?.totalVisibleCount !== null && warehouseData?.totalVisibleCount !== undefined) {
           setRealCount(warehouseData.totalVisibleCount);
         }
@@ -27,51 +31,24 @@ export default function Dashboard() {
         if (Array.isArray(warehouseData?.featuredStories) && warehouseData.featuredStories.length) {
           setFeaturedStories(warehouseData.featuredStories);
         }
-        return;
+      }
+
+      const patternsContentType = patternsResp.headers.get('content-type') || '';
+      if (patternsResp.ok && patternsContentType.includes('application/json')) {
+        const data = await patternsResp.json();
+        if (data?.status === 'success') setPatterns(data);
       }
 
     } catch (e) {
-      console.error("Failed to fetch real count", e);
-    }
-  };
-
-  const fetchFeatured = async () => {
-    try {
-      const warehouseResp = await fetch('/api/observatory/summary', { cache: 'no-store' });
-      const contentType = warehouseResp.headers.get('content-type') || '';
-      if (warehouseResp.ok && contentType.includes('application/json')) {
-        const warehouseData = await warehouseResp.json();
-        if (Array.isArray(warehouseData?.featuredStories) && warehouseData.featuredStories.length) {
-          setFeaturedStories(warehouseData.featuredStories);
-          return;
-        }
-      }
-
-    } catch (e) {
-      console.error("Failed to fetch featured stories", e);
-    }
-  };
-
-  const fetchPatterns = async () => {
-    try {
-      const resp = await fetch('/api/insights/patterns', { cache: 'no-store' });
-      const contentType = resp.headers.get('content-type') || '';
-      if (!resp.ok || !contentType.includes('application/json')) return;
-      const data = await resp.json();
-      if (data?.status === 'success') setPatterns(data);
-    } catch (e) {
-      console.error("Failed to fetch patterns", e);
+      console.error("Failed to fetch homepage data", e);
     }
   };
 
   React.useEffect(() => {
-    fetchRealCount();
-    fetchFeatured();
-    fetchPatterns();
+    fetchHomepageData();
 
     const refreshInterval = window.setInterval(() => {
-      fetchRealCount();
-      fetchPatterns();
+      fetchHomepageData();
     }, 45000);
 
     return () => {

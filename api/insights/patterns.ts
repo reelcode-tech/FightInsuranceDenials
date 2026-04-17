@@ -170,7 +170,7 @@ function getSql() {
   return neon(connectionString);
 }
 
-async function fetchPatternsFromNeon() {
+export async function fetchPatternsFromNeon() {
   const sql = getSql();
 
   const [

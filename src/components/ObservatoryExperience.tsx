@@ -178,11 +178,19 @@ export default function ObservatoryExperience({
               </div>
 
               <div className="rounded-[1.8rem] border border-white/8 bg-[#0d1328] p-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#96a6d9]">Search - Compare - Generate appeal</p>
-                <div className="mt-5 space-y-3 text-sm leading-7 text-[#c4cbe8]">
-                  <p><span className="font-semibold text-white">1.</span> Search for your insurer, plan, drug, procedure, or denial reason.</p>
-                  <p><span className="font-semibold text-white">2.</span> See which excuses keep surfacing and how other patients pushed back.</p>
-                  <p><span className="font-semibold text-white">3.</span> Turn that evidence into a stronger AI-guided appeal in minutes.</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#96a6d9]">Live public record</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#b9b6eb]">Published stories</p>
+                    <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-white">{totalStories.toLocaleString() || '0'}</p>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#b9b6eb]">Top denial reason</p>
+                    <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-white">{topCategory}</p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-[1.4rem] border border-[#8b5cf6]/18 bg-[#141a33] p-4 text-sm leading-7 text-[#c4cbe8]">
+                  Search the record, compare the pattern, then turn that evidence into a stronger appeal.
                 </div>
               </div>
             </div>
