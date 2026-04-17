@@ -41,52 +41,7 @@ export default function ObservatoryExperience({
     return () => window.clearInterval(interval);
   }, [searchTerm]);
 
-  const liveStories = featuredStories.length
-    ? featuredStories
-    : [
-        {
-          id: 'fallback-1',
-          insurer: 'UnitedHealthcare',
-          planType: 'Choice Plus PPO',
-          procedure: 'Taltz',
-          denialReason: 'Prior authorization',
-          date: '',
-          status: 'denied',
-          narrative: '',
-          tags: [],
-          isPublic: true,
-          createdAt: null,
-          summary: 'A patient with inflammatory disease kept getting forced back through prior authorization loops for a drug that had already been working.',
-        },
-        {
-          id: 'fallback-2',
-          insurer: 'Blue Cross Blue Shield',
-          planType: 'Marketplace',
-          procedure: 'fertility treatment',
-          denialReason: 'Coverage exclusion',
-          date: '',
-          status: 'denied',
-          narrative: '',
-          tags: [],
-          isPublic: true,
-          createdAt: null,
-          summary: 'A couple documented how plan language and repeated denials kept pushing fertility treatment farther out of reach and more expensive.',
-        },
-        {
-          id: 'fallback-3',
-          insurer: 'Aetna',
-          planType: 'Employer sponsored PPO',
-          procedure: 'MRI',
-          denialReason: 'Medical necessity',
-          date: '',
-          status: 'denied',
-          narrative: '',
-          tags: [],
-          isPublic: true,
-          createdAt: null,
-          summary: 'A patient dealing with chronic pain showed how an imaging denial delayed specialist care and added weeks of uncertainty.',
-        },
-      ];
+  const liveStories = featuredStories.slice(0, 3);
 
   const trendingSearches = React.useMemo(() => {
     const base = [topCategory, ...SEARCH_CHIPS, ...liveStories.map((story) => story.insurer || story.procedure).filter(Boolean)];
@@ -323,8 +278,9 @@ export default function ObservatoryExperience({
             ))}
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {liveStories.slice(0, 3).map((story) => {
+          {liveStories.length ? (
+            <div className="mt-8 grid gap-5 lg:grid-cols-3">
+              {liveStories.map((story) => {
               const tags = buildStoryTags(story);
               const title = (story as any).title || buildStoryTitle(story);
               const summary = story.preview || buildStoryPreview(story);
@@ -380,7 +336,30 @@ export default function ObservatoryExperience({
                 </article>
               );
             })}
-          </div>
+            </div>
+          ) : (
+            <div className="mt-8 rounded-[2rem] border border-dashed border-white/12 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-8 md:p-10">
+              <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-start">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#96a6d9]">Public record in progress</p>
+                  <h3 className="text-2xl font-semibold tracking-[-0.04em] text-white md:text-3xl">
+                    We do not show fabricated patient stories here.
+                  </h3>
+                  <p className="max-w-2xl text-sm leading-7 text-[#c6cde8]">
+                    This section only fills with published, anonymized stories from the live database. Until more are ready, search the evidence patterns or add your own denial to strengthen the record.
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#a39bfd]">What you can do now</p>
+                  <div className="mt-4 space-y-3 text-sm leading-7 text-[#d4daf3]">
+                    <p>Search repeat denial patterns by insurer, treatment, or reason.</p>
+                    <p>Share your own denial so it can become evidence for the next patient.</p>
+                    <p>Come back here to see featured stories once they are verified and published.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
