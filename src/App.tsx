@@ -77,6 +77,28 @@ export default function App() {
     { id: 'about', label: 'About / Trust' },
   ];
 
+  const footerGroups: Array<{ title: string; items: Array<{ label: string; tab: AppTab }> }> = [
+    {
+      title: 'Explore',
+      items: [
+        { label: 'Observatory', tab: 'home' },
+        { label: 'Evidence Patterns', tab: 'insights' },
+        { label: 'Data Products', tab: 'b2b' },
+      ],
+    },
+    {
+      title: 'Take action',
+      items: [
+        { label: 'Share Your Story', tab: 'share' },
+        { label: 'Fight Back', tab: 'appeal' },
+      ],
+    },
+    {
+      title: 'Trust',
+      items: [{ label: 'About / Trust', tab: 'about' }],
+    },
+  ];
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'share':
@@ -190,6 +212,41 @@ export default function App() {
       </header>
 
       <main>{renderActiveTab()}</main>
+      <footer className="border-t border-white/8 bg-[#070b16]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:grid-cols-[1.2fr_1fr] md:px-8">
+          <div className="space-y-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9e9489]">
+              Public health insurance denial database
+            </p>
+            <h2 className="max-w-xl text-3xl font-semibold tracking-[-0.05em] text-[#f7f2eb]">
+              Built so patients do not have to fight a denial in isolation.
+            </h2>
+            <p className="max-w-2xl text-sm leading-7 text-[#b9b2ab]">
+              Search the record, compare your denial, share your story, and build a stronger appeal with evidence that is bigger
+              than one phone call or one letter.
+            </p>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-3">
+            {footerGroups.map((group) => (
+              <div key={group.title}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[#9e9489]">{group.title}</p>
+                <div className="mt-4 flex flex-col gap-3">
+                  {group.items.map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => navigateToTab(item.tab)}
+                      className="text-left text-sm font-medium text-[#d2cbc2] transition-colors hover:text-white"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </footer>
       <Toaster position="top-right" richColors theme="light" />
     </div>
   );

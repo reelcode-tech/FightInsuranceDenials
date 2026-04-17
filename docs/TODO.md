@@ -67,7 +67,7 @@
 - [ ] Surface precedent-aware appeal evidence more clearly in the appeal output UI.
 - [x] Improve Evidence Patterns storytelling so findings, methodology, and source context are obvious to non-technical visitors.
 - [ ] Build a cleaner B2B / Data Products page with real productized offerings and pricing logic.
-- [ ] Strengthen About / Transparency / Privacy with methodology, taxonomy, privacy boundaries, and trust language.
+- [x] Strengthen About / Transparency / Privacy with methodology, taxonomy, privacy boundaries, and trust language.
 - [ ] Remove any stale or conflicting design remnants from older versions of the site.
 - [x] Add a living source inventory so we can track active lanes, cautious/manual lanes, and partnership-only sources in one place.
 
@@ -95,6 +95,8 @@
 ## Done Recently
 - [x] Pull together a BigQuery insights report that translates the current warehouse into real patient questions, stronger treatment x denial patterns, plan-type patterns, and insurer-family patterns.
 - [x] Turn the latest detailed product review into a page-by-page execution tracker so design, analytics, and data-visualization feedback are now measurable instead of floating in chat.
+- [x] Add a real footer/sitemap-style public shell so the daughter pages are easier to discover without hunting through the app.
+- [x] Rebuild About / Trust into a cleaner public-interest trust page and move Data Products toward a more credible organization-facing offer.
 - [x] Add shared source-confidence scoring and fingerprint generation so higher-fidelity sources carry consistent trust metadata and dedupe keys.
 - [x] Add API guard helpers for rate limiting and safe public error responses, then wire them into observatory and AI routes.
 - [x] Clean up public story previews so homepage and evidence story cards stay scannable instead of dumping raw extracted text.

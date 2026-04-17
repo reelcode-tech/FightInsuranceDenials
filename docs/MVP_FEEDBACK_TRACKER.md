@@ -20,9 +20,9 @@ Current product state:
 - Too much friction between "interesting data" and "action I can take today"
 
 Current progress snapshot:
-- `5 / 30` items `done`
-- `15 / 30` items `in_progress`
-- `9 / 30` items `not_started`
+- `8 / 30` items `done`
+- `13 / 30` items `in_progress`
+- `8 / 30` items `not_started`
 - `1 / 30` items `reconsider`
 
 ## 1. Homepage / First Impression
@@ -81,7 +81,7 @@ Current progress snapshot:
   - `/fight-back`, `/share-your-story`, `/evidence-patterns`, `/data-products`, and `/about-trust` now exist as routed app destinations.
 
 ### 2.2 Public discoverability / crawlable structure
-- Status: `in_progress`
+- Status: `done`
 - Feedback:
   - Site still needs clearer public structure, footer links, and indexable support content.
 - Acceptance criteria:
@@ -194,7 +194,7 @@ Current progress snapshot:
   - If not, should we hide this behind a simpler “for advocates / researchers” placeholder?
 
 ### 6.2 Real productization
-- Status: `not_started`
+- Status: `in_progress`
 - Feedback:
   - If retained, this page needs real product concepts, not just vague monetization language.
 - Acceptance criteria:
@@ -205,7 +205,7 @@ Current progress snapshot:
 ## 7. /about-trust
 
 ### 7.1 Clear public-interest framing
-- Status: `in_progress`
+- Status: `done`
 - Feedback:
   - The page should explain why this exists, how stories are anonymized, and why the database is different.
 - Acceptance criteria:
@@ -316,4 +316,3 @@ Current progress snapshot:
 - [x] Search-led homepage entry flow exists.
 - [x] Live story browser and cleaner story previews have started.
 - [x] BigQuery question-first analytics work has started.
-
