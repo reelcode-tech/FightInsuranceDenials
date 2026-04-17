@@ -8,6 +8,7 @@ test('site routes resolve the expected page for each public path', () => {
   assert.equal(getTabFromPath('/share-your-story'), 'share');
   assert.equal(getTabFromPath('/fight-back'), 'appeal');
   assert.equal(getTabFromPath('/evidence-patterns'), 'insights');
+  assert.equal(getTabFromPath('/data-visualizations'), 'visuals');
   assert.equal(getTabFromPath('/data-products'), 'b2b');
   assert.equal(getTabFromPath('/about-trust'), 'about');
   assert.equal(getTabFromPath('/about-trust/'), 'about');
@@ -26,5 +27,5 @@ test('homepage news cards keep the structured narrative fields the hero relies o
 });
 
 test('all tabs still have a public path mapping', () => {
-  assert.deepEqual(Object.keys(TAB_PATHS).sort(), ['about', 'appeal', 'b2b', 'home', 'insights', 'share']);
+  assert.deepEqual(Object.keys(TAB_PATHS).sort(), ['about', 'appeal', 'b2b', 'home', 'insights', 'share', 'visuals']);
 });

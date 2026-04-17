@@ -1,10 +1,11 @@
-export type AppTab = 'home' | 'share' | 'appeal' | 'insights' | 'b2b' | 'about';
+export type AppTab = 'home' | 'share' | 'appeal' | 'insights' | 'visuals' | 'b2b' | 'about';
 
 export const TAB_PATHS: Record<AppTab, string> = {
   home: '/',
   share: '/share-your-story',
   appeal: '/fight-back',
   insights: '/evidence-patterns',
+  visuals: '/data-visualizations',
   b2b: '/data-products',
   about: '/about-trust',
 };
