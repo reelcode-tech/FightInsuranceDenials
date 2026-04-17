@@ -105,7 +105,10 @@ export function legacyDenialToStory(record: Partial<DenialRecord> & Record<strin
       consent_level: normalizeConsentLevel(record),
       is_anonymized: record.is_anonymized ?? true,
       contains_pii: record.contains_pii ?? false,
-      public_story_ready: record.isPublic ?? false,
+      public_story_ready:
+        record.public_story_ready ??
+        record.isPublic ??
+        normalizeConsentLevel(record) === 'public_story',
       raw_upload_url: record.fileUrl || record.raw_upload_url,
     },
     source: {

@@ -18,6 +18,24 @@ import type { DenialRecord, ExtractionResult } from '../types';
 import type { GlobalAnalytics, ObservatoryStory } from '../types/domain';
 import { legacyDenialToStory, storyToLegacyDenial } from './storyMapper';
 
+export function buildSubmissionPrivacy(input: {
+  consentLevel: ObservatoryStory['privacy']['consent_level'];
+  narrative?: string;
+  uploadedFileUrl?: string | null;
+}): ObservatoryStory['privacy'] {
+  const hasSensitiveSourceMaterial = Boolean(input.narrative?.trim() || input.uploadedFileUrl);
+  const isPublicStoryCandidate = input.consentLevel === 'public_story';
+
+  return {
+    consent_level: input.consentLevel,
+    is_anonymized: false,
+    contains_pii: hasSensitiveSourceMaterial,
+    // Public stories still remain gated by anonymization/published status elsewhere.
+    public_story_ready: isPublicStoryCandidate,
+    raw_upload_url: input.uploadedFileUrl || undefined,
+  };
+}
+
 function snapshotToLegacyDenial(doc: QueryDocumentSnapshot): DenialRecord {
   const data = doc.data() as Record<string, any>;
   return {
@@ -189,13 +207,11 @@ export async function saveUserSubmission(
       appeal_deadline: submission.extractedData.appealDeadline || '',
       submission_timestamp: serverTimestamp() as never,
     },
-    privacy: {
-      consent_level: consentLevel,
-      is_anonymized: !submission.narrative,
-      contains_pii: true,
-      public_story_ready: consentLevel === 'public_story' && !submission.narrative,
-      raw_upload_url: submission.uploadedFileUrl || undefined,
-    },
+    privacy: buildSubmissionPrivacy({
+      consentLevel,
+      narrative: submission.narrative,
+      uploadedFileUrl: submission.uploadedFileUrl,
+    }),
     source: {
       source_type: 'user_upload',
       source_label: 'User Submission',
