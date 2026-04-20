@@ -2,12 +2,14 @@
 
 ## Active Priorities
 - [x] Create a clean handoff package so another coding agent can pick up the repo, understand the architecture, and continue execution without rereading the full chat history.
-- [ ] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
+- [x] Follow `TESTING.md` on every change: add regression coverage for fixes, run test/build gates, and verify the real failing path after deploy.
 - [ ] Work through the structured MVP review tracker in `docs/MVP_FEEDBACK_TRACKER.md`, closing page-by-page UX, analytics, and data-visualization gaps with visible progress.
 - [ ] Turn the warehouse findings in `docs/BIGQUERY_INSIGHTS_REPORT.md` into public evidence modules so the site reflects stronger BigQuery-scale insight instead of tiny public-slice counts.
-- [ ] Keep refining the homepage so it feels premium, emotionally grounded, and visually coherent on desktop and mobile.
+- [x] Keep refining the homepage so it feels premium, emotionally grounded, and visually coherent on desktop and mobile.
+- [ ] Add browser-captured screenshots/video proof for homepage and data visualizations after each major public redesign.
 - [ ] Replace the current hero image with a stronger healthcare-denial emotional image or a custom-generated visual if the current source still misses the feeling.
 - [x] Tighten the homepage first screen so value, trust, and the two primary actions are clear within 5 seconds.
+- [x] Make the public-story count consistent across homepage, evidence patterns, data visualizations, and share-your-story surfaces.
 - [ ] Keep growing public-source ingestion toward 10,000+ raw observations while improving precision, not just volume.
 - [ ] Improve extraction quality so fewer rows fall into Unknown insurer, Unknown category, or generic procedure buckets.
 - [ ] Pivot the evidence layer toward broader question-first aggregates so public pages stop relying on tiny insurer+procedure+category clusters.
@@ -63,10 +65,13 @@
 
 ## Product / UX
 - [ ] Close out the homepage/demo/dashboard/story-browser feedback captured in `docs/MVP_FEEDBACK_TRACKER.md`.
+- [x] Replace the long homepage “why now” rail with tighter visual stat cards and a shorter proof-first hero.
+- [x] Rebuild `/data-visualizations` around chart usability: legends, methodology note, appeal citation copy, and consistent totals.
 - [ ] Finish the Share Your Story intake so venting, voice-to-text, structured fields, upload, and consent feel cohesive.
 - [ ] Strengthen Fight Back so upload-first appeal generation feels premium and trustworthy.
 - [ ] Surface precedent-aware appeal evidence more clearly in the appeal output UI.
 - [x] Improve Evidence Patterns storytelling so findings, methodology, and source context are obvious to non-technical visitors.
+- [ ] Finish the remaining Sprint 3.0 polish: mobile chart density tuning, screenshot proof, and visual alignment for Fight Back / Share Your Story / Data Products.
 - [ ] Build a cleaner B2B / Data Products page with real productized offerings and pricing logic.
 - [x] Strengthen About / Transparency / Privacy with methodology, taxonomy, privacy boundaries, and trust language.
 - [ ] Remove any stale or conflicting design remnants from older versions of the site.
@@ -76,6 +81,7 @@
 - [x] Point Vercel production to the current GitHub branch/workflow instead of stale code.
 - [x] Restore live production observatory APIs so Vercel serves real Neon-backed data instead of crashing routes.
 - [x] Re-verify live production observatory APIs after the redesign pass so homepage and evidence pages are reading real Neon-backed data.
+- [x] Deploy Sprint 3.0 usability overhaul to `www.fightinsurancedenials.com`.
 - [ ] Add required production environment variables to Vercel.
 - [ ] Add `CRON_SECRET` in Vercel so the nightly ingest cron can run in production.
 - [ ] Keep the local always-on warehouse daemon running hourly until production cron is fully armed.
@@ -94,6 +100,8 @@
 - [ ] Add basic audit/logging strategy without leaking health-related details.
 
 ## Done Recently
+- [x] Ship Sprint 3.0 usability overhaul: shorter homepage copy, new proof-first hero, stat cards, clearer data visualizations, success-rate overlays, and consistent `1,173` story-count messaging.
+- [x] Refresh the handoff baseline with updated architecture, skills guidance, lessons learned, open challenges, and an exact next-session prompt.
 - [x] Add dedicated handoff docs for the next coding agent, including latest code location, current state, architecture orientation, and exact execution commands.
 - [x] Pull together a BigQuery insights report that translates the current warehouse into real patient questions, stronger treatment x denial patterns, plan-type patterns, and insurer-family patterns.
 - [x] Turn the latest detailed product review into a page-by-page execution tracker so design, analytics, and data-visualization feedback are now measurable instead of floating in chat.

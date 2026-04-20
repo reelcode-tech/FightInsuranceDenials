@@ -8,6 +8,7 @@ import {
   buildStoryTitle,
   buildWhatWasDenied,
 } from '../../src/lib/storyPresentation.js';
+import { PUBLIC_STORY_COUNT } from '../../src/lib/publicMetrics.js';
 import { enforceRateLimit, sendSafeError } from '../_lib/http.js';
 
 function asNumber(value: unknown) {
@@ -82,7 +83,7 @@ export default async function handler(_req: any, res: any) {
       status: 'success',
       rawObservationCount: asNumber((counts as any).raw_observation_count),
       sourceRecordCount: asNumber((counts as any).source_record_count),
-      totalVisibleCount: asNumber((counts as any).total_visible_count),
+      totalVisibleCount: PUBLIC_STORY_COUNT || asNumber((counts as any).total_visible_count),
       topCategory: (topCategoryResult[0] as any)?.denial_category || 'Coverage Denial',
       featuredStories: (featuredResult as any[]).map((row: any) => {
         const story = {

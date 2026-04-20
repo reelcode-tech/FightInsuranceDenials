@@ -6,6 +6,7 @@ import { buildActionQuestions, type HeatmapRow, type MetricRow, type PatternsRes
 import type { DenialRecord } from '@/src/types';
 import { buildStoryActionTag, buildStoryPreview, buildStoryTags, buildStoryTitle, buildWhatWasDenied } from '@/src/lib/storyPresentation';
 import { buildWarehouseDashboardSnapshot, type WarehouseDashboardSnapshot } from '@/src/lib/warehouseInsightsSnapshot';
+import { formatPublicStoryCount, normalizePublicStoryCount } from '@/src/lib/publicMetrics';
 
 const BAR_COLORS = ['#0f5ea8', '#2a7cc7', '#2ea89a', '#69c2bb', '#8fbfcf', '#d2e4eb'];
 
@@ -114,6 +115,7 @@ export default function Insights() {
   const topInsurer = data?.topInsurers[0]?.label || 'Blue Cross Blue Shield';
   const topCategory = data?.topCategories[0]?.label || 'Prior Authorization';
   const topProcedure = data?.topProcedures[0]?.label || 'Prescription medication';
+  const publishedStoryCount = normalizePublicStoryCount(data?.overview.cleanPatternRows);
   const actionQuestions = buildActionQuestions(data).slice(0, 2);
   const signalRows = [
     { label: topInsurer, value: `${data?.topInsurers[0]?.value || 0}`, width: '88%' },
@@ -156,9 +158,9 @@ export default function Insights() {
               {liveSnapshot ? (
                 <>
                   <div className="rounded-[1.8rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_16px_45px_rgba(34,95,130,0.08)]">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#2e7888]">Warehouse snapshot</p>
-                    <p className="mt-3 text-5xl text-[#0e2b43]">{liveSnapshot.meta.usableRows}</p>
-                    <p className="mt-2 text-sm leading-7 text-[#5b7789]">{liveSnapshot.meta.updatedLabel}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#2e7888]">Public stories to compare</p>
+                    <p className="mt-3 text-5xl text-[#0e2b43]">{formatPublicStoryCount(publishedStoryCount)}</p>
+                    <p className="mt-2 text-sm leading-7 text-[#5b7789]">How to use this in your appeal (2 minutes)</p>
                   </div>
                   <div className="rounded-[1.8rem] border border-[#d7e7eb] bg-[#f7fcfe] p-5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#2e7888]">What is dominating the record</p>
@@ -195,7 +197,7 @@ export default function Insights() {
                 </div>
                 <div className="rounded-[1.4rem] border border-[#d7e7eb] bg-[#f7fcfe] px-5 py-4 text-right">
                   <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#2e7888]">{liveSnapshot?.meta.updatedLabel || 'Loading snapshot'}</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#0e2b43]">{liveSnapshot?.meta.usableRows || '0'}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#0e2b43]">{formatPublicStoryCount(publishedStoryCount)}</p>
                 </div>
               </div>
               <div className="mt-6 overflow-hidden rounded-[2rem] border border-[#d7e7eb] bg-white">
@@ -214,6 +216,7 @@ export default function Insights() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#2e7888]">Start here</p>
                 <h2 className="mt-3 text-3xl text-[#0e2b43]">Use a patient question, not a raw metric.</h2>
                 <p className="mt-4 text-sm leading-7 text-[#5b7789]">Start with the question that sounds closest to your situation, then move into the matching evidence.</p>
+                <p className="mt-4 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
               </div>
               <div className="grid gap-5 lg:grid-cols-3">
                 {[...actionQuestions, ...(liveSnapshot?.questions || [])].slice(0, 5).map((item: any) => (
@@ -243,6 +246,7 @@ export default function Insights() {
                     </div>
                   ))}
                 </div>
+                <p className="mt-5 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
               </div>
             </section>
 
@@ -260,6 +264,7 @@ export default function Insights() {
                     </div>
                   ))}
                 </div>
+                <p className="mt-5 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
               </div>
               <div className="rounded-[2.3rem] border border-[#d6e7ed] bg-white p-6 shadow-[0_20px_60px_rgba(34,95,130,0.08)]">
                 <h3 className="text-2xl tracking-tight text-[#0e2b43]">Search the story database</h3>
@@ -291,6 +296,7 @@ export default function Insights() {
                     );
                   })}
                 </div>
+                <p className="mt-5 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
               </div>
             </section>
 
@@ -302,7 +308,7 @@ export default function Insights() {
                   <p className="mt-4 text-sm leading-7 text-[#5b7789]">Use the insurer, treatment, and denial reason that matches your case. Then bring that combination into Fight Back and build an appeal around the patterns already in the record.</p>
                 </div>
                 <div className="flex flex-wrap gap-4 lg:justify-end">
-                  <Button onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'appeal' }))} className="rounded-full bg-[#0f5ea8] px-6 text-white hover:bg-[#0c4f8f]">See if your denial matches 1,135 others</Button>
+                  <Button onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'appeal' }))} className="rounded-full bg-[#0f5ea8] px-6 text-white hover:bg-[#0c4f8f]">See if your denial matches {formatPublicStoryCount(publishedStoryCount)} others</Button>
                   <Button variant="outline" onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: 'about' }))} className="rounded-full border-[#d7e7eb] bg-white text-[#12324a] hover:bg-[#f4fbfd]">
                     View methodology & trust details <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

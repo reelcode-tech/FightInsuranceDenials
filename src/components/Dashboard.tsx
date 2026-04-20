@@ -3,6 +3,7 @@ import { DenialRecord } from "@/src/types";
 import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
 import { type PatternsResponse } from '@/src/lib/insightsPresentation';
+import { normalizePublicStoryCount } from '@/src/lib/publicMetrics';
 
 export default function Dashboard() {
   const STORY_SEED_KEY = 'fid_story_seed';
@@ -99,7 +100,7 @@ export default function Dashboard() {
   return (
     <ObservatoryExperience
       featuredStories={featuredStories}
-      totalStories={realCount ?? 0}
+      totalStories={normalizePublicStoryCount(realCount)}
       topCategory={topCategoryLabel !== 'N/A' ? topCategoryLabel : (topCategory?.label || 'Coverage denial')}
       searchTerm={searchTerm}
       onSearchTermChange={setSearchTerm}

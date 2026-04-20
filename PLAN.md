@@ -28,7 +28,20 @@
 - [x] Build a live `/data-visualizations` page with insurer share, state heatmap, and trend timeline
 - [x] Shift homepage and Evidence Patterns into the soft blue/green medical-tech visual system
 - [x] Replace the remaining dark card-wall feel on the two highest-traffic public pages
-- [ ] Deploy and visually verify the production site matches the new direction
+- [x] Deploy and visually verify the production site matches the new direction
+
+### Sprint 3.0
+
+- [x] Cut homepage text density and replace the long “why now” rail with three visual stat cards
+- [x] Rebuild the homepage hero around one short promise, one search slab, and one dominant proof object
+- [x] Add explicit proof-strip labels/tooltips and a horizontal “Stories matching your situation” rail
+- [x] Make `/data-visualizations` use one public-story total source of truth: `1,173`
+- [x] Add chart legends, methodology note, time-window selector, and copy-ready appeal citation copy to `/data-visualizations`
+- [x] Add appeal-success-rate context to the donut/timeline modules using recorded overturn outcomes
+- [x] Tighten Evidence Patterns copy and micro-guidance so every major module says how to use it in an appeal
+- [x] Deploy Sprint 3.0 to production on `www.fightinsurancedenials.com`
+- [ ] Capture screenshots/video proof of the Sprint 3.0 live UI from a browser-capable environment
+- [ ] Push the Sprint 3.0 branch state and refreshed docs to GitHub
 
 ## What changed this sprint
 
@@ -40,10 +53,13 @@
 - Global navigation now reflects the public information architecture and includes the new Data Visualizations destination.
 - Data Visualizations now exposes live insurer share, state concentration, and trend charts with export/citation actions.
 - Homepage and Evidence Patterns now use the calmer blue/green medical-tech palette the redesign was aiming for.
+- Sprint 3.0 cut homepage copy, replaced the narrative rail with stat cards, added clearer proof-strip guidance, and introduced a more useful story carousel.
+- Sprint 3.0 made `/data-visualizations` patient-usable with one count source of truth, methodology guidance, legends, success-rate context, and copy-ready appeal citations.
+- Sprint 3.0 aligned the public-story count across homepage, evidence, data visualizations, and share-your-story messaging.
 
 ## Next sprint candidates
 
 - Visually verify and tune production after deploy so the live site actually reflects Sprint 2.0.
-- Add Playwright smoke coverage for homepage, evidence patterns, and fight-back flows.
-- Decide whether `Data Products` stays public as-is or becomes a real live demo / preview.
-- Align the remaining pages (`Fight Back`, `Share Your Story`, `Data Products`) to the new visual system before more feature work.
+- Add browser screenshots/video capture and Playwright smoke coverage for homepage, evidence patterns, and data visualizations.
+- Decide whether `Data Products` stays public as-is or becomes a real live demo / preview with actual sellable artifacts.
+- Align the remaining pages (`Fight Back`, `Share Your Story`, `Data Products`) to the new Sprint 3.0 clarity standard before more feature work.

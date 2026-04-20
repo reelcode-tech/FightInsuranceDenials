@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { saveUserSubmission } from '@/src/lib/observatoryRepository';
 import { validateUploadFileMeta } from '@/src/lib/intakePipeline';
 import { buildSeededStoryNarrative, mergeStoryExtraction } from '@/src/lib/storyIntake';
+import { formatPublicStoryCount, PUBLIC_STORY_COUNT } from '@/src/lib/publicMetrics';
 
 const STORY_SEED_KEY = 'fid_story_seed';
 
@@ -331,7 +332,7 @@ export default function SubmitDenial() {
 
         <section className="rounded-[2rem] border border-white/8 bg-[#0b1020] px-6 py-5 text-center">
           <p className="text-sm leading-7 text-[#c9d1ee]">
-            1,135 stories already published. Yours will be anonymized before it goes public.
+            {formatPublicStoryCount(PUBLIC_STORY_COUNT)} stories already published. Yours will be anonymized before it goes public.
           </p>
         </section>
 

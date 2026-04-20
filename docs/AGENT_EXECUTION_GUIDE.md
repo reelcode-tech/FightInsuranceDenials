@@ -1,105 +1,89 @@
 # FightInsuranceDenials Agent Execution Guide
 
-Last updated: 2026-04-16
+Last updated: 2026-04-20
 
-This guide tells the next coding agent how to work on the project effectively.
-
-## 1. Read order
-
-Read in this order:
+## Read order
 
 1. `docs/HANDOFF_START_HERE.md`
-2. `docs/AGENT_CURRENT_STATE.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/TODO.md`
-5. `docs/MVP_FEEDBACK_TRACKER.md`
-6. `docs/BIGQUERY_INSIGHTS_REPORT.md`
-7. `TESTING.md`
+2. `docs/PROJECT_INTENT.md`
+3. `docs/AGENT_CURRENT_STATE.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/SKILL_PLAYBOOK.md`
+6. `docs/LESSONS_LEARNED.md`
+7. `docs/TODO.md`
+8. `docs/MVP_FEEDBACK_TRACKER.md`
+9. `docs/BIGQUERY_INSIGHTS_REPORT.md`
+10. `docs/NEXT_SESSION_PROMPT.md`
 
-## 2. Practical architecture summary
+## Practical architecture summary
 
 Frontend / app shell:
 - Vite + React
-- main entry: `src/App.tsx`
-- routed tabs are managed client-side through `src/lib/siteRoutes.ts`
+- root app shell: `src/App.tsx`
+- client-side tab routing: `src/lib/siteRoutes.ts`
 
-Important public pages:
-- homepage / observatory:
+Key public pages:
+- homepage:
   - `src/components/Dashboard.tsx`
   - `src/components/ObservatoryExperience.tsx`
-- share your story:
-  - `src/components/SubmitDenial.tsx`
 - fight back:
   - `src/components/AppealTools.tsx`
   - `src/components/AppealGenerator.tsx`
+- share your story:
+  - `src/components/SubmitDenial.tsx`
 - evidence patterns:
   - `src/components/Insights.tsx`
+- data visualizations:
+  - `src/components/DataVisualizations.tsx`
 - data products:
   - `src/components/B2BDataProducts.tsx`
 - about / trust:
   - `src/components/AboutTransparency.tsx`
 
 API layer:
-- Vercel-style API routes in `api/`
-- important routes:
+- Vercel-style routes in `api/`
+- most important routes:
   - `api/observatory/summary.ts`
   - `api/observatory/stories.ts`
   - `api/insights/patterns.ts`
+  - `api/insights/dashboard.ts`
   - `api/ai/extract.ts`
   - `api/ai/generate-appeal.ts`
 
-Data:
-- BigQuery = warehouse and analytics source
+Shared product metrics:
+- `src/lib/publicMetrics.ts`
+
+Data layer:
+- BigQuery = warehouse / broader analytics source
 - Neon = app-facing operational relational store
-- Firebase = legacy auth/app residue; not the desired analytics future
+- Firebase = auth and some legacy residue
 
-## 3. How to think about the product
-
-There are three main product jobs:
+## Core product jobs
 
 1. Search the public record
-- help patients find similar denials
-- help them see what patterns repeat
+- help patients find matching denial patterns fast
 
 2. Share your story
 - capture narratives safely
-- extract structured fields
-- convert isolated experiences into public evidence
+- extract structure from messy denial evidence
 
 3. Fight back
-- turn denial details into a stronger appeal
-- use precedent and benchmark context
+- help patients turn denial details into better appeals
 
-These jobs should remain visually and conceptually distinct.
+4. Explain the pattern visually
+- make the evidence usable in under a few minutes, not just searchable
 
-## 4. Best next technical moves
+## Commands
 
-If you only have one pass to make impact, do these:
+Local install / run:
 
-1. Build the data visualization layer
-- create a dedicated dashboard page/section
-- show insurer share, denial reason share, state or regional summary if stable, and treatment-pattern trends
-- use the warehouse-scale findings in `docs/BIGQUERY_INSIGHTS_REPORT.md`
+```powershell
+cd "C:\Users\sashi\Projects\FightInsuranceDenials-working"
+npm install
+npm run dev
+```
 
-2. Reduce text and increase signal
-- replace explanatory paragraphs with charts, cards, screenshots, and focused labels
-- use one sentence where three currently exist
-
-3. Make data products real
-- show concrete outputs that could plausibly be sold:
-  - insurer trend dashboards
-  - plan-type benchmark reports
-  - exportable evidence packets
-  - regulator / hospital / legal reporting views
-
-4. Keep improving promotion from warehouse to public evidence
-- the warehouse already has stronger signal than the site expresses
-
-## 5. Testing requirements
-
-Always follow `TESTING.md`.
-
-Minimum pre-push gate:
+Quality gate:
 
 ```powershell
 npm test
@@ -107,56 +91,51 @@ npm run lint
 npm run build
 ```
 
-If changing API, data flow, or UX tied to a bug:
-- add or update regression coverage
-- verify the failing path after deployment if possible
-
-## 6. Deployment workflow
-
-Current happy path:
+Warehouse/data commands:
 
 ```powershell
-git status
-git add .
-git commit -m "Meaningful message"
-git push origin main
+npm run warehouse:normalize
+npm run warehouse:promote
+npm run warehouse:autopilot
+npm run warehouse:deep-backfill
 ```
 
-Then verify production in Vercel:
-- confirm latest deployment on `fight-insurance-denials`
-- confirm it is `READY`
-- confirm commit SHA matches what you pushed
-
-## 7. Known traps
-
-- The public site can underexpress the actual warehouse signal.
-- Tiny public clusters can be misleadingly weak.
-- Better UX is not just more copy; the user wants more visual proof and less explanation.
-- More connectors are not automatically better; shallow ingestion has already wasted time.
-- Keep work focused on:
-  - evidence density
-  - product clarity
-  - visual trust
-  - public usefulness
-
-## 8. If you need a fast orientation in code
-
-Start here:
+Deployment:
 
 ```powershell
-Get-Content .\\src\\App.tsx
-Get-Content .\\src\\components\\ObservatoryExperience.tsx
-Get-Content .\\src\\components\\Insights.tsx
-Get-Content .\\src\\components\\AppealTools.tsx
-Get-Content .\\src\\components\\SubmitDenial.tsx
+npx vercel --prod --yes --name fight-insurance-denials
 ```
 
-Then review:
+## Operating rules for the next agent
 
-```powershell
-Get-Content .\\docs\\TODO.md
-Get-Content .\\docs\\MVP_FEEDBACK_TRACKER.md
-Get-Content .\\docs\\BIGQUERY_INSIGHTS_REPORT.md
-```
+- Work on the real repo:
+  - `C:\Users\sashi\Projects\FightInsuranceDenials-working`
+- Stay on or branch from:
+  - `codex/fix-everything-2026`
+- Do not resume from stale sandbox copies or old branches without verifying commit history first.
+- Run lint/test/build before claiming completion.
+- Prefer surgical, page-focused sprints instead of wide unfocused rewrites.
+- Keep public copy short. The user wants less explanation and more proof.
 
-That is enough to understand the current product direction fast.
+## Known traps
+
+- The public site can still underexpress the warehouse signal.
+- The B2B page can easily drift back into vague “intelligence platform” copy unless backed by actual artifacts.
+- Some environment checks may fail inside sandboxed shells and need elevated reruns.
+- Screenshot/video proof is still an open workflow gap.
+
+## What to do first in a fresh session
+
+1. Confirm branch and git status.
+2. Read the docs listed above.
+3. Open:
+   - `src/components/ObservatoryExperience.tsx`
+   - `src/components/DataVisualizations.tsx`
+   - `src/components/Insights.tsx`
+   - `src/lib/publicMetrics.ts`
+   - `api/insights/dashboard.ts`
+4. Run:
+   - `npm test`
+   - `npm run lint`
+   - `npm run build`
+5. Verify whether production still matches the current branch.

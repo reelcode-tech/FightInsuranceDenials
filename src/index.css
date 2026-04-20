@@ -8,24 +8,24 @@
 
 @layer base {
   :root {
-    --background: #08111f;
-    --foreground: #f6f2eb;
-    --card: #0f1728;
-    --card-foreground: #f6f2eb;
-    --popover: #0f1728;
-    --popover-foreground: #f6f2eb;
-    --primary: #8b5cf6;
+    --background: #f6fcfd;
+    --foreground: #12324a;
+    --card: #ffffff;
+    --card-foreground: #12324a;
+    --popover: #ffffff;
+    --popover-foreground: #12324a;
+    --primary: #0f5ea8;
     --primary-foreground: #ffffff;
-    --secondary: #162036;
-    --secondary-foreground: #d8e1ff;
-    --muted: #121b2f;
-    --muted-foreground: #9aa8c7;
-    --accent: #162036;
-    --accent-foreground: #f6f2eb;
+    --secondary: #eaf6f8;
+    --secondary-foreground: #12324a;
+    --muted: #eff8fb;
+    --muted-foreground: #5f7c8c;
+    --accent: #eaf6f8;
+    --accent-foreground: #12324a;
     --destructive: #c74b3c;
-    --border: rgba(255, 255, 255, 0.1);
-    --input: rgba(255, 255, 255, 0.12);
-    --ring: rgba(139, 92, 246, 0.45);
+    --border: rgba(18, 50, 74, 0.1);
+    --input: rgba(18, 50, 74, 0.08);
+    --ring: rgba(15, 94, 168, 0.28);
     --radius: 0.625rem;
   }
 
@@ -35,15 +35,16 @@
 
   html {
     background:
-      radial-gradient(circle at top, rgba(86, 124, 255, 0.18), transparent 30%),
-      linear-gradient(180deg, #08111f 0%, #09101b 100%);
+      radial-gradient(circle at top left, rgba(84, 183, 199, 0.14), transparent 28%),
+      radial-gradient(circle at top right, rgba(96, 201, 163, 0.14), transparent 28%),
+      linear-gradient(180deg, #f7fdff 0%, #eef8fb 100%);
   }
 
   body {
     background:
-      radial-gradient(circle at top left, rgba(226, 111, 81, 0.16), transparent 24%),
-      radial-gradient(circle at top right, rgba(107, 83, 255, 0.12), transparent 28%),
-      linear-gradient(180deg, #08111f 0%, #09101b 100%);
+      radial-gradient(circle at top left, rgba(84, 183, 199, 0.12), transparent 24%),
+      radial-gradient(circle at top right, rgba(96, 201, 163, 0.12), transparent 28%),
+      linear-gradient(180deg, #f7fdff 0%, #eef8fb 100%);
     color: var(--foreground);
     font-family: var(--font-sans);
     letter-spacing: -0.01em;
@@ -61,7 +62,7 @@
   }
 
   ::selection {
-    background: rgba(139, 92, 246, 0.35);
-    color: #fff;
+    background: rgba(84, 183, 199, 0.28);
+    color: #12324a;
   }
 }

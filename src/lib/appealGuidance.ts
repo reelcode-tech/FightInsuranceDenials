@@ -57,7 +57,7 @@ export const HOMEPAGE_NEWS: NewsCard[] = [
     title: 'That is where this database becomes the missing piece.',
     summary:
       'Regulators can force better process, but they cannot hand a patient comparable stories, repeat insurer language, or plan-specific precedent. That is what this database is for.',
-    stat: '1,000+ published stories already in the record',
+    stat: '1,173 published stories already in the record',
     pullQuote:
       'Scattered frustration is easy for insurers to ignore. A searchable public record is much harder to shrug off.',
     whatThisMeans:

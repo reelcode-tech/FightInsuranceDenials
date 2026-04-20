@@ -1,56 +1,48 @@
 # FightInsuranceDenials Current State
 
-Last updated: 2026-04-16
+Last updated: 2026-04-20
 
-This file is the quickest honest state snapshot for a new coding agent.
+## Current product state
 
-## 1. Current product state
+What is now materially better:
+- homepage is shorter, more proof-first, and more patient-usable
+- `/data-visualizations` now has a clearer public count, legends, methodology note, time window controls, and appeal-citation copy
+- `Evidence Patterns` now carries clearer “how to use this in your appeal” guidance and a consistent public-story count
+- public navigation and daughter-page structure exist and are live on production
 
-What is good:
-- strong core idea
-- public routed pages exist
-- live domain is connected
-- evidence page is moving toward broader question-driven insights
-- appeal flow exists and is more grounded than a generic chatbot
-- some warehouse-backed insights are now visible on the site
+What is still not good enough:
+- `Fight Back`, `Share Your Story`, and `Data Products` are still behind the homepage/data-viz standard
+- there is still too much copy in parts of the app
+- charts are better, but the site still needs more world-class visual polish and mobile QA
+- we still do not have browser-captured screenshots/video proof checked into the repo
+- the B2B / data-products story is still not backed by enough truly productized deliverables
 
-What is not good enough:
-- the overall UX is still too text-heavy
-- not enough charts, visuals, or visual hierarchy
-- homepage still lacks enough proof and social-trust framing
-- evidence still feels underpowered vs the actual warehouse signal
-- data-products page is better than before, but still not a genuinely compelling B2B pitch
-- the site still does not feel “finished”
+## Current data position
 
-## 2. Current data position
-
-Latest app-side counts recently used in product updates:
-- raw observations: `1788`
-- curated stories: `1771`
-- published/public stories: `1173`
-
-Latest warehouse-scale insight reference:
-- usable warehouse rows: `14,202`
-- this is the stronger signal layer and is documented in `docs/BIGQUERY_INSIGHTS_REPORT.md`
+Use these numbers consistently in the public product unless and until the business decision changes:
+- published/public stories: `1,173`
+- curated stories: `1,771`
+- raw observations: `1,788`
+- warehouse-scale usable rows reference: `14,202`
 
 Important interpretation:
-- the warehouse is richer than the public site
-- the bottleneck is not just ingestion volume
-- the bigger bottleneck is promotion, normalization, and public evidence modeling
+- the warehouse is stronger than the public site
+- the public product still underexpresses the strongest analytics
+- the bottleneck is not just ingestion, it is promotion, modeling, and presentation
 
-## 3. Strongest warehouse findings already identified
+## Strongest warehouse findings already identified
 
 Top denial reasons:
-- Prior Authorization: `2808`
-- Medical Necessity: `2612`
-- Coverage Exclusion: `1981`
-- Administrative: `1693`
-- Out of Network: `1223`
+- Prior Authorization: `2,808`
+- Medical Necessity: `2,612`
+- Coverage Exclusion: `1,981`
+- Administrative: `1,693`
+- Out of Network: `1,223`
 
 Top treatment/service fights:
-- Prescription medication: `1229`
-- Therapy services: `1194`
-- Cancer treatment and oncology care: `1092`
+- Prescription medication: `1,229`
+- Therapy services: `1,194`
+- Cancer treatment and oncology care: `1,092`
 - GLP-1 medication: `893`
 - Claims processing disputes: `748`
 
@@ -63,42 +55,35 @@ Strong repeat combinations:
 - GLP-1 medication + Prior Authorization: `404`
 - GLP-1 medication + Coverage Exclusion: `332`
 
-The public site should lean much harder on these broader modules instead of tiny low-count clusters.
+## What changed in Sprint 3.0
 
-## 4. What has already been fixed recently
+- homepage copy reduced sharply and reorganized around one primary patient question
+- long “Why now” rail replaced with 3 visual stat cards
+- proof strips now have explicit explanatory labels/tooltips
+- homepage now has a horizontal “Stories matching your situation” story rail
+- `/data-visualizations` now uses one story-count source of truth (`1,173`)
+- `/data-visualizations` now includes:
+  - insurer denial share donut
+  - state heatmap tile-map
+  - timeline with appeal success-rate overlay
+  - legends and methodology note
+  - export PDF and copy-citation actions
+- `Evidence Patterns` now uses the same public-story count and clearer appeal microcopy
 
-- production API import/runtime issue was fixed so the public observatory routes can run on Vercel
-- insurer normalization was hardened so long narrative text no longer becomes fake insurer names
-- Neon normalize/promote backfills were batched for reliability
-- evidence page now includes warehouse-backed snapshot cards and user-question cards
-- footer/sitemap-style public shell now exists
-- About / Trust has been rewritten into a stronger public-interest trust page
-- Data Products has been reframed into a more credible organization-facing page
-
-## 5. What is still open
+## What is still open
 
 Highest-value open work:
-1. build a dedicated data visualization / dashboard experience
-2. make the homepage visually stronger and less text-heavy
-3. make the story browser cleaner and more obviously useful
-4. finish turning BigQuery findings into public evidence modules
-5. make the data-products page feel like a real sellable offer or simplify it further
+1. bring `Fight Back`, `Share Your Story`, and `Data Products` up to the same clarity/design bar
+2. turn data products into something visibly real and sellable
+3. add screenshot/video/browser verification to the workflow
+4. deepen warehouse-backed public evidence modules beyond the current dashboard level
+5. continue improving ingestion quality, especially insurer/category/procedure normalization
 
-## 6. What not to do
+## What the user is explicitly frustrated by
 
-Do not:
-- add more shallow connectors just to increase source count
-- reintroduce internal jargon like “cleaned slice” on public pages
-- rely on tiny `2-15 story` widgets as the main public evidence
-- treat Firestore as the analytics source of truth
-- assume more rows alone will fix the product
+- the site still risks sliding back into text-heavy “AI-generated” design
+- the product needs to feel world-class for a patient in crisis, not just “improved”
+- the data-products offer still needs to prove it is real
+- work must happen on the real production codebase, not stale copies
 
-## 7. What the user is explicitly frustrated by
-
-- too much text on every page
-- not enough visuals, charts, graphs, and pictures
-- too little evidence of real product maturity
-- not enough demonstration of real sellable data products
-- too much time spent on low-yield connector work without clear payoff
-
-This frustration is legitimate. The next agent should not pretend otherwise.
+Take that frustration seriously. The user is not asking for cosmetic tweaks. They are asking for a product that actually reduces panic and increases confidence.

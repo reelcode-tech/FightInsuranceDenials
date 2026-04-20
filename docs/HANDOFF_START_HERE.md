@@ -1,100 +1,74 @@
-# FightInsuranceDenials Agent Handoff
+# FightInsuranceDenials Handoff Start Here
 
-Last updated: 2026-04-16
+Last updated: 2026-04-20
 
-This is the entry point for any new coding agent taking over the project.
+This is the first file a new agent or session should read.
 
-## 1. Latest code
+## Latest code
 
-- Local working repo:
+- Local repo:
   - `C:\Users\sashi\Projects\FightInsuranceDenials-working`
 - GitHub source of truth:
   - `https://github.com/reelcode-tech/FightInsuranceDenials`
-- Current primary branch:
-  - `main`
-- Latest known handoff commit:
-  - `1219d56fd4ef4e62ae55114b4895a9ec95b0f511`
+- Active working branch:
+  - `codex/fix-everything-2026`
+- Latest production-focused commit before this handoff package:
+  - `a5a2908` (`Sprint 2.0 urgent visual overhaul`)
+- Sprint 3.0 local state:
+  - Homepage/data-viz/usability overhaul is implemented in the working tree and deployed to production on 2026-04-20.
 
-## 2. Read these files first, in this order
+## Production
+
+- Primary domain:
+  - `https://www.fightinsurancedenials.com`
+- Key public routes:
+  - `/`
+  - `/fight-back`
+  - `/share-your-story`
+  - `/evidence-patterns`
+  - `/data-visualizations`
+  - `/data-products`
+  - `/about-trust`
+
+## Read these next, in order
 
 1. `docs/HANDOFF_START_HERE.md`
-2. `docs/AGENT_CURRENT_STATE.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/TODO.md`
-5. `docs/MVP_FEEDBACK_TRACKER.md`
-6. `docs/BIGQUERY_INSIGHTS_REPORT.md`
-7. `TESTING.md`
+2. `docs/PROJECT_INTENT.md`
+3. `docs/AGENT_CURRENT_STATE.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/SKILL_PLAYBOOK.md`
+6. `docs/LESSONS_LEARNED.md`
+7. `docs/TODO.md`
+8. `docs/MVP_FEEDBACK_TRACKER.md`
+9. `docs/BIGQUERY_INSIGHTS_REPORT.md`
+10. `docs/NEXT_SESSION_PROMPT.md`
 
-Do not start by randomly reading components. Read the docs first so you understand what is already known to be weak, what has already been tried, and what the user is unhappy about.
+## What this project is trying to become
 
-## 3. What this product is
+FightInsuranceDenials is meant to become:
+- the first public, patient-usable database of real health insurance denials
+- a searchable precedent layer for patients writing appeals
+- a public-interest evidence product that can also support hospitals, lawyers, regulators, and employers
 
-FightInsuranceDenials is:
-- a public health insurance denial database
-- a searchable evidence layer for patients
-- an AI-assisted appeal-writing tool
-- a growing warehouse + data product foundation
+It is not just a landing page. It is supposed to become a usable patient tool first, then a serious analytics/data product second.
 
-It is not yet a polished production product. It is an early-stage MVP with a strong core idea and incomplete execution.
+## What success looks like
 
-## 4. What matters most right now
+Success is not “more pages” or “more connectors.”
 
-The user’s top concerns:
-- UX is still too text-heavy and not visual enough
-- the site still feels too much like an MVP/prototype
-- evidence patterns are underpowered on the public site
-- data products do not yet feel real enough to sell
-- the public site still underexpresses the stronger BigQuery signal
+Success looks like:
+- a stressed patient can land on the homepage and understand what to do in under 10 seconds
+- the patient can find matching denial patterns without reading walls of text
+- charts and story evidence are clear enough to paste into an appeal packet
+- the public site reflects the stronger warehouse signal instead of tiny brittle story clusters
+- the B2B / data-products layer contains at least one artifact that feels genuinely sellable
 
-The next agent should prioritize:
-1. cleaner, more visual public UX
-2. stronger evidence/dashboard modules from warehouse insights
-3. clearer productization of sellable data outputs
-4. continued improvement of data quality and promotion logic
+## Short warning
 
-## 5. Exact local commands
+Do not assume the site is done because it now looks better than before.
 
-Install / run:
-
-```powershell
-cd "C:\Users\sashi\Projects\FightInsuranceDenials-working"
-npm install
-npm run dev
-```
-
-Quality gate:
-
-```powershell
-npm test
-npm run lint
-npm run build
-```
-
-Warehouse / data tasks:
-
-```powershell
-npm run warehouse:normalize
-npm run warehouse:promote
-npm run warehouse:autopilot
-npm run warehouse:deep-backfill
-```
-
-## 6. Deployment / hosting
-
-- Production is on Vercel project:
-  - `fight-insurance-denials`
-- Public domains:
-  - `https://fightinsurancedenials.com`
-  - `https://www.fightinsurancedenials.com`
-- Latest known production deploy at handoff time:
-  - commit `1219d56`
-  - message: `Polish trust and data product pages`
-
-## 7. Handoff rule
-
-Before making any major UX or data-layer change:
-- check `docs/TODO.md`
-- check `docs/MVP_FEEDBACK_TRACKER.md`
-- check `docs/BIGQUERY_INSIGHTS_REPORT.md`
-
-Those three files are the current operating system for this project.
+Major gaps still remain:
+- the remaining pages are not yet fully aligned to the new clarity standard
+- browser screenshot/video proof is still missing from this repo handoff
+- data products are still more promising than fully real
+- warehouse promotion and public evidence modeling still need work
