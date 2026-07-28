@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Dashboard from './components/Dashboard';
 import SubmitDenial from './components/SubmitDenial';
-import Insights from './components/Insights';
 import DataVisualizations from './components/DataVisualizations';
 import AppealTools from './components/AppealTools';
 import B2BDataProducts from './components/B2BDataProducts';
@@ -12,12 +11,21 @@ import { Menu, ShieldAlert, X } from 'lucide-react';
 import { auth } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { toast } from 'sonner';
-import { AppTab, getTabFromPath, TAB_PATHS } from './lib/siteRoutes';
+import { AppTab, getCanonicalPathForPath, getTabFromPath, seedVisualFilters, TAB_PATHS } from './lib/siteRoutes';
+import { applyPageSeo } from './lib/seo';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>(() => getTabFromPath(window.location.pathname));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const replaceWithCanonicalPath = React.useCallback((pathname: string, tab: AppTab) => {
+    const canonicalPath = TAB_PATHS[tab];
+    const normalized = pathname.replace(/\/+$/, '') || '/';
+    if (normalized !== canonicalPath) {
+      window.history.replaceState({ tab }, '', canonicalPath);
+    }
+  }, []);
 
   const navigateToTab = React.useCallback((tab: AppTab) => {
     const nextPath = TAB_PATHS[tab];
@@ -29,7 +37,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const openPatternFinder = React.useCallback(() => {
+    seedVisualFilters({
+      quickFilterLabel: 'Find my denial pattern',
+    });
+    navigateToTab('visuals');
+  }, [navigateToTab]);
+
   useEffect(() => {
+    replaceWithCanonicalPath(window.location.pathname, activeTab);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -40,7 +56,9 @@ export default function App() {
     };
 
     const handlePopState = () => {
-      setActiveTab(getTabFromPath(window.location.pathname));
+      const nextTab = getTabFromPath(window.location.pathname);
+      replaceWithCanonicalPath(window.location.pathname, nextTab);
+      setActiveTab(nextTab);
       setIsMobileMenuOpen(false);
     };
 
@@ -51,7 +69,11 @@ export default function App() {
       window.removeEventListener('nav', handleNav);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [navigateToTab]);
+  }, [activeTab, navigateToTab, replaceWithCanonicalPath]);
+
+  useEffect(() => {
+    applyPageSeo(activeTab);
+  }, [activeTab]);
 
   const handleLogin = async () => {
     try {
@@ -71,11 +93,11 @@ export default function App() {
 
   const navItems: Array<{ id: AppTab; label: string }> = [
     { id: 'home', label: 'Home' },
-    { id: 'appeal', label: 'Fight Back' },
-    { id: 'insights', label: 'Evidence Patterns' },
-    { id: 'visuals', label: 'Data Visualizations' },
-    { id: 'b2b', label: 'Data Products' },
-    { id: 'about', label: 'About Trust' },
+    { id: 'appeal', label: 'Write My Appeal' },
+    { id: 'visuals', label: 'Evidence & Insights' },
+    { id: 'share', label: 'Share Your Story' },
+    { id: 'b2b', label: 'For Employers' },
+    { id: 'about', label: 'About' },
   ];
 
   const footerGroups: Array<{ title: string; items: Array<{ label: string; tab: AppTab }> }> = [
@@ -83,21 +105,15 @@ export default function App() {
       title: 'Explore',
       items: [
         { label: 'Home', tab: 'home' },
-        { label: 'Fight Back', tab: 'appeal' },
-        { label: 'Evidence Patterns', tab: 'insights' },
-        { label: 'Data Visualizations', tab: 'visuals' },
-        { label: 'Data Products', tab: 'b2b' },
-      ],
-    },
-    {
-      title: 'Contribute',
-      items: [
+        { label: 'Write My Appeal', tab: 'appeal' },
+        { label: 'Evidence & Insights', tab: 'visuals' },
         { label: 'Share Your Story', tab: 'share' },
+        { label: 'For Employers', tab: 'b2b' },
       ],
     },
     {
-      title: 'Trust',
-      items: [{ label: 'About Trust', tab: 'about' }],
+      title: 'About',
+      items: [{ label: 'About', tab: 'about' }],
     },
   ];
 
@@ -108,7 +124,6 @@ export default function App() {
       case 'appeal':
         return <AppealTools />;
       case 'insights':
-        return <Insights />;
       case 'visuals':
         return <DataVisualizations />;
       case 'b2b':
@@ -132,7 +147,7 @@ export default function App() {
             <div>
               <p className="text-sm font-bold tracking-tight text-[#12324a]">FightInsuranceDenials</p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#628393]">
-                Health insurance denial database
+                Health insurance denial help
               </p>
             </div>
           </button>
@@ -151,6 +166,12 @@ export default function App() {
                 {item.label}
               </button>
             ))}
+            <Button
+              onClick={openPatternFinder}
+              className="ml-2 rounded-full bg-[#12324a] px-5 text-white hover:bg-[#0e2b43]"
+            >
+              Search Real Denials
+            </Button>
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
@@ -188,6 +209,9 @@ export default function App() {
         {isMobileMenuOpen && (
           <div className="border-t border-[#d7e7eb] bg-[#f8fcfd] px-5 pb-5 pt-3 lg:hidden">
             <div className="flex flex-col gap-2">
+              <Button onClick={openPatternFinder} className="rounded-2xl bg-[#12324a] text-white hover:bg-[#0e2b43]">
+                Search Real Denials
+              </Button>
               {navItems.map((item) => (
                 <button
                   key={item.id}
@@ -220,15 +244,17 @@ export default function App() {
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:grid-cols-[1.2fr_1fr] md:px-8">
           <div className="space-y-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#628393]">
-              Public health insurance denial database
+              Health insurance denial help
             </p>
             <h2 className="max-w-xl text-3xl tracking-[-0.05em] text-[#12324a]">
-              Built so patients do not have to fight a denial in isolation.
+              Your insurance said no. We help you fight back.
             </h2>
             <p className="max-w-2xl text-sm leading-7 text-[#5f7c8c]">
-              Search the record, compare your denial, share your story, and build a stronger appeal with evidence that is bigger
-              than one phone call or one letter.
+              Write your appeal letter, search real denials, and share your story so the next patient has more proof.
             </p>
+            <Button onClick={() => navigateToTab('appeal')} className="mt-2 rounded-full bg-[#0f5ea8] px-5 text-white hover:bg-[#0c4f8f]">
+              Write My Appeal Letter
+            </Button>
           </div>
 
           <div className="grid gap-8 sm:grid-cols-3">
