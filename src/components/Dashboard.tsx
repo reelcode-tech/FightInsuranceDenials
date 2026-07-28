@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import ObservatoryExperience from "@/src/components/ObservatoryExperience";
 import { type PatternsResponse } from '@/src/lib/insightsPresentation';
 import { normalizePublicStoryCount } from '@/src/lib/publicMetrics';
+import { seedVisualFilters } from '@/src/lib/siteRoutes';
 
 export default function Dashboard() {
   const STORY_SEED_KEY = 'fid_story_seed';
@@ -59,11 +60,24 @@ export default function Dashboard() {
 
   const topCategory = patterns?.topCategories?.[0];
 
-  const navigate = (tab: 'share' | 'appeal' | 'insights') => {
+  const navigate = (tab: 'share' | 'appeal' | 'insights' | 'b2b') => {
     window.dispatchEvent(new CustomEvent('nav', { detail: tab }));
     if (tab === 'insights') {
       toast.success("Opening observatory benchmarks");
     }
+  };
+
+  const findPatternFromQuery = (presetLabel?: string) => {
+    const query = searchTerm.trim();
+    const filterLabel = presetLabel || query;
+
+    seedVisualFilters({
+      quickFilterLabel: filterLabel || 'Find my denial pattern',
+      ...(query ? { reason: query } : {}),
+    });
+
+    window.dispatchEvent(new CustomEvent('nav', { detail: 'visuals' }));
+    toast.success('Opening filtered denial patterns');
   };
 
   const seedStoryFromQuery = () => {
@@ -83,20 +97,6 @@ export default function Dashboard() {
     navigate('share');
   };
 
-  const openRecordFromQuery = () => {
-    const query = searchTerm.trim();
-    if (query) {
-      window.sessionStorage.setItem(
-        'fid_record_query',
-        JSON.stringify({
-          query,
-          createdAt: new Date().toISOString(),
-        }),
-      );
-    }
-    navigate('insights');
-  };
-
   return (
     <ObservatoryExperience
       featuredStories={featuredStories}
@@ -105,7 +105,7 @@ export default function Dashboard() {
       searchTerm={searchTerm}
       onSearchTermChange={setSearchTerm}
       onNavigate={navigate}
-      onOpenRecordFromQuery={openRecordFromQuery}
+      onFindPatternFromQuery={findPatternFromQuery}
       onStartStoryFromQuery={seedStoryFromQuery}
     />
   );

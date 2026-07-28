@@ -1,11 +1,24 @@
 import React from 'react';
-import { Copy, Download, Search, Share2 } from 'lucide-react';
+import { Copy, FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Area, AreaChart, Cell, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { PatternsResponse } from '@/src/lib/insightsPresentation';
+import type { DenialRecord } from '@/src/types';
+import {
+  buildAppealParagraph,
+  buildAppealQuery,
+  buildAppealSuccessSummary,
+  clearVisualFilterSeed,
+  persistAppealContext,
+  readVisualFilterSeed,
+  type AppealContext,
+} from '@/src/lib/appealLeverage';
 import { formatPublicStoryCount, normalizePublicStoryCount } from '@/src/lib/publicMetrics';
+import { normalizeInsurerName, normalizeProcedureLabel } from '@/src/lib/normalization';
+import AppealLeverageDrawer from '@/src/components/AppealLeverageDrawer';
+import { trackEvent } from '@/src/lib/analytics';
 
 type MetricRow = { label: string; value: number };
-
 type TimelineRow = {
   label: string;
   shortLabel: string;
@@ -16,9 +29,6 @@ type TimelineRow = {
 
 type DashboardResponse = {
   status: 'success' | 'error';
-  snapshot?: {
-    meta: { updatedLabel: string; usableRows: string; source: string };
-  };
   dashboard?: {
     methodology: string;
     windowLabel: string;
@@ -29,11 +39,6 @@ type DashboardResponse = {
       topProcedure: string;
       appealSuccessRate: number;
     };
-    filters: {
-      insurers: string[];
-      reasons: string[];
-      states: string[];
-    };
     charts: {
       insurerShare: MetricRow[];
       stateShare: MetricRow[];
@@ -42,430 +47,783 @@ type DashboardResponse = {
   };
 };
 
-const DONUT_COLORS = ['#0f5ea8', '#2a7cc7', '#31a68e', '#6fc8b7', '#8fd6cc', '#c8dde3'];
-const FILTER_PRESETS = ['All Insurers', 'All Reasons', 'My State'];
-const TIME_WINDOWS = ['Last 12 months', 'All time'];
-const ACTION_CARDS = [
-  {
-    title: 'Use this chart in your appeal',
-    body: 'Copy the citation, then explain that your denial matches a repeat pattern already visible in the public record.',
-    tab: 'appeal',
-    cta: 'Open Fight Back',
-  },
-  {
-    title: 'Search the matching stories',
-    body: 'Move from the chart to the actual patient stories that use the same insurer, treatment, or denial language.',
-    tab: 'insights',
-    cta: 'Open Evidence Patterns',
-  },
-  {
-    title: 'Strengthen the record',
-    body: 'If your denial is missing, add it so the next patient has more precedent to cite.',
-    tab: 'share',
-    cta: 'Share your story',
-  },
-];
-
-const STATE_TILE_POSITIONS: Record<string, { col: number; row: number }> = {
-  WA: { col: 0, row: 1 }, OR: { col: 0, row: 2 }, CA: { col: 0, row: 3 }, AK: { col: 0, row: 6 }, HI: { col: 1, row: 6 },
-  ID: { col: 1, row: 2 }, NV: { col: 1, row: 3 }, AZ: { col: 1, row: 4 }, MT: { col: 2, row: 1 }, WY: { col: 2, row: 2 },
-  UT: { col: 2, row: 3 }, CO: { col: 2, row: 4 }, NM: { col: 2, row: 5 }, ND: { col: 3, row: 1 }, SD: { col: 3, row: 2 },
-  NE: { col: 3, row: 3 }, KS: { col: 3, row: 4 }, OK: { col: 3, row: 5 }, TX: { col: 3, row: 6 }, MN: { col: 4, row: 1 },
-  IA: { col: 4, row: 2 }, MO: { col: 4, row: 3 }, AR: { col: 4, row: 4 }, LA: { col: 4, row: 5 }, WI: { col: 5, row: 1 },
-  IL: { col: 5, row: 2 }, MS: { col: 5, row: 5 }, MI: { col: 6, row: 1 }, IN: { col: 6, row: 2 }, KY: { col: 6, row: 3 },
-  TN: { col: 6, row: 4 }, AL: { col: 6, row: 5 }, GA: { col: 7, row: 5 }, FL: { col: 8, row: 6 }, OH: { col: 7, row: 2 },
-  WV: { col: 7, row: 3 }, VA: { col: 8, row: 3 }, NC: { col: 8, row: 4 }, SC: { col: 8, row: 5 }, PA: { col: 8, row: 2 },
-  NY: { col: 9, row: 1 }, VT: { col: 10, row: 0 }, NH: { col: 11, row: 0 }, ME: { col: 12, row: 0 }, NJ: { col: 9, row: 2 },
-  MD: { col: 9, row: 3 }, DE: { col: 10, row: 3 }, CT: { col: 10, row: 1 }, RI: { col: 11, row: 1 }, MA: { col: 11, row: 0 },
-  DC: { col: 10, row: 4 },
+type SearchResponse = {
+  status: 'success' | 'error';
+  query?: string;
+  total?: number;
+  stories?: DenialRecord[];
 };
 
-const STATE_NAME_TO_CODE: Record<string, string> = {
-  Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA', Colorado: 'CO', Connecticut: 'CT',
-  Delaware: 'DE', Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA',
-  Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI',
-  Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH',
-  'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH',
-  Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD',
-  Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV',
-  Wisconsin: 'WI', Wyoming: 'WY', 'District of Columbia': 'DC',
+type GuidedQuestion = {
+  title: string;
+  description: string;
+  insurer?: string;
+  reason?: string;
+  procedure?: string;
+  state?: string;
+  count?: number;
 };
 
-function normalizeStateCode(label: string) {
-  if (!label) return '';
-  const trimmed = label.trim();
-  if (trimmed.length === 2) return trimmed.toUpperCase();
-  return STATE_NAME_TO_CODE[trimmed] || '';
+const DONUT_COLORS = ['#0f5ea8', '#2a7cc7', '#31a68e', '#6fc8b7', '#8fd6cc'];
+
+function shareOfTotal(value: number, total: number) {
+  if (!total) return '0.0%';
+  return `${((value / total) * 100).toFixed(1)}%`;
 }
 
-function intensityColor(value: number, maxValue: number) {
-  if (!value || !maxValue) return '#d8e6ed';
-  const ratio = value / maxValue;
-  if (ratio > 0.8) return '#0f5ea8';
-  if (ratio > 0.55) return '#2a7cc7';
-  if (ratio > 0.35) return '#31a68e';
-  if (ratio > 0.18) return '#74cfbf';
-  return '#b9dde0';
+function buildGuidedQuestions(patterns: PatternsResponse | null, dashboard: DashboardResponse['dashboard'] | undefined) {
+  if (!patterns || !dashboard) {
+    return [
+      { title: 'Am I the only one getting denied for this?', description: 'Start here to see how many other patients are dealing with the same kind of denial.' },
+      { title: 'What excuse is my insurer using on everyone else?', description: 'We show the denial reason that keeps coming up in real stories.' },
+      { title: 'What treatment is getting blocked most?', description: 'We show which treatments patients keep fighting for the most.' },
+      { title: 'Is this happening in my state?', description: 'We show where patients are reporting the same fight.' },
+      { title: 'What actually helped other patients?', description: 'We show the success rate from stories where the outcome is known.' },
+      { title: 'Is this new or getting worse?', description: 'We show whether these denials are rising or settling down.' },
+    ];
+  }
+
+  const topInsurer = patterns.topInsurers[0];
+  const topCategory = patterns.topCategories[0];
+  const topProcedure = patterns.topProcedures[0];
+  const topState = dashboard.charts.stateShare[0];
+
+  const questions: GuidedQuestion[] = [
+    {
+      title: 'Am I the only one getting denied for this?',
+      description: topProcedure
+        ? `${topProcedure.label} is one of the biggest fights in the public record right now.`
+        : 'We can show you similar denials from other patients right away.',
+      procedure: topProcedure?.label,
+      count: topProcedure?.value,
+    },
+    {
+      title: 'What excuse is my insurer using on everyone else?',
+      description: topCategory
+        ? `${topCategory.label} is the excuse showing up most often in the stories we can compare.`
+        : 'We can show you the most common excuse tied to your insurer.',
+      reason: topCategory?.label,
+      insurer: topInsurer?.label,
+      count: topCategory?.value,
+    },
+    {
+      title: 'What treatment is getting blocked most?',
+      description: topProcedure
+        ? `${topProcedure.label} is showing up more than any other treatment fight right now.`
+        : 'We can show you which treatments patients keep fighting for.',
+      procedure: topProcedure?.label,
+      count: topProcedure?.value,
+    },
+    {
+      title: 'Is this happening in my state?',
+      description: topState
+        ? `${topState.label} is one of the states with the most public stories in this view.`
+        : 'We can show you which states are reporting the same fight.',
+      state: topState?.label,
+      count: topState?.value,
+    },
+    {
+      title: 'What actually helped other patients?',
+      description: `Right now, ${dashboard.totals.appealSuccessRate}% of stories with a recorded outcome show a successful appeal.`,
+      insurer: topInsurer?.label,
+      reason: topCategory?.label,
+      procedure: topProcedure?.label,
+      count: dashboard.totals.appealSuccessRate,
+    },
+    {
+      title: 'Is this new or getting worse?',
+      description: 'The trend line below shows whether these denials are rising, falling, or staying steady.',
+      insurer: topInsurer?.label,
+      reason: topCategory?.label,
+      procedure: topProcedure?.label,
+    },
+  ];
+
+  return questions;
 }
 
-function formatCitation(insurer: string, stories: number, reason: string, successRate: number, windowLabel: string) {
-  return `According to FightInsuranceDenials (${new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })}), the current ${windowLabel.toLowerCase()} view covers ${formatPublicStoryCount(stories)} public stories. ${insurer} appears most often, ${reason} is the most repeated denial reason, and the database currently shows an appeal success signal of ${successRate}% in stories with recorded outcomes.`;
-}
-
-function exportDashboardPdf(title: string, totals: DashboardResponse['dashboard']['totals'], methodology: string, windowLabel: string) {
-  import('jspdf').then(({ jsPDF }) => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text(title, 16, 22);
-    doc.setFontSize(11);
-    doc.text(`Published stories: ${formatPublicStoryCount(totals.publishedStories)}`, 16, 40);
-    doc.text(`Top insurer: ${totals.topInsurer}`, 16, 48);
-    doc.text(`Top denial reason: ${totals.topCategory}`, 16, 56);
-    doc.text(`Appeal success signal: ${totals.appealSuccessRate}%`, 16, 64);
-    doc.text(`Window: ${windowLabel}`, 16, 72);
-    doc.text(methodology, 16, 88, { maxWidth: 178 });
-    doc.save('fight-insurance-denials-dashboard.pdf');
-  });
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
+function AppealCopyBox({
+  paragraph,
+  helper,
+  successRate,
+  onCopy,
+  onGenerate,
+}: {
+  paragraph: string;
+  helper: string;
+  successRate: number;
+  onCopy: () => void;
+  onGenerate: () => void;
+}) {
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#5f7c8c]">
-      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-      <span>{label}</span>
+    <div className="mt-5 rounded-[1.6rem] border border-[#d7e8ee] bg-[linear-gradient(180deg,#f8fdff_0%,#eef8fb_100%)] p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#2e7888]">Use this in your appeal (60 seconds)</p>
+      <p className="mt-3 text-sm leading-7 text-[#557082]">{paragraph}</p>
+      <p className="mt-3 text-sm font-semibold text-[#0f5ea8]">{helper}</p>
+      <p className="mt-1 text-sm font-medium text-[#167b6d]">{buildAppealSuccessSummary(successRate)}</p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button variant="outline" onClick={onCopy} className="rounded-[1rem] border-[#d5e6ec] bg-white text-[#12324a] hover:bg-[#f4fbfd]">
+          <Copy className="mr-2 h-4 w-4" />
+          Copy appeal paragraph
+        </Button>
+        <Button onClick={onGenerate} className="rounded-[1rem] bg-[#0f5ea8] text-white hover:bg-[#0c4f8f]">
+          <FileText className="mr-2 h-4 w-4" />
+          Generate full AI appeal letter
+        </Button>
+      </div>
     </div>
   );
 }
 
-function StateTileMap({ rows }: { rows: MetricRow[] }) {
-  const valuesByCode = React.useMemo(() => {
-    const map = new Map<string, number>();
-    rows.forEach((row) => {
-      const code = normalizeStateCode(row.label);
-      if (code) map.set(code, row.value);
-    });
-    return map;
-  }, [rows]);
+function buildContext(input: {
+  title: string;
+  insurer?: string;
+  reason?: string;
+  procedure?: string;
+  state?: string;
+  publishedStories: number;
+  evidenceCount?: number;
+  successRate: number;
+  scopeLabel: string;
+  sourceLabel: string;
+}) {
+  return {
+    title: input.title,
+    paragraph: buildAppealParagraph({
+      scopeLabel: input.scopeLabel,
+      publishedStories: input.publishedStories,
+      evidenceCount: input.evidenceCount,
+      successRate: input.successRate,
+      insurer: input.insurer,
+      reason: input.reason,
+      procedure: input.procedure,
+      state: input.state,
+    }),
+    query: buildAppealQuery([input.insurer, input.reason, input.procedure, input.state]),
+    insurer: input.insurer,
+    reason: input.reason,
+    procedure: input.procedure,
+    state: input.state,
+    publishedStories: input.publishedStories,
+    evidenceCount: input.evidenceCount,
+    successRate: input.successRate,
+    sourceLabel: input.sourceLabel,
+    createdAt: new Date().toISOString(),
+  } satisfies AppealContext;
+}
 
-  const maxValue = Math.max(...Array.from(valuesByCode.values()), 0);
-  const tileWidth = 32;
-  const tileHeight = 26;
-  const gap = 6;
-
-  return (
-    <svg viewBox="0 0 520 280" className="h-full w-full">
-      {Object.entries(STATE_TILE_POSITIONS).map(([code, position]) => {
-        const x = position.col * (tileWidth + gap);
-        const y = position.row * (tileHeight + gap);
-        const value = valuesByCode.get(code) || 0;
-        return (
-          <g key={code} transform={`translate(${x}, ${y})`}>
-            <rect rx="9" width={tileWidth} height={tileHeight} fill={intensityColor(value, maxValue)} stroke="rgba(10,41,66,0.12)" />
-            <text x={tileWidth / 2} y={16} textAnchor="middle" fontSize="10" fill={value > 0 ? '#f8fcff' : '#5a7486'} fontWeight="700">
-              {code}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
+function copyToClipboard(text: string) {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+  navigator.clipboard.writeText(text).catch(() => undefined);
 }
 
 export default function DataVisualizations() {
-  const [payload, setPayload] = React.useState<DashboardResponse | null>(null);
+  const [patterns, setPatterns] = React.useState<PatternsResponse | null>(null);
+  const [dashboardPayload, setDashboardPayload] = React.useState<DashboardResponse | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [activeFilter, setActiveFilter] = React.useState('All Insurers');
-  const [timeWindow, setTimeWindow] = React.useState('Last 12 months');
-  const [copyState, setCopyState] = React.useState<'idle' | 'done'>('idle');
+  const [selectedQuestion, setSelectedQuestion] = React.useState('');
+  const [results, setResults] = React.useState<DenialRecord[]>([]);
+  const [fallbackResults, setFallbackResults] = React.useState<DenialRecord[]>([]);
+  const [searchState, setSearchState] = React.useState<'idle' | 'loading' | 'ready'>('idle');
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   React.useEffect(() => {
     const load = async () => {
-      const response = await fetch('/api/insights/dashboard', { cache: 'no-store' });
-      const json = await response.json();
-      setPayload(json);
+      const [patternsResponse, dashboardResponse] = await Promise.all([
+        fetch('/api/insights/patterns', { cache: 'no-store' }),
+        fetch('/api/insights/dashboard', { cache: 'no-store' }),
+      ]);
+      const patternsJson = await patternsResponse.json();
+      const dashboardJson = await dashboardResponse.json();
+      setPatterns(patternsJson);
+      setDashboardPayload(dashboardJson);
     };
 
-    load().catch((error) => console.error('Failed to load data visualizations', error));
+    load().catch((error) => console.error('Failed to load Evidence & Insights', error));
   }, []);
 
-  const dashboard = payload?.dashboard;
-  const snapshot = payload?.snapshot;
-  const insurerShare = dashboard?.charts.insurerShare || [];
-  const stateShare = dashboard?.charts.stateShare || [];
-  const timeline = dashboard?.charts.timeline || [];
-  const totals = dashboard?.totals;
-  const publishedStories = normalizePublicStoryCount(totals?.publishedStories);
+  const dashboard = dashboardPayload?.dashboard;
+  const publishedStories = normalizePublicStoryCount(dashboard?.totals.publishedStories);
+  const guidedQuestions = React.useMemo(() => buildGuidedQuestions(patterns, dashboard), [patterns, dashboard]);
 
-  const citation = totals
-    ? formatCitation(totals.topInsurer, publishedStories, totals.topCategory, totals.appealSuccessRate, dashboard?.windowLabel || timeWindow)
-    : '';
+  React.useEffect(() => {
+    if (guidedQuestions.length && !selectedQuestion) {
+      const seeded = readVisualFilterSeed();
+      if (seeded?.quickFilterLabel) {
+        setSelectedQuestion(seeded.quickFilterLabel);
+        setSearchTerm(buildAppealQuery([seeded.insurer, seeded.reason, seeded.procedure, seeded.state]));
+        clearVisualFilterSeed();
+        return;
+      }
+      setSelectedQuestion(guidedQuestions[0].title);
+    }
+  }, [guidedQuestions, selectedQuestion]);
+
+  const activeQuestion = guidedQuestions.find((item) => item.title === selectedQuestion) || guidedQuestions[0] || null;
+  const activeSearch = searchTerm.trim() || buildAppealQuery([
+    activeQuestion?.insurer,
+    activeQuestion?.reason,
+    activeQuestion?.procedure,
+    activeQuestion?.state,
+  ]);
+
+  const quickInsurers = patterns?.topInsurers.slice(0, 4) || [];
+  const quickProcedures = patterns?.topProcedures.slice(0, 4) || [];
+  const quickReasons = patterns?.topCategories.slice(0, 4) || [];
+
+  React.useEffect(() => {
+    if (!activeSearch) return;
+    let cancelled = false;
+
+    const normalizedInsurer = normalizeInsurerName(activeSearch);
+    const normalizedProcedure = normalizeProcedureLabel(activeSearch);
+    const fallbackQuery = buildAppealQuery([
+      normalizedInsurer !== 'Unknown' ? normalizedInsurer : '',
+      normalizedProcedure !== 'Insurance denial evidence' ? normalizedProcedure : '',
+      patterns?.topCategories[0]?.label || '',
+    ]);
+
+    const loadSearch = async () => {
+      setSearchState('loading');
+      const primaryResponse = await fetch(`/api/observatory/stories?q=${encodeURIComponent(activeSearch)}&limit=8`, { cache: 'no-store' });
+      const primaryJson = (await primaryResponse.json()) as SearchResponse;
+      if (cancelled) return;
+      setResults(primaryJson.stories || []);
+
+      if ((primaryJson.total || 0) === 0 && fallbackQuery && fallbackQuery !== activeSearch) {
+        const fallbackResponse = await fetch(`/api/observatory/stories?q=${encodeURIComponent(fallbackQuery)}&limit=6`, { cache: 'no-store' });
+        const fallbackJson = (await fallbackResponse.json()) as SearchResponse;
+        if (cancelled) return;
+        setFallbackResults(fallbackJson.stories || []);
+      } else {
+        setFallbackResults([]);
+      }
+
+      setSearchState('ready');
+    };
+
+    loadSearch().catch((error) => {
+      if (!cancelled) {
+        console.error('Failed to search stories', error);
+        setResults([]);
+        setFallbackResults([]);
+        setSearchState('ready');
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSearch, patterns]);
+
+  const insurerData = React.useMemo(() => {
+    if (!dashboard?.charts.insurerShare?.length) return [];
+    if (!activeQuestion?.insurer) return dashboard.charts.insurerShare.slice(0, 5);
+
+    const selected = dashboard.charts.insurerShare.find((item) => item.label === activeQuestion.insurer);
+    const total = dashboard.charts.insurerShare.reduce((sum, item) => sum + item.value, 0);
+    if (!selected) return dashboard.charts.insurerShare.slice(0, 5);
+    const otherValue = Math.max(total - selected.value, 0);
+    return otherValue ? [selected, { label: 'Other insurers', value: otherValue }] : [selected];
+  }, [dashboard, activeQuestion]);
+
+  const reasonData = patterns?.topCategories.slice(0, 5) || [];
+  const treatmentData = patterns?.topProcedures.slice(0, 5) || [];
+  const timelineData = dashboard?.charts.timeline || [];
+
+  const insurerTotal = insurerData.reduce((sum, item) => sum + item.value, 0);
+  const successRate = dashboard?.totals.appealSuccessRate || 0;
+  const topState = dashboard?.charts.stateShare[0];
+
+  const insurerContext = buildContext({
+    title: 'What your insurer is doing to other patients',
+    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+    reason: activeQuestion?.reason || dashboard?.totals.topCategory,
+    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+    publishedStories,
+    evidenceCount: insurerData[0]?.value,
+    successRate,
+    scopeLabel: 'insurer chart',
+    sourceLabel: 'Evidence & Insights insurer chart',
+  });
+
+  const treatmentContext = buildContext({
+    title: 'What treatment is getting blocked most',
+    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+    reason: activeQuestion?.reason || reasonData[0]?.label,
+    procedure: activeQuestion?.procedure || treatmentData[0]?.label,
+    publishedStories,
+    evidenceCount: treatmentData[0]?.value,
+    successRate,
+    scopeLabel: 'treatment chart',
+    sourceLabel: 'Evidence & Insights treatment chart',
+  });
+
+  const timelineContext = buildContext({
+    title: 'Is this getting worse?',
+    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+    reason: activeQuestion?.reason || dashboard?.totals.topCategory,
+    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+    publishedStories,
+    evidenceCount: timelineData[timelineData.length - 1]?.value,
+    successRate: timelineData[timelineData.length - 1]?.successRate || successRate,
+    scopeLabel: dashboard?.windowLabel || 'current timeline',
+    sourceLabel: dashboard?.windowLabel || 'timeline',
+  });
+
+  const drawerContext = insurerContext;
+
+  const openAppealBuilder = (context: AppealContext) => {
+    persistAppealContext(context);
+    window.dispatchEvent(new CustomEvent('nav', { detail: 'appeal' }));
+  };
+
+  const displayStories = results.length ? results : fallbackResults;
+  const featuredStories = displayStories.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f6fcfd_0%,#eff8fb_100%)] px-4 py-8 text-[#12324a] md:px-8 md:py-10">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fcfd_0%,#edf7fb_100%)] px-4 py-8 text-[#143047] md:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[2.8rem] border border-[#d8e8ef] bg-[radial-gradient(circle_at_top_left,rgba(85,188,204,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(103,204,156,0.15),transparent_24%),linear-gradient(180deg,#fbfeff_0%,#f1fbfc_100%)] p-6 shadow-[0_30px_80px_rgba(21,75,112,0.12)] md:p-10">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#cfe4ea] bg-white/85 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#2e7888]">
-              <span>{formatPublicStoryCount(publishedStories)} stories</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#3bb995]" />
-              <span>{dashboard?.windowLabel || timeWindow}</span>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-[1.06fr_0.94fr] lg:items-end">
-              <div className="space-y-4">
-                <h1 className="max-w-4xl text-4xl text-[#0e2b43] md:text-6xl">Denial patterns you can actually use in an appeal.</h1>
-                <p className="max-w-3xl text-base leading-7 text-[#557082] md:text-lg">
-                  Search the record, filter the biggest repeat patterns, and copy a citation you can paste into your appeal packet.
-                </p>
+        <section className="rounded-[2.8rem] border border-[#d8e8ef] bg-[radial-gradient(circle_at_top_left,rgba(85,188,204,0.15),transparent_28%),linear-gradient(180deg,#fbfeff_0%,#f1fbfc_100%)] p-6 shadow-[0_24px_70px_rgba(21,75,112,0.1)] md:p-10">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#d7e7eb] bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">
+                Evidence & Insights
               </div>
-              <div className="rounded-[1.7rem] border border-[#d7e8ee] bg-white/88 p-4 text-sm leading-7 text-[#557082]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Methodology</p>
-                <p className="mt-2">{dashboard?.methodology || 'Counts reflect the current published public stories in the live database and are refreshed from the production API.'}</p>
-              </div>
+              <h1 className="max-w-4xl text-4xl tracking-[-0.05em] text-[#0e2b43] md:text-6xl">
+                Search Denial Patterns by State, Insurer, and Care Type
+              </h1>
+              <p className="max-w-3xl text-base leading-7 text-[#557082] md:text-lg">
+                Start with a simple question. We show publicly shared patient stories, state-by-state signals, and public payer records where they exist, then explain what the lookup can and cannot prove.
+              </p>
             </div>
+            <div className="rounded-[1.8rem] border border-[#d7e7eb] bg-white p-5">
+              <label className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">
+                Search real denials
+              </label>
+              <div className="relative mt-3">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#6f91a0]" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    trackEvent('lookup_search_started', { source: 'lookup_page' });
+                  }}
+                  placeholder='Type your denial in plain English (e.g. "GLP-1 medication denied by UnitedHealthcare" or "MRI prior auth denied")'
+                  className="h-14 w-full rounded-[1rem] border border-[#d5e6ec] bg-[#f9fdff] pl-12 pr-4 text-[15px] text-[#12324a] outline-none"
+                />
+              </div>
+              <p className="mt-3 text-sm leading-7 text-[#557082]">
+                We use real insurers, denial reasons, and treatment names from the database so the page never starts empty.
+              </p>
+            </div>
+          </div>
 
-            <div className="rounded-[2rem] border border-[#d7e8ee] bg-white/88 p-4 shadow-[0_16px_44px_rgba(34,95,130,0.08)]">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#6f91a0]" />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder='Search my denial (e.g. "GLP-1 prior auth denied")'
-                    className="h-14 w-full rounded-[1.25rem] border border-[#d5e6ec] bg-[#f9fdff] pl-12 pr-4 text-[15px] text-[#12324a] outline-none transition focus:border-[#55bccc]"
-                  />
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {quickInsurers.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setSearchTerm(item.label)}
+                  className="rounded-full border border-[#d7e7eb] bg-white px-3 py-2 text-xs font-semibold text-[#27576c]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {quickProcedures.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setSearchTerm(item.label)}
+                  className="rounded-full border border-[#d7e7eb] bg-white px-3 py-2 text-xs font-semibold text-[#27576c]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {quickReasons.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setSearchTerm(item.label)}
+                  className="rounded-full border border-[#d7e7eb] bg-white px-3 py-2 text-xs font-semibold text-[#27576c]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-3">
+          <article className="rounded-[1.8rem] border border-[#d7e7eb] bg-white p-5 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">What is in this lookup</p>
+            <p className="mt-3 text-sm leading-7 text-[#557082]">
+              Publicly shared patient stories, curated public records, state-level signals, insurer names, denial reasons, and care categories that have been normalized for easier search.
+            </p>
+          </article>
+          <article className="rounded-[1.8rem] border border-[#d7e7eb] bg-white p-5 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">What is not in this lookup</p>
+            <p className="mt-3 text-sm leading-7 text-[#557082]">
+              It is not a complete claims database, not a private employer-plan audit, and not proof that your plan denied the same thing. It helps you ask sharper questions and find similar public fights.
+            </p>
+          </article>
+          <article className="rounded-[1.8rem] border border-[#d7e7eb] bg-white p-5 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">State-by-state view</p>
+            <p className="mt-3 text-sm leading-7 text-[#557082]">
+              States appear when a public story or public record includes enough location signal. Some states look quiet because the data has not been shared publicly yet, not because denials are absent.
+            </p>
+          </article>
+        </section>
+
+        <section className="grid gap-5 sm:gap-6 lg:grid-cols-3">
+          {guidedQuestions.map((question) => (
+            <button
+              key={question.title}
+              type="button"
+              onClick={() => {
+                setSelectedQuestion(question.title);
+                setSearchTerm(buildAppealQuery([question.insurer, question.reason, question.procedure, question.state]));
+              }}
+              className={`rounded-[1.9rem] border p-6 text-left shadow-[0_18px_50px_rgba(34,95,130,0.08)] transition ${
+                selectedQuestion === question.title ? 'border-[#9dd2de] bg-[#eef8fb]' : 'border-[#d7e7eb] bg-white hover:-translate-y-0.5'
+              }`}
+            >
+              <h2 className="text-2xl tracking-[-0.04em] text-[#0e2b43]">{question.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-[#557082]">{question.description}</p>
+              {question.count ? <p className="mt-4 text-sm font-semibold text-[#0f5ea8]">{formatPublicStoryCount(question.count)} related stories</p> : null}
+            </button>
+          ))}
+        </section>
+
+        <section className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+          <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Stories first</p>
+              <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">Read the public record</h2>
+              <p className="mt-3 text-sm leading-7 text-[#557082]">
+                We found public stories that are closest to this fight. Start here if you want to see whether other patients are hearing the same excuse before you look at the charts.
+              </p>
+              {searchState === 'loading' ? <p className="mt-4 text-sm font-semibold text-[#0f5ea8]">Searching the public record...</p> : null}
+            </div>
+            <div className="grid gap-4">
+              {featuredStories.length ? (
+                featuredStories.map((story) => (
+                  <article key={story.id} className="rounded-[1.4rem] border border-[#e2eef2] bg-[#f9fdff] p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-[#d7e7eb] bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#4e7285]">
+                        {story.insurer || 'Insurer not listed'}
+                      </span>
+                      <span className="rounded-full border border-[#d7e7eb] bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#4e7285]">
+                        {story.procedure || 'Care denied'}
+                      </span>
+                      <span className="rounded-full bg-[#e7f7f3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#167b6d]">
+                        {story.denialReason || 'Coverage denial'}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold text-[#0e2b43]">{story.title || `${story.procedure} denied by ${story.insurer}`}</h3>
+                    <p className="mt-2 text-sm leading-7 text-[#557082]">{story.preview || story.summary || story.narrative}</p>
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-[1.4rem] border border-[#e2eef2] bg-[#f9fdff] p-4 text-sm leading-7 text-[#557082]">
+                  We do not have a strong public match yet. Try your insurer name, treatment, or the denial reason.
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {FILTER_PRESETS.map((filter) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      onClick={() => setActiveFilter(filter)}
-                      className={`rounded-full border px-4 py-3 text-sm font-semibold transition ${
-                        activeFilter === filter
-                          ? 'border-[#1d7288] bg-[#e6f7fb] text-[#12536a]'
-                          : 'border-[#d5e6ec] bg-white text-[#557082] hover:bg-[#f4fbfd]'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                  {TIME_WINDOWS.map((windowOption) => (
-                    <button
-                      key={windowOption}
-                      type="button"
-                      onClick={() => setTimeWindow(windowOption)}
-                      className={`rounded-full border px-4 py-3 text-sm font-semibold transition ${
-                        timeWindow === windowOption
-                          ? 'border-[#1d7288] bg-[#e6f7fb] text-[#12536a]'
-                          : 'border-[#d5e6ec] bg-white text-[#557082] hover:bg-[#f4fbfd]'
-                      }`}
-                    >
-                      {windowOption}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <article className="rounded-[2.3rem] border border-[#d6e7ed] bg-white p-6 shadow-[0_22px_50px_rgba(26,77,111,0.08)]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <article className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">Insurer denial share</p>
-                <h2 className="mt-2 text-3xl text-[#0e2b43]">Who keeps surfacing first</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Question</p>
+                <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">How often is this insurer showing up?</h2>
               </div>
-              <div className="rounded-[1.3rem] border border-[#d7e8ee] bg-[#f7fcfe] px-4 py-3 text-right text-sm text-[#557082]">
-                <p>{formatPublicStoryCount(publishedStories)} public stories</p>
-                <p>{totals?.appealSuccessRate || 0}% appeal success signal</p>
-              </div>
+              <p className="rounded-full border border-[#d7e7eb] bg-[#f7fcfe] px-4 py-2 text-sm font-semibold text-[#2e7888]">
+                {formatPublicStoryCount(publishedStories)} public stories
+              </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-4">
-              <LegendDot color="#0f5ea8" label="Denial share" />
-              <LegendDot color="#31a68e" label="Appeal success signal" />
-            </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={260}>
                   <PieChart>
-                    <Pie data={insurerShare} dataKey="value" nameKey="label" innerRadius={72} outerRadius={112} paddingAngle={3}>
-                      {insurerShare.map((row, index) => (
+                    <Pie data={insurerData} dataKey="value" nameKey="label" innerRadius={64} outerRadius={96} paddingAngle={3}>
+                      {insurerData.map((row, index) => (
                         <Cell key={row.label} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(value: number, _name, entry: any) => [`${value.toLocaleString()} stories`, entry.payload.label]}
-                      contentStyle={{ borderRadius: 18, border: '1px solid #d5e6ec', background: '#ffffff' }}
-                    />
-                    <Legend />
+                    <Tooltip formatter={(value: number) => `${shareOfTotal(value, insurerTotal)} of all stories`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="space-y-4">
-                {insurerShare.map((item, index) => (
-                  <div key={item.label} className="rounded-[1.2rem] border border-[#e1eef2] bg-[#f9fdff] px-4 py-3">
+              <div className="space-y-3">
+                {insurerData.map((item, index) => (
+                  <div key={item.label} className="rounded-[1.2rem] border border-[#e2eef2] bg-[#f9fdff] px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <span className="h-3 w-3 rounded-full" style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }} />
                         <span className="text-sm font-semibold text-[#12324a]">{item.label}</span>
                       </div>
-                      <span className="text-sm text-[#557082]">{item.value.toLocaleString()}</span>
+                      <span className="text-sm text-[#557082]">{shareOfTotal(item.value, insurerTotal)}</span>
                     </div>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#6b8797]">{item.value.toLocaleString()} stories</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="mt-5 rounded-[1.5rem] border border-[#d7e8ee] bg-[#f7fcfe] p-4">
-              <p className="text-sm leading-7 text-[#557082]">
-                Plain English: this shows which insurers appear most often in the public record, plus the overall appeal success signal in stories where a real outcome was documented.
-              </p>
-              <p className="mt-2 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
-            </div>
+            <AppealCopyBox
+              paragraph={insurerContext.paragraph}
+              helper={`${insurerContext.insurer || 'This insurer'} appears in ${shareOfTotal(insurerData[0]?.value || 0, insurerTotal)} of the stories in this view.`}
+              successRate={successRate}
+              onCopy={() => copyToClipboard(insurerContext.paragraph)}
+              onGenerate={() => openAppealBuilder(insurerContext)}
+            />
           </article>
 
-          <article className="rounded-[2.3rem] border border-[#d6e7ed] bg-white p-6 shadow-[0_22px_50px_rgba(26,77,111,0.08)]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <article className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">Denial frequency by state</p>
-                <h2 className="mt-2 text-3xl text-[#0e2b43]">Where patients are reporting the same fights</h2>
-              </div>
-              <Button variant="outline" className="rounded-full border-[#d5e6ec] bg-white text-[#12324a] hover:bg-[#f4fbfd]">
-                <Share2 className="mr-2 h-4 w-4" />
-                Share view
-              </Button>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-4">
-              <LegendDot color="#0f5ea8" label="Higher story volume" />
-              <LegendDot color="#b9dde0" label="Lower story volume" />
-            </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-              <div className="rounded-[1.8rem] border border-[#e2eef2] bg-[#f7fcfe] p-4">
-                <StateTileMap rows={stateShare} />
-              </div>
-              <div className="rounded-[1.8rem] border border-[#dcebf0] bg-[linear-gradient(180deg,#f8fdff_0%,#eef9fb_100%)] p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">Top states in the current view</p>
-                <div className="mt-4 space-y-4">
-                  {stateShare.slice(0, 4).map((state) => (
-                    <div key={state.label}>
-                      <div className="flex items-center justify-between text-sm font-semibold text-[#12324a]">
-                        <span>{state.label}</span>
-                        <span>{state.value.toLocaleString()} stories</span>
-                      </div>
-                      <div className="mt-2 h-2 rounded-full bg-[#d8ebf0]">
-                        <div
-                          className="h-2 rounded-full bg-[linear-gradient(90deg,#2a7cc7,#31a68e)]"
-                          style={{ width: `${Math.max(16, (state.value / Math.max(...stateShare.map((item) => item.value), 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-sm leading-6 text-[#5f7c8c]">
-                  Per-capita note: darker tiles indicate more stories per million residents where population-normalized comparisons are available; lighter tiles mean lower public reporting volume.
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Question</p>
+                <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">What excuse keeps showing up?</h2>
               </div>
             </div>
-            <div className="mt-5 rounded-[1.5rem] border border-[#d7e8ee] bg-[#f7fcfe] p-4">
-              <p className="text-sm leading-7 text-[#557082]">
-                Plain English: this helps you see whether your state already has enough public reporting to support a “this keeps happening here” argument.
-              </p>
-              <p className="mt-2 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
+            <div className="mt-6 h-[280px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={280}>
+                <BarChart data={reasonData}>
+                  <XAxis dataKey="label" tick={{ fill: '#6b8797', fontSize: 11 }} angle={-12} textAnchor="end" height={70} interval={0} />
+                  <YAxis tick={{ fill: '#6b8797', fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                    {reasonData.map((row, index) => (
+                      <Cell key={row.label} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+            <AppealCopyBox
+              paragraph={buildAppealParagraph({
+                scopeLabel: 'denial reason chart',
+                publishedStories,
+                evidenceCount: reasonData[0]?.value,
+                successRate,
+                insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                reason: reasonData[0]?.label,
+                procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+              })}
+              helper={`${reasonData[0]?.label || 'This excuse'} is the reason showing up most often right now.`}
+              successRate={successRate}
+              onCopy={() =>
+                copyToClipboard(
+                  buildAppealParagraph({
+                    scopeLabel: 'denial reason chart',
+                    publishedStories,
+                    evidenceCount: reasonData[0]?.value,
+                    successRate,
+                    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                    reason: reasonData[0]?.label,
+                    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+                  }),
+                )
+              }
+              onGenerate={() =>
+                openAppealBuilder(
+                  buildContext({
+                    title: 'What excuse insurers keep using',
+                    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                    reason: reasonData[0]?.label,
+                    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+                    publishedStories,
+                    evidenceCount: reasonData[0]?.value,
+                    successRate,
+                    scopeLabel: 'denial reason chart',
+                    sourceLabel: 'Evidence & Insights denial reason chart',
+                  }),
+                )
+              }
+            />
           </article>
         </section>
 
-        <section className="rounded-[2.3rem] border border-[#d6e7ed] bg-white p-6 shadow-[0_22px_50px_rgba(26,77,111,0.08)]">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <article className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#2e7888]">Trending patterns over time</p>
-              <h2 className="mt-2 text-3xl text-[#0e2b43]">What is rising in the live record</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Question</p>
+              <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">What care gets blocked most?</h2>
             </div>
-            <div className="rounded-full border border-[#d6e7ed] bg-[#f7fcfe] px-4 py-2 text-sm font-semibold text-[#2c7488]">
-              {dashboard?.windowLabel || timeWindow}
+            <div className="mt-6 h-[280px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={280}>
+                <BarChart data={treatmentData}>
+                  <XAxis dataKey="label" tick={{ fill: '#6b8797', fontSize: 11 }} angle={-12} textAnchor="end" height={70} interval={0} />
+                  <YAxis tick={{ fill: '#6b8797', fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                    {treatmentData.map((row, index) => (
+                      <Cell key={row.label} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+            <AppealCopyBox
+              paragraph={treatmentContext.paragraph}
+              helper={`${treatmentData[0]?.label || 'This treatment'} is the treatment fight showing up most often in the public record right now.`}
+              successRate={successRate}
+              onCopy={() => copyToClipboard(treatmentContext.paragraph)}
+              onGenerate={() => openAppealBuilder(treatmentContext)}
+            />
+          </article>
+
+          <article className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Question</p>
+              <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">Where is this happening?</h2>
+              <p className="mt-3 text-sm leading-7 text-[#557082]">
+                This state-by-state view shows where the current public record has signal. It will undercount places where patients, regulators, or payers have not published usable records yet.
+              </p>
+            </div>
+            <div className="mt-6 grid gap-3">
+              {(dashboard?.charts.stateShare || []).slice(0, 6).map((state) => (
+                <button
+                  key={state.label}
+                  type="button"
+                  onClick={() => trackEvent('lookup_state_filter_click', { state: state.label, source: 'lookup_page' })}
+                  className="rounded-[1.2rem] border border-[#e2eef2] bg-[#f9fdff] px-4 py-3 text-left"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-[#12324a]">{state.label}</span>
+                    <span className="text-sm text-[#557082]">{state.value.toLocaleString()} stories</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <AppealCopyBox
+              paragraph={buildAppealParagraph({
+                scopeLabel: 'state list',
+                publishedStories,
+                evidenceCount: topState?.value,
+                successRate,
+                insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                reason: activeQuestion?.reason || dashboard?.totals.topCategory,
+                procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+                state: topState?.label,
+              })}
+              helper={topState ? `${topState.label} has ${topState.value.toLocaleString()} public stories in the current view.` : 'We show the states with the most public stories first.'}
+              successRate={successRate}
+              onCopy={() =>
+                copyToClipboard(
+                  buildAppealParagraph({
+                    scopeLabel: 'state list',
+                    publishedStories,
+                    evidenceCount: topState?.value,
+                    successRate,
+                    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                    reason: activeQuestion?.reason || dashboard?.totals.topCategory,
+                    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+                    state: topState?.label,
+                  }),
+                )
+              }
+              onGenerate={() =>
+                openAppealBuilder(
+                  buildContext({
+                    title: 'What patients in my state are seeing',
+                    insurer: activeQuestion?.insurer || dashboard?.totals.topInsurer,
+                    reason: activeQuestion?.reason || dashboard?.totals.topCategory,
+                    procedure: activeQuestion?.procedure || dashboard?.totals.topProcedure,
+                    state: topState?.label,
+                    publishedStories,
+                    evidenceCount: topState?.value,
+                    successRate,
+                    scopeLabel: 'state list',
+                    sourceLabel: 'Evidence & Insights state list',
+                  }),
+                )
+              }
+            />
+          </article>
+        </section>
+
+        <section className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">Question</p>
+            <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">Is this new or getting worse?</h2>
           </div>
-          <div className="mt-5 flex flex-wrap gap-4">
-            <LegendDot color="#2a7cc7" label="Story volume" />
-            <LegendDot color="#31a68e" label="Appeal success rate" />
-          </div>
-          <div className="mt-6 h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timeline} margin={{ left: 6, right: 12, top: 18, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="timelinePrimary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2a7cc7" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#2a7cc7" stopOpacity={0.04} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="shortLabel" tick={{ fill: '#6b8797', fontSize: 12 }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" tick={{ fill: '#6b8797', fontSize: 12 }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fill: '#6b8797', fontSize: 12 }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  formatter={(value: number, name: string) => (name === 'successRate' ? `${value}%` : `${value.toLocaleString()} stories`)}
-                  labelFormatter={(label) => `Month: ${label}`}
-                  contentStyle={{ borderRadius: 18, border: '1px solid #d5e6ec', background: '#ffffff' }}
-                />
-                <Area yAxisId="left" type="monotone" dataKey="value" name="Story volume" stroke="#2a7cc7" fill="url(#timelinePrimary)" strokeWidth={3} />
-                <Line yAxisId="right" type="monotone" dataKey="successRate" name="successRate" stroke="#31a68e" strokeWidth={3} dot={{ r: 3 }} />
-              </AreaChart>
+          <div className="mt-6 h-[300px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={300}>
+              <LineChart data={timelineData}>
+                <XAxis dataKey="shortLabel" tick={{ fill: '#6b8797', fontSize: 12 }} />
+                <YAxis yAxisId="left" tick={{ fill: '#6b8797', fontSize: 12 }} />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fill: '#6b8797', fontSize: 12 }} />
+                <Tooltip />
+                <Line yAxisId="left" type="monotone" dataKey="value" stroke="#0f5ea8" strokeWidth={3} dot={{ r: 3 }} />
+                <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#31a68e" strokeWidth={3} dot={{ r: 3 }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-5 rounded-[1.5rem] border border-[#d7e8ee] bg-[#f7fcfe] p-4">
-            <p className="text-sm leading-7 text-[#557082]">
-              Plain English: the blue area shows how many public stories were added each month, while the green line shows the share of those stories that recorded an overturned appeal outcome.
-            </p>
-            <p className="mt-2 text-sm font-medium text-[#2c7488]">How to use this in your appeal (2 minutes)</p>
-          </div>
+          <AppealCopyBox
+            paragraph={timelineContext.paragraph}
+            helper={`${dashboard?.windowLabel || 'This timeline'} shows whether this denial fight is rising or settling down.`}
+            successRate={timelineContext.successRate}
+            onCopy={() => copyToClipboard(timelineContext.paragraph)}
+            onGenerate={() => openAppealBuilder(timelineContext)}
+          />
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          {ACTION_CARDS.map((card) => (
-            <button
-              key={card.title}
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('nav', { detail: card.tab }))}
-              className="rounded-[1.8rem] border border-[#dbeaf0] bg-white p-5 text-left shadow-[0_12px_30px_rgba(36,88,122,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_32px_rgba(36,88,122,0.08)]"
-            >
-              <p className="text-lg font-semibold text-[#12324a]">{card.title}</p>
-              <p className="mt-3 text-sm leading-7 text-[#5f7c8c]">{card.body}</p>
-              <p className="mt-4 text-sm font-semibold text-[#0f5ea8]">{card.cta}</p>
-            </button>
-          ))}
+        <section className="rounded-[2.2rem] border border-[#d7e7eb] bg-white p-6 shadow-[0_18px_50px_rgba(34,95,130,0.08)]">
+          <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2e7888]">More stories like yours</p>
+              <h2 className="mt-2 text-3xl tracking-[-0.04em] text-[#0e2b43]">Keep digging into similar fights</h2>
+              <p className="mt-3 text-sm leading-7 text-[#557082]">
+                This is where you read the real public stories behind the charts. If we do not have your exact denial yet, we show the closest similar fights instead.
+              </p>
+              {searchState === 'loading' ? <p className="mt-4 text-sm font-semibold text-[#0f5ea8]">Searching the public record...</p> : null}
+              {searchState === 'ready' && !results.length && fallbackResults.length ? (
+                <p className="mt-4 rounded-[1rem] border border-[#d7e7eb] bg-[#f7fcfe] px-4 py-3 text-sm leading-7 text-[#557082]">
+                  We don&apos;t have your exact denial yet, but here&apos;s what&apos;s happening to patients with very similar fights.
+                </p>
+              ) : null}
+              {searchState === 'ready' && !results.length && !fallbackResults.length ? (
+                <p className="mt-4 rounded-[1rem] border border-[#d7e7eb] bg-[#f7fcfe] px-4 py-3 text-sm leading-7 text-[#557082]">
+                  We don&apos;t have a good public match for that search yet. Try your insurer name, the treatment, or the denial reason instead.
+                </p>
+              ) : null}
+            </div>
+            <div className="grid gap-4">
+              {displayStories.slice(0, 6).map((story) => (
+                <article key={story.id} className="rounded-[1.4rem] border border-[#e2eef2] bg-[#f9fdff] p-4">
+                  <h3 className="text-lg font-semibold text-[#0e2b43]">{story.title || `${story.procedure} denied by ${story.insurer}`}</h3>
+                  <p className="mt-2 text-sm leading-7 text-[#557082]">{story.preview || story.summary || story.narrative}</p>
+                </article>
+              ))}
+            </div>
+          </div>
         </section>
-
-        <div className="flex flex-col gap-3 rounded-[1.8rem] border border-[#d7e8ee] bg-white p-5 shadow-[0_16px_44px_rgba(34,95,130,0.06)] md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-[#12324a]">Copy a ready-to-paste citation for your appeal packet.</p>
-            <p className="mt-1 text-sm leading-7 text-[#5f7c8c]">{citation}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={() => totals && exportDashboardPdf('FightInsuranceDenials dashboard snapshot', totals, dashboard?.methodology || '', dashboard?.windowLabel || timeWindow)}
-              className="rounded-full bg-[#0f5ea8] text-white hover:bg-[#0d528f]"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                if (!citation) return;
-                await navigator.clipboard.writeText(citation);
-                setCopyState('done');
-                window.setTimeout(() => setCopyState('idle'), 1800);
-              }}
-              className="rounded-full border-[#d5e6ec] bg-white text-[#12324a] hover:bg-[#f4fbfd]"
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              {copyState === 'done' ? 'Citation copied' : 'Copy appeal citation'}
-            </Button>
-          </div>
-        </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(true)}
+        className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-3 rounded-full bg-[#0f5ea8] px-5 py-4 text-sm font-semibold text-white shadow-[0_18px_44px_rgba(15,94,168,0.28)] transition hover:bg-[#0c4f8f]"
+      >
+        <FileText className="h-4 w-4" />
+        Build My Appeal
+      </button>
+
+      <AppealLeverageDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        context={drawerContext}
+        stories={displayStories}
+        onGenerateAppeal={() => openAppealBuilder(drawerContext)}
+      />
     </div>
   );
 }

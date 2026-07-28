@@ -13,6 +13,7 @@ import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User 
 import { toast } from 'sonner';
 import { AppTab, getCanonicalPathForPath, getTabFromPath, seedVisualFilters, TAB_PATHS } from './lib/siteRoutes';
 import { applyPageSeo } from './lib/seo';
+import { initAnalytics, trackEvent } from './lib/analytics';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>(() => getTabFromPath(window.location.pathname));
@@ -72,7 +73,12 @@ export default function App() {
   }, [activeTab, navigateToTab, replaceWithCanonicalPath]);
 
   useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
     applyPageSeo(activeTab);
+    trackEvent('page_view', { source: activeTab });
   }, [activeTab]);
 
   const handleLogin = async () => {

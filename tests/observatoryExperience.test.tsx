@@ -13,18 +13,20 @@ function renderHomepage(featuredStories: any[] = []) {
       searchTerm=""
       onSearchTermChange={() => {}}
       onNavigate={() => {}}
-      onOpenRecordFromQuery={() => {}}
+      onFindPatternFromQuery={() => {}}
       onStartStoryFromQuery={() => {}}
     />
   );
 }
 
-test('homepage story section shows an intentional proof state when no featured stories exist', () => {
+test('homepage shows the two-door conversion state when no featured stories exist', () => {
   const markup = renderHomepage([]);
 
-  assert.match(markup, /We do not show fabricated patient stories here\./);
-  assert.match(markup, /This section only fills with published, anonymized stories from the live database\./);
-  assert.doesNotMatch(markup, /Taltz denied by UnitedHealthcare|UnitedHealthcare.*Choice Plus PPO/i);
+  assert.match(markup, /Write My Appeal Letter/);
+  assert.match(markup, /Search Real Denials/);
+  assert.match(markup, /For Patients/);
+  assert.match(markup, /For Self-Funded Employers/);
+  assert.match(markup, /Request a TPA Visibility Check/);
 });
 
 test('homepage still renders real featured stories when they exist', () => {
@@ -45,6 +47,7 @@ test('homepage still renders real featured stories when they exist', () => {
     },
   ]);
 
-  assert.match(markup, /Taltz denied by UnitedHealthcare/);
-  assert.doesNotMatch(markup, /We do not show fabricated patient stories here\./);
+  assert.match(markup, /Two ways to use FightInsuranceDenials/);
+  assert.match(markup, /Search Real Denials/);
+  assert.match(markup, /My biologic was denied after repeat paperwork/);
 });

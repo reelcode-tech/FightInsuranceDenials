@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Table2,
 } from 'lucide-react';
+import { trackEvent } from '@/src/lib/analytics';
 
 const decisionMoments = [
   'TPA or ASO renewal is coming up',
@@ -157,6 +158,27 @@ const products = [
 ];
 
 export default function B2BDataProducts() {
+  const [pilotForm, setPilotForm] = React.useState({
+    name: '',
+    company: '',
+    tpa: '',
+    email: '',
+  });
+
+  const handlePilotSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    trackEvent('employer_pilot_interest_click', {
+      audience: 'employer',
+      source: 'employer_page',
+      currentTpa: pilotForm.tpa || 'unknown',
+    });
+    const subject = encodeURIComponent('TPA Visibility Check request');
+    const body = encodeURIComponent(
+      `Name: ${pilotForm.name}\nCompany: ${pilotForm.company}\nWork email: ${pilotForm.email}\nCurrent TPA/ASO: ${pilotForm.tpa}\n\nI am interested in a TPA Visibility Check.`,
+    );
+    window.location.href = `mailto:hello@fightinsurancedenials.com?subject=${subject}&body=${body}`;
+  };
+
   return (
     <div className="min-h-screen bg-[#f7fbf9] px-5 py-10 text-[#172f35] md:px-8">
       <div className="mx-auto max-w-7xl space-y-10">
@@ -175,12 +197,18 @@ export default function B2BDataProducts() {
                 denial patterns, appeal outcomes, delay, missing disclosures, and renewal questions.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button className="h-12 rounded-md bg-[#123139] px-6 text-base font-semibold text-white hover:bg-[#0c242a]">
+                <Button
+                  onClick={() => trackEvent('employer_tpa_visibility_check_click', { audience: 'employer', source: 'employer_page' })}
+                  className="h-12 rounded-md bg-[#123139] px-6 text-base font-semibold text-white hover:bg-[#0c242a]"
+                >
                   Request an employer briefing <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => document.getElementById('sample-deliverables')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => {
+                    trackEvent('employer_sample_report_click', { audience: 'employer', source: 'employer_page' });
+                    document.getElementById('sample-deliverables')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   className="h-12 rounded-md border-[#b9cec7] bg-white px-6 text-base font-semibold text-[#123139] hover:bg-[#eef6f2]"
                 >
                   See sample outputs
@@ -393,6 +421,40 @@ export default function B2BDataProducts() {
               </div>
             </div>
           </figure>
+        </section>
+
+        <section className="grid gap-6 border border-[#cfded9] bg-white p-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#42635d]">Validation pilot</p>
+            <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-[#123139]">Request a TPA Visibility Check.</h2>
+            <p className="mt-4 text-sm leading-7 text-[#4f6867]">
+              This is the fake-door test for demand. We are measuring whether self-funded employers want help understanding
+              what denial, appeal, and prior-authorization data they should ask their administrator to produce.
+            </p>
+            <p className="mt-4 text-sm leading-7 text-[#4f6867]">
+              Do not send member names, claim numbers, denial letters, diagnoses, or medical records here.
+            </p>
+          </div>
+          <form onSubmit={handlePilotSubmit} className="grid gap-3">
+            {[
+              ['name', 'Name'],
+              ['email', 'Work email'],
+              ['company', 'Company'],
+              ['tpa', 'Current TPA/ASO, if known'],
+            ].map(([key, label]) => (
+              <label key={key} className="grid gap-2 text-sm font-semibold text-[#123139]">
+                {label}
+                <input
+                  value={pilotForm[key as keyof typeof pilotForm]}
+                  onChange={(event) => setPilotForm((current) => ({ ...current, [key]: event.target.value }))}
+                  className="h-12 border border-[#cfded9] bg-[#f7fbf9] px-4 text-sm font-normal text-[#123139] outline-none"
+                />
+              </label>
+            ))}
+            <Button type="submit" className="mt-2 h-12 rounded-md bg-[#123139] text-white hover:bg-[#0c242a]">
+              Request a TPA Visibility Check
+            </Button>
+          </form>
         </section>
 
         <section className="grid gap-6 border-y border-[#cfded9] bg-[#eef6f2] p-6 lg:grid-cols-[0.72fr_1.28fr]">
